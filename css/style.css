@@ -325,7 +325,7 @@ body.is-resizing * {
 
 @media (max-width: 768px) {
   body {
-    overflow: hidden;
+    overflow: auto;
   }
 
   .app-shell {
@@ -396,6 +396,31 @@ body.is-resizing * {
     height: 10px;
     cursor: row-resize;
   }
+
+   .info-panel {
+  overflow: auto;
+}
+
+.info-split-area {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.info-box {
+  min-height: 0;
+  overflow: auto;
+}
+
+.inline-pill-list {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.quote-list,
+.source-list {
+  max-height: 100%;
+  overflow: auto;
+}
 
   .info-panel {
     min-height: 150px;
