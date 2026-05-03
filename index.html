@@ -3,23 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Ruowen Knowledge Graph</title>
-
-  <link rel="stylesheet" href="./css/style.css?v=search_toggle_20260504_01" />
+  <link rel="stylesheet" href="./css/style.css?v=ruowen_stable_20260504_02" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
-
 <body>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
-      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">
-        🔍
-      </button>
-
-      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄">
-        ☰
-      </button>
+      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">🔍</button>
+      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄">☰</button>
 
       <div class="logo">✦</div>
 
@@ -41,13 +33,8 @@
         </div>
       </div>
 
-      <p class="sidebar-description">
-        搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳
-      </p>
-
       <div class="sidebar-section">
         <label class="sidebar-label">顯示類型</label>
-
         <button class="side-item active filter-chip" data-type="all">全部</button>
         <button class="side-item active filter-chip" data-type="topic">第一層主題</button>
         <button class="side-item active filter-chip" data-type="concept">第二層概念</button>
@@ -55,11 +42,10 @@
         <button class="side-item active filter-chip" data-type="phrase">句子</button>
       </div>
 
-      <div class="sidebar-section">
+      <div class="sidebar-section sidebar-category-section">
         <label class="sidebar-label">主題分類</label>
         <div id="categoryChips" class="sidebar-category-list"></div>
       </div>
-
     </aside>
 
     <div id="sidebarResizeHandle" class="sidebar-resize-handle" title="拖曳調整側邊欄寬度"></div>
@@ -83,9 +69,7 @@
               <span>滾輪：縮放</span>
             </div>
 
-            <div id="emptyState" class="empty-state hidden">
-              找不到符合條件的節點
-            </div>
+            <div id="emptyState" class="empty-state hidden">找不到符合條件的節點</div>
           </div>
         </section>
 
@@ -94,37 +78,28 @@
         <section id="infoPanel" class="info-panel">
           <div class="info-header">
             <div class="info-icon">◎</div>
-
             <div class="info-title-block">
               <h2 id="infoTitle">尚未選擇節點</h2>
-              <div id="infoTags" class="info-tags">
-                <span>請點選圖上的節點</span>
-              </div>
+              <div id="infoTags" class="info-tags"><span>請點選圖上的節點</span></div>
             </div>
           </div>
 
           <div class="info-related-row">
             <h3>相關詞彙</h3>
-            <div id="relatedTerms" class="inline-pill-list">
-              <span class="muted">尚無資料</span>
-            </div>
+            <div id="relatedTerms" class="inline-pill-list"><span class="muted">尚無資料</span></div>
           </div>
 
           <div class="info-split-area">
             <div id="sentencePanel" class="info-box sentence-box">
               <h3>相關句子參考</h3>
-              <div id="relatedPhrases" class="quote-list">
-                <span class="muted">尚無資料</span>
-              </div>
+              <div id="relatedPhrases" class="quote-list"><span class="muted">尚無資料</span></div>
             </div>
 
             <div id="innerResizeHandle" class="resize-handle vertical"></div>
 
             <div id="sourcePanel" class="info-box source-box">
               <h3>相關出處</h3>
-              <div id="sourceList" class="source-list">
-                <span class="muted">尚無資料</span>
-              </div>
+              <div id="sourceList" class="source-list"><span class="muted">尚無資料</span></div>
             </div>
           </div>
         </section>
@@ -132,6 +107,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=search_toggle_20260504_01"></script>
+  <script src="./app.js?v=ruowen_stable_20260504_02"></script>
 </body>
 </html>

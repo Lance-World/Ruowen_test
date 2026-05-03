@@ -55,6 +55,10 @@ async function init() {
   }
 }
 
+/* ================================
+   Data
+================================ */
+
 async function loadData() {
   const [nodes, edges, sources, meta] = await Promise.all([
     fetchJson(DATA_PATHS.nodes),
@@ -228,42 +232,67 @@ function setupControls() {
       const allEnabled = ["topic", "concept", "term", "phrase"].every((item) =>
         state.visibleTypes.has(item)
       );
-      allChip.classList.toggle("active", allEnabled);
 
+      allChip.classList.toggle("active", allEnabled);
       updateGraph();
     });
   });
 
-  document.getElementById("searchBtn").addEventListener("click", searchNode);
+  const searchBtn = document.getElementById("searchBtn");
+  const clearSearchBtn = document.getElementById("clearSearchBtn");
+  const searchInput = document.getElementById("searchInput");
+  const resetViewBtn = document.getElementById("resetViewBtn");
+  const expandAllBtn = document.getElementById("expandAllBtn");
+  const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+  const searchToggleBtn = document.getElementById("searchToggleBtn");
 
-  document.getElementById("clearSearchBtn").addEventListener("click", () => {
-    const input = document.getElementById("searchInput");
-    if (input) input.value = "";
+  if (searchBtn) {
+    searchBtn.addEventListener("click", searchNode);
+  }
 
-    showAll();
-  });
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      showAll();
+    });
+  }
 
-  document.getElementById("searchInput").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      searchNode();
-    }
-
-    if (event.key === "Escape") {
-      const panel = document.getElementById("sidebarSearchPanel");
-      if (panel) {
-        panel.classList.add("search-collapsed");
-        localStorage.setItem("searchPanelOpen", "0");
+  if (searchInput) {
+    searchInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        searchNode();
       }
-    }
-  });
 
-  document.getElementById("resetViewBtn").addEventListener("click", resetZoom);
-  document.getElementById("expandAllBtn").addEventListener("click", showAll);
-  document.getElementById("clearSelectionBtn").addEventListener("click", clearSelection);
-  document.getElementById("sidebarToggleBtn").addEventListener("click", toggleSidebar);
-  document.getElementById("searchToggleBtn").addEventListener("click", toggleSearchPanel);
+      if (event.key === "Escape") {
+        const panel = document.getElementById("sidebarSearchPanel");
+        if (panel) {
+          panel.classList.add("search-collapsed");
+          localStorage.setItem("searchPanelOpen", "0");
+        }
+      }
+    });
+  }
 
-  });
+  if (resetViewBtn) {
+    resetViewBtn.addEventListener("click", resetZoom);
+  }
+
+  if (expandAllBtn) {
+    expandAllBtn.addEventListener("click", showAll);
+  }
+
+  if (clearSelectionBtn) {
+    clearSelectionBtn.addEventListener("click", clearSelection);
+  }
+
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener("click", toggleSidebar);
+  }
+
+  if (searchToggleBtn) {
+    searchToggleBtn.addEventListener("click", toggleSearchPanel);
+  }
 }
 
 function setVisibleTypes(types) {
@@ -296,7 +325,8 @@ function showAll() {
     item.classList.toggle("active", item.dataset.category === "all");
   });
 
-  document.getElementById("searchInput").value = "";
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.value = "";
 
   updateGraph();
   renderDefaultInfo();
@@ -323,7 +353,7 @@ function setupSidebarResize() {
   const sidebar = document.getElementById("sidebar");
   const appShell = document.querySelector(".app-shell");
 
-  if (!handle || !sidebar) return;
+  if (!handle || !sidebar || !appShell) return;
 
   let isDragging = false;
 
@@ -361,6 +391,8 @@ function setupMainVerticalResize() {
   const handle = document.getElementById("mainResizeHandle");
   const workspace = document.getElementById("workspace");
 
+  if (!handle || !workspace) return;
+
   let isDragging = false;
 
   handle.addEventListener("mousedown", () => {
@@ -397,6 +429,8 @@ function setupInnerHorizontalResize() {
   const handle = document.getElementById("innerResizeHandle");
   const splitArea = document.querySelector(".info-split-area");
 
+  if (!handle || !splitArea) return;
+
   let isDragging = false;
 
   handle.addEventListener("mousedown", () => {
@@ -428,6 +462,8 @@ function resizeGraphAfterPanelChange() {
   if (!state.svg) return;
 
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
@@ -444,7 +480,8 @@ function resizeGraphAfterPanelChange() {
 ================================ */
 
 function getFilteredData() {
-  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+  const searchInput = document.getElementById("searchInput");
+  const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
   let nodes = state.allNodes.filter((node) => {
     if (!state.visibleTypes.has(node.type)) return false;
@@ -514,7 +551,6 @@ function renderGraph() {
   const height = graphCard.clientHeight;
 
   svg.attr("viewBox", [0, 0, width, height]);
-
   svg.selectAll("*").remove();
 
   state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
@@ -537,7 +573,10 @@ function renderGraph() {
 function updateGraph() {
   const { nodes, edges } = getFilteredData();
 
-  document.getElementById("emptyState").classList.toggle("hidden", nodes.length > 0);
+  const emptyState = document.getElementById("emptyState");
+  if (emptyState) {
+    emptyState.classList.toggle("hidden", nodes.length > 0);
+  }
 
   const graphCard = document.querySelector(".graph-card");
   const width = graphCard.clientWidth;
@@ -946,7 +985,8 @@ function getNeighborNodes(nodeId) {
 ================================ */
 
 function searchNode() {
-  const keyword = document.getElementById("searchInput").value.trim();
+  const input = document.getElementById("searchInput");
+  const keyword = input ? input.value.trim() : "";
 
   updateGraph();
 
