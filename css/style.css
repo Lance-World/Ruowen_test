@@ -319,21 +319,7 @@ button {
   color: var(--teal-deep);
 }
 
-.sidebar-bottom {
-  margin-top: auto;
-  display: grid;
-  gap: 8px;
-  transition:
-    opacity 0.18s ease,
-    visibility 0.18s ease,
-    height 0.18s ease,
-    margin 0.18s ease;
-}
 
-.side-tool-btn {
-  background: rgba(36, 91, 98, 0.82);
-  font-size: 13px;
-}
 
 /* ================================
    Sidebar Resize Handle
@@ -390,8 +376,7 @@ button {
 .app-shell.sidebar-collapsed .sidebar-title,
 .app-shell.sidebar-collapsed .sidebar-description,
 .app-shell.sidebar-collapsed .sidebar-search-panel,
-.app-shell.sidebar-collapsed .sidebar-section,
-.app-shell.sidebar-collapsed .sidebar-bottom {
+.app-shell.sidebar-collapsed .sidebar-section {
   opacity: 0;
   pointer-events: none;
   visibility: hidden;

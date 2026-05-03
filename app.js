@@ -263,12 +263,6 @@ function setupControls() {
   document.getElementById("sidebarToggleBtn").addEventListener("click", toggleSidebar);
   document.getElementById("searchToggleBtn").addEventListener("click", toggleSearchPanel);
 
-  document.getElementById("showTopicOnlyBtn").addEventListener("click", () => {
-    setVisibleTypes(["topic"]);
-  });
-
-  document.getElementById("showConceptOnlyBtn").addEventListener("click", () => {
-    setVisibleTypes(["topic", "concept"]);
   });
 }
 
