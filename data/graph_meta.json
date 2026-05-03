@@ -1,0 +1,36 @@
+{
+  "project": "Ruowen Knowledge Graph",
+  "node_count": 17,
+  "edge_count": 2,
+  "level1_categories": [
+    "01_靈魂與意識",
+    "02_能量與頻率",
+    "03_業力與課題",
+    "04_身體與健康",
+    "05_情緒與感受",
+    "06_關係與投射",
+    "07_家庭與原生經驗",
+    "08_自我與人格",
+    "09_信念與思維",
+    "10_夢境與潛意識",
+    "11_創造與顯化",
+    "12_金錢與價值",
+    "13_時間與人生階段",
+    "14_修行與覺察",
+    "15_世界觀與哲學"
+  ],
+  "level2_concepts": [
+    "意識狀態"
+  ],
+  "node_type_counts": {
+    "topic": 15,
+    "concept": 1,
+    "term": 1
+  },
+  "edge_type_counts": {
+    "contains": 1,
+    "related_to": 1
+  },
+  "public_build": true,
+  "description": "Public sanitized knowledge graph data."
+}

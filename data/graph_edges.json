@@ -1,0 +1,18 @@
+[
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_意識狀態",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_意識狀態",
+    "type": "contains",
+    "label": "包含",
+    "weight": 4
+  },
+  {
+    "id": "concept_意識狀態__related_to__term_覺知",
+    "source": "concept_意識狀態",
+    "target": "term_覺知",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 4
+  }
+]
