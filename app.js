@@ -43,6 +43,7 @@ async function init() {
     await loadData();
     restoreSidebarState();
     restoreSidebarWidth();
+    restoreSearchPanelState();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
@@ -104,6 +105,19 @@ function restoreSidebarWidth() {
   }
 }
 
+function restoreSearchPanelState() {
+  const panel = document.getElementById("sidebarSearchPanel");
+  const isOpen = localStorage.getItem("searchPanelOpen") === "1";
+
+  if (!panel) return;
+
+  if (isOpen) {
+    panel.classList.remove("search-collapsed");
+  } else {
+    panel.classList.add("search-collapsed");
+  }
+}
+
 function toggleSidebar() {
   const appShell = document.querySelector(".app-shell");
   appShell.classList.toggle("sidebar-collapsed");
@@ -114,6 +128,34 @@ function toggleSidebar() {
   setTimeout(() => {
     resizeGraphAfterPanelChange();
   }, 320);
+}
+
+function toggleSearchPanel() {
+  const panel = document.getElementById("sidebarSearchPanel");
+  const appShell = document.querySelector(".app-shell");
+
+  if (!panel) return;
+
+  if (appShell.classList.contains("sidebar-collapsed")) {
+    appShell.classList.remove("sidebar-collapsed");
+    localStorage.setItem("sidebarCollapsed", "0");
+  }
+
+  panel.classList.toggle("search-collapsed");
+
+  const isOpen = !panel.classList.contains("search-collapsed");
+  localStorage.setItem("searchPanelOpen", isOpen ? "1" : "0");
+
+  if (isOpen) {
+    setTimeout(() => {
+      const input = document.getElementById("searchInput");
+      if (input) input.focus();
+    }, 120);
+  }
+
+  setTimeout(() => {
+    resizeGraphAfterPanelChange();
+  }, 120);
 }
 
 function setupCategoryChips() {
@@ -194,9 +236,24 @@ function setupControls() {
 
   document.getElementById("searchBtn").addEventListener("click", searchNode);
 
+  document.getElementById("clearSearchBtn").addEventListener("click", () => {
+    const input = document.getElementById("searchInput");
+    if (input) input.value = "";
+
+    showAll();
+  });
+
   document.getElementById("searchInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       searchNode();
+    }
+
+    if (event.key === "Escape") {
+      const panel = document.getElementById("sidebarSearchPanel");
+      if (panel) {
+        panel.classList.add("search-collapsed");
+        localStorage.setItem("searchPanelOpen", "0");
+      }
     }
   });
 
@@ -204,6 +261,7 @@ function setupControls() {
   document.getElementById("expandAllBtn").addEventListener("click", showAll);
   document.getElementById("clearSelectionBtn").addEventListener("click", clearSelection);
   document.getElementById("sidebarToggleBtn").addEventListener("click", toggleSidebar);
+  document.getElementById("searchToggleBtn").addEventListener("click", toggleSearchPanel);
 
   document.getElementById("showTopicOnlyBtn").addEventListener("click", () => {
     setVisibleTypes(["topic"]);

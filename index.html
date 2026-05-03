@@ -6,13 +6,17 @@
 
   <title>Ruowen Knowledge Graph</title>
 
-  <link rel="stylesheet" href="./css/style.css?v=stable_layout_20260504_01" />
+  <link rel="stylesheet" href="./css/style.css?v=search_toggle_20260504_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 
 <body>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
+      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">
+        🔍
+      </button>
+
       <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄">
         ☰
       </button>
@@ -24,20 +28,22 @@
         <span>Knowledge Graph</span>
       </div>
 
-      <p class="sidebar-description">
-        搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳
-      </p>
-
-      <div class="sidebar-section">
-        <label class="sidebar-label">搜尋</label>
+      <div id="sidebarSearchPanel" class="sidebar-search-panel search-collapsed">
         <input
           id="searchInput"
           class="sidebar-search"
           type="text"
-          placeholder="搜尋節點..."
+          placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
         />
-        <button id="searchBtn" class="sidebar-main-btn">搜尋</button>
+        <div class="search-action-row">
+          <button id="searchBtn" class="sidebar-main-btn">搜尋</button>
+          <button id="clearSearchBtn" class="sidebar-sub-btn">清除</button>
+        </div>
       </div>
+
+      <p class="sidebar-description">
+        搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳
+      </p>
 
       <div class="sidebar-section">
         <label class="sidebar-label">顯示類型</label>
@@ -130,6 +136,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=stable_layout_20260504_01"></script>
+  <script src="./app.js?v=search_toggle_20260504_01"></script>
 </body>
 </html>

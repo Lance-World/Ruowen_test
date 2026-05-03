@@ -93,25 +93,35 @@ button {
     opacity 0.28s ease;
 }
 
-.sidebar-toggle {
+.sidebar-toggle,
+.search-toggle {
   position: absolute;
-  right: 14px;
   top: 14px;
   width: 34px;
   height: 34px;
   border: 0;
   border-radius: 999px;
-  background: rgba(92, 166, 168, 0.88);
   color: white;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   display: grid;
   place-items: center;
   box-shadow: 0 8px 18px rgba(92, 166, 168, 0.22);
   z-index: 20;
 }
 
-.sidebar-toggle:hover {
+.sidebar-toggle {
+  right: 14px;
+  background: rgba(92, 166, 168, 0.88);
+}
+
+.search-toggle {
+  right: 54px;
+  background: rgba(36, 91, 98, 0.78);
+}
+
+.sidebar-toggle:hover,
+.search-toggle:hover {
   filter: brightness(0.96);
 }
 
@@ -135,7 +145,7 @@ button {
 .sidebar-title {
   display: grid;
   gap: 2px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   transition:
     opacity 0.18s ease,
     visibility 0.18s ease,
@@ -154,7 +164,7 @@ button {
 }
 
 .sidebar-description {
-  margin: -8px 0 18px;
+  margin: 0 0 18px;
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 1.45;
@@ -164,6 +174,30 @@ button {
     visibility 0.18s ease,
     height 0.18s ease,
     margin 0.18s ease;
+}
+
+.sidebar-search-panel {
+  margin: 0 0 14px;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(199, 220, 222, 0.72);
+  transition:
+    opacity 0.18s ease,
+    max-height 0.22s ease,
+    margin 0.18s ease,
+    padding 0.18s ease;
+  overflow: hidden;
+}
+
+.sidebar-search-panel.search-collapsed {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+  border-color: transparent;
 }
 
 .sidebar-section {
@@ -191,8 +225,12 @@ button {
   padding: 10px 13px;
   outline: none;
   color: var(--text-main);
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 8px;
+}
+
+.sidebar-search::placeholder {
+  color: rgba(83, 113, 118, 0.48);
 }
 
 .sidebar-search:focus {
@@ -200,20 +238,37 @@ button {
   box-shadow: 0 0 0 4px rgba(92, 166, 168, 0.13);
 }
 
+.search-action-row {
+  display: flex;
+  gap: 8px;
+}
+
 .sidebar-main-btn,
-.side-tool-btn {
-  width: 100%;
+.side-tool-btn,
+.sidebar-sub-btn {
   border: 0;
-  background: var(--teal-main);
-  color: white;
   border-radius: 999px;
   padding: 10px 14px;
   cursor: pointer;
+}
+
+.sidebar-main-btn,
+.side-tool-btn {
+  width: 100%;
+  background: var(--teal-main);
+  color: white;
   box-shadow: 0 10px 22px rgba(92, 166, 168, 0.18);
 }
 
+.sidebar-sub-btn {
+  min-width: 64px;
+  background: rgba(83, 113, 118, 0.13);
+  color: var(--text-secondary);
+}
+
 .sidebar-main-btn:hover,
-.side-tool-btn:hover {
+.side-tool-btn:hover,
+.sidebar-sub-btn:hover {
   filter: brightness(0.96);
 }
 
@@ -319,8 +374,13 @@ button {
   top: 14px;
 }
 
+.app-shell.sidebar-collapsed .search-toggle {
+  right: 15px;
+  top: 56px;
+}
+
 .app-shell.sidebar-collapsed .logo {
-  margin-top: 44px;
+  margin-top: 92px;
   margin-bottom: 0;
   width: 40px;
   height: 40px;
@@ -329,6 +389,7 @@ button {
 
 .app-shell.sidebar-collapsed .sidebar-title,
 .app-shell.sidebar-collapsed .sidebar-description,
+.app-shell.sidebar-collapsed .sidebar-search-panel,
 .app-shell.sidebar-collapsed .sidebar-section,
 .app-shell.sidebar-collapsed .sidebar-bottom {
   opacity: 0;
