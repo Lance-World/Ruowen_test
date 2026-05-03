@@ -42,6 +42,7 @@ async function init() {
   try {
     await loadData();
     restoreSidebarState();
+    restoreSidebarWidth();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
@@ -52,10 +53,6 @@ async function init() {
     alert("讀取資料失敗，請確認 web/data/*.json 是否存在，並用本機伺服器開啟。");
   }
 }
-
-/* ================================
-   Data Loading
-================================ */
 
 async function loadData() {
   const [nodes, edges, sources, meta] = await Promise.all([
@@ -91,6 +88,19 @@ function restoreSidebarState() {
 
   if (isCollapsed) {
     appShell.classList.add("sidebar-collapsed");
+  }
+}
+
+function restoreSidebarWidth() {
+  const sidebar = document.getElementById("sidebar");
+  const savedWidth = localStorage.getItem("sidebarWidth");
+
+  if (!sidebar || !savedWidth) return;
+
+  const width = Number(savedWidth);
+
+  if (Number.isFinite(width) && width >= 220 && width <= 420) {
+    sidebar.style.width = `${width}px`;
   }
 }
 
@@ -251,8 +261,48 @@ function clearSelection() {
 ================================ */
 
 function setupResizablePanels() {
+  setupSidebarResize();
   setupMainVerticalResize();
   setupInnerHorizontalResize();
+}
+
+function setupSidebarResize() {
+  const handle = document.getElementById("sidebarResizeHandle");
+  const sidebar = document.getElementById("sidebar");
+  const appShell = document.querySelector(".app-shell");
+
+  if (!handle || !sidebar) return;
+
+  let isDragging = false;
+
+  handle.addEventListener("mousedown", () => {
+    if (appShell.classList.contains("sidebar-collapsed")) return;
+
+    isDragging = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  });
+
+  window.addEventListener("mousemove", (event) => {
+    if (!isDragging) return;
+
+    const minWidth = 220;
+    const maxWidth = 420;
+    const nextWidth = Math.max(minWidth, Math.min(maxWidth, event.clientX - 18));
+
+    sidebar.style.width = `${nextWidth}px`;
+    localStorage.setItem("sidebarWidth", String(nextWidth));
+
+    resizeGraphAfterPanelChange();
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!isDragging) return;
+
+    isDragging = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  });
 }
 
 function setupMainVerticalResize() {
@@ -412,6 +462,7 @@ function renderGraph() {
   const height = graphCard.clientHeight;
 
   svg.attr("viewBox", [0, 0, width, height]);
+
   svg.selectAll("*").remove();
 
   state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
@@ -620,8 +671,12 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
-  const node = state.allNodes.find((item) => item.id === nodeId);
-  if (!node || node.x === undefined || node.y === undefined) return;
+  const visibleNode = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .find((item) => item.id === nodeId);
+
+  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
 
   const graphCard = document.querySelector(".graph-card");
   const width = graphCard.clientWidth;
@@ -630,7 +685,7 @@ function focusNode(nodeId) {
   const transform = d3.zoomIdentity
     .translate(width / 2, height / 2)
     .scale(1.55)
-    .translate(-node.x, -node.y);
+    .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
@@ -865,7 +920,11 @@ function searchNode() {
     });
 
     if (matchedNode) {
-      focusNode(matchedNode.id);
+      setVisibleTypes(["topic", "concept", "term", "phrase"]);
+
+      setTimeout(() => {
+        focusNode(matchedNode.id);
+      }, 280);
     }
   }, 280);
 }

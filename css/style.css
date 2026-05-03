@@ -48,7 +48,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font-family: inherit;
 }
 
@@ -56,12 +57,16 @@ button {
   user-select: none;
 }
 
+/* ================================
+   App Shell
+================================ */
+
 .app-shell {
   width: 100vw;
   height: 100vh;
   display: flex;
   padding: 18px;
-  gap: 18px;
+  gap: 10px;
   transition: gap 0.28s ease;
 }
 
@@ -275,6 +280,24 @@ button {
   font-size: 13px;
 }
 
+/* ================================
+   Sidebar Resize Handle
+================================ */
+
+.sidebar-resize-handle {
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  border-radius: 999px;
+  background: rgba(92, 166, 168, 0.14);
+  border: 1px solid rgba(199, 220, 222, 0.42);
+  transition: background 0.18s ease;
+}
+
+.sidebar-resize-handle:hover {
+  background: rgba(217, 170, 56, 0.34);
+}
+
 /* Sidebar collapsed */
 
 .app-shell.sidebar-collapsed {
@@ -282,9 +305,13 @@ button {
 }
 
 .app-shell.sidebar-collapsed .sidebar {
-  width: 64px;
+  width: 64px !important;
   padding: 14px 10px;
   align-items: center;
+}
+
+.app-shell.sidebar-collapsed .sidebar-resize-handle {
+  display: none;
 }
 
 .app-shell.sidebar-collapsed .sidebar-toggle {
@@ -358,6 +385,10 @@ button {
   height: 100%;
   display: block;
 }
+
+/* ================================
+   Floating Controls
+================================ */
 
 .floating-actions {
   position: absolute;
@@ -690,7 +721,7 @@ button {
 @media (max-width: 1100px) {
   .app-shell {
     padding: 10px;
-    gap: 10px;
+    gap: 8px;
   }
 
   .sidebar {
@@ -698,7 +729,7 @@ button {
   }
 
   .app-shell.sidebar-collapsed .sidebar {
-    width: 58px;
+    width: 58px !important;
   }
 
   .floating-note {
