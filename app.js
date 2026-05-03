@@ -327,54 +327,7 @@ function clearSelection() {
   renderDefaultInfo();
 }
 
-/* ================================
-   Info Tags Toggle
-================================ */
 
-function setupInfoTagsToggle() {
-  const infoHeader = document.querySelector(".info-header");
-  const infoTitleBlock = document.querySelector(".info-title-block");
-  const infoTags = document.getElementById("infoTags");
-
-  if (!infoHeader || !infoTitleBlock || !infoTags) return;
-
-  let toggleBtn = document.getElementById("infoTagsToggleBtn");
-
-  if (!toggleBtn) {
-    toggleBtn = document.createElement("button");
-    toggleBtn.id = "infoTagsToggleBtn";
-    toggleBtn.className = "info-tags-toggle";
-    toggleBtn.type = "button";
-    toggleBtn.title = "收合 / 展開副標 Hash Tags";
-    toggleBtn.textContent = "⌄";
-
-    const title = infoTitleBlock.querySelector("h2");
-    if (title) {
-      const titleRow = document.createElement("div");
-      titleRow.className = "info-title-row";
-      title.parentNode.insertBefore(titleRow, title);
-      titleRow.appendChild(title);
-      titleRow.appendChild(toggleBtn);
-    } else {
-      infoTitleBlock.prepend(toggleBtn);
-    }
-  }
-
-  const isCollapsed = localStorage.getItem("infoTagsCollapsed") === "1";
-
-  infoTags.classList.toggle("tags-collapsed", isCollapsed);
-  toggleBtn.classList.toggle("collapsed", isCollapsed);
-
-  toggleBtn.addEventListener("click", () => {
-    infoTags.classList.toggle("tags-collapsed");
-    const collapsed = infoTags.classList.contains("tags-collapsed");
-
-    toggleBtn.classList.toggle("collapsed", collapsed);
-    localStorage.setItem("infoTagsCollapsed", collapsed ? "1" : "0");
-
-    setTimeout(resizeGraphAfterPanelChange, 80);
-  });
-}
 
 /* ================================
    Resizable Panels - Pointer Events
