@@ -871,33 +871,37 @@ function renderInfoPanel(node) {
   renderSources(node);
 }
 
-function renderRelatedTerms(node) {
-  const box = document.getElementById("relatedTerms");
+function renderSources(node) {
+  const box = document.getElementById("sourceList");
+  const sources = state.graphSources[node.id] || [];
 
-  const relatedNodes = getNeighborNodes(node.id)
-    .filter((item) => item.type === "term")
-    .slice(0, 30);
-
-  const matchedTerms = String(node.matched_terms || "")
-    .split("、")
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  const labels = Array.from(
-    new Set([
-      ...relatedNodes.map((item) => item.label),
-      ...matchedTerms,
-      node.canonical_term,
-    ].filter(Boolean))
-  ).slice(0, 36);
-
-  if (labels.length === 0) {
+  if (sources.length === 0) {
     box.innerHTML = '<span class="muted">尚無資料</span>';
     return;
   }
 
-  box.innerHTML = labels
-    .map((label) => `<span>${escapeHtml(label)}</span>`)
+  box.innerHTML = sources
+    .slice(0, 18)
+    .map((source) => {
+      const title = source.title || source.file || "未命名來源";
+      const time = source.timestamp || "";
+      const url = source.timestamp_url || source.base_url || "";
+      const text = source.text || "";
+
+      const linkHtml = url
+        ? `<a class="source-link" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">
+             ▶ ${escapeHtml(time || "開啟來源")}
+           </a>`
+        : `<span class="source-link disabled">▶ ${escapeHtml(time || "無連結")}</span>`;
+
+      return `
+        <div class="source-item">
+          <div class="source-title">${escapeHtml(title)}</div>
+          <div>${linkHtml}</div>
+          <div class="source-text">${escapeHtml(shortenText(text, 100))}</div>
+        </div>
+      `;
+    })
     .join("");
 }
 
@@ -948,16 +952,20 @@ function renderSources(node) {
     .map((source) => {
       const title = source.title || source.file || "未命名來源";
       const time = source.timestamp || "";
-      const url = source.timestamp_url || source.base_url || "#";
+      const url = source.timestamp_url || source.base_url || "";
       const text = source.text || "";
 
       return `
         <div class="source-item">
           <div class="source-title">${escapeHtml(title)}</div>
           <div>
-            <a class="source-link" href="${escapeAttribute(url)}" target="_blank">
-              ▶ ${escapeHtml(time || "開啟來源")}
-            </a>
+            ${
+              url
+                ? `<a class="source-link" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">
+                     ▶ ${escapeHtml(time || "開啟來源")}
+                   </a>`
+                : `<span class="source-link disabled">▶ ${escapeHtml(time || "無連結")}</span>`
+            }
           </div>
           <div class="source-text">${escapeHtml(shortenText(text, 100))}</div>
         </div>

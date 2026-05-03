@@ -134,6 +134,12 @@ button { user-select: none; }
 .source-text { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
 .source-link { font-size: 12px; color: #2d7d86; text-decoration: none; font-weight: 700; }
 .source-link:hover { text-decoration: underline; }
+.source-link.disabled {
+  color: var(--text-muted);
+  cursor: default;
+  text-decoration: none;
+  font-weight: 500;
+}
 .muted { color: var(--text-muted) !important; background: transparent !important; padding: 0 !important; }
 .node { cursor: pointer; transition: opacity 0.2s ease; }
 .node circle { stroke: rgba(255,255,255,0.92); stroke-width: 2px; filter: drop-shadow(0 10px 18px rgba(23,60,67,0.18)); }
