@@ -1,11 +1,1363 @@
 [
   {
+    "id": "topic_01_靈魂與意識__contains__concept_靈魂本質",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈魂本質",
+    "type": "contains",
+    "label": "包含",
+    "weight": 5829
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_內在小孩",
+    "source": "topic_08_自我與人格",
+    "target": "concept_內在小孩",
+    "type": "contains",
+    "label": "包含",
+    "weight": 3944
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_情緒流動",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_情緒流動",
+    "type": "contains",
+    "label": "包含",
+    "weight": 3209
+  },
+  {
+    "id": "topic_09_信念與思維__contains__concept_信念系統",
+    "source": "topic_09_信念與思維",
+    "target": "concept_信念系統",
+    "type": "contains",
+    "label": "包含",
+    "weight": 2896
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_身體感受",
+    "source": "topic_04_身體與健康",
+    "target": "concept_身體感受",
+    "type": "contains",
+    "label": "包含",
+    "weight": 2191
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_生命轉化",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_生命轉化",
+    "type": "contains",
+    "label": "包含",
+    "weight": 2059
+  },
+  {
+    "id": "topic_09_信念與思維__contains__concept_思維模式",
+    "source": "topic_09_信念與思維",
+    "target": "concept_思維模式",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1939
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_人生旅程",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_人生旅程",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1922
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_頻率振動",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_頻率振動",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1794
+  },
+  {
+    "id": "topic_15_世界觀與哲學__contains__concept_世界觀",
+    "source": "topic_15_世界觀與哲學",
+    "target": "concept_世界觀",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1756
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_能量場",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_能量場",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1739
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_恐懼與安全感",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_恐懼與安全感",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1594
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_關係投射",
+    "source": "topic_06_關係與投射",
+    "target": "concept_關係投射",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1373
+  },
+  {
+    "id": "topic_03_業力與課題__contains__concept_生命課題",
+    "source": "topic_03_業力與課題",
+    "target": "concept_生命課題",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1298
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_關係角色",
+    "source": "topic_06_關係與投射",
+    "target": "concept_關係角色",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1225
+  },
+  {
+    "id": "topic_11_創造與顯化__contains__concept_創造力",
+    "source": "topic_11_創造與顯化",
+    "target": "concept_創造力",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1125
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_人生選擇",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_人生選擇",
+    "type": "contains",
+    "label": "包含",
+    "weight": 1058
+  },
+  {
+    "id": "topic_15_世界觀與哲學__contains__concept_宇宙觀",
+    "source": "topic_15_世界觀與哲學",
+    "target": "concept_宇宙觀",
+    "type": "contains",
+    "label": "包含",
+    "weight": 915
+  },
+  {
+    "id": "topic_14_修行與覺察__contains__concept_覺察",
+    "source": "topic_14_修行與覺察",
+    "target": "concept_覺察",
+    "type": "contains",
+    "label": "包含",
+    "weight": 909
+  },
+  {
+    "id": "topic_07_家庭與原生經驗__contains__concept_父母關係",
+    "source": "topic_07_家庭與原生經驗",
+    "target": "concept_父母關係",
+    "type": "contains",
+    "label": "包含",
+    "weight": 885
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_靈媒與通靈",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈媒與通靈",
+    "type": "contains",
+    "label": "包含",
+    "weight": 776
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_疾病與症狀",
+    "source": "topic_04_身體與健康",
+    "target": "concept_疾病與症狀",
+    "type": "contains",
+    "label": "包含",
+    "weight": 756
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_習慣模式",
+    "source": "topic_08_自我與人格",
+    "target": "concept_習慣模式",
+    "type": "contains",
+    "label": "包含",
+    "weight": 732
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_行為模式",
+    "source": "topic_08_自我與人格",
+    "target": "concept_行為模式",
+    "type": "contains",
+    "label": "包含",
+    "weight": 672
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_自我認同",
+    "source": "topic_08_自我與人格",
+    "target": "concept_自我認同",
+    "type": "contains",
+    "label": "包含",
+    "weight": 671
+  },
+  {
     "id": "topic_01_靈魂與意識__contains__concept_意識狀態",
     "source": "topic_01_靈魂與意識",
     "target": "concept_意識狀態",
     "type": "contains",
     "label": "包含",
-    "weight": 4
+    "weight": 655
+  },
+  {
+    "id": "topic_15_世界觀與哲學__contains__concept_自然觀",
+    "source": "topic_15_世界觀與哲學",
+    "target": "concept_自然觀",
+    "type": "contains",
+    "label": "包含",
+    "weight": 640
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_睡眠與休息",
+    "source": "topic_04_身體與健康",
+    "target": "concept_睡眠與休息",
+    "type": "contains",
+    "label": "包含",
+    "weight": 604
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_自我價值感",
+    "source": "topic_08_自我與人格",
+    "target": "concept_自我價值感",
+    "type": "contains",
+    "label": "包含",
+    "weight": 584
+  },
+  {
+    "id": "topic_03_業力與課題__contains__concept_輪迴",
+    "source": "topic_03_業力與課題",
+    "target": "concept_輪迴",
+    "type": "contains",
+    "label": "包含",
+    "weight": 556
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_伴侶關係",
+    "source": "topic_06_關係與投射",
+    "target": "concept_伴侶關係",
+    "type": "contains",
+    "label": "包含",
+    "weight": 542
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_正向感受",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_正向感受",
+    "type": "contains",
+    "label": "包含",
+    "weight": 528
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_溝通與表達",
+    "source": "topic_06_關係與投射",
+    "target": "concept_溝通與表達",
+    "type": "contains",
+    "label": "包含",
+    "weight": 494
+  },
+  {
+    "id": "topic_15_世界觀與哲學__contains__concept_人生哲學",
+    "source": "topic_15_世界觀與哲學",
+    "target": "concept_人生哲學",
+    "type": "contains",
+    "label": "包含",
+    "weight": 484
+  },
+  {
+    "id": "topic_10_夢境與潛意識__contains__concept_潛意識",
+    "source": "topic_10_夢境與潛意識",
+    "target": "concept_潛意識",
+    "type": "contains",
+    "label": "包含",
+    "weight": 483
+  },
+  {
+    "id": "topic_08_自我與人格__contains__concept_自我信任",
+    "source": "topic_08_自我與人格",
+    "target": "concept_自我信任",
+    "type": "contains",
+    "label": "包含",
+    "weight": 481
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_能量保護",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_能量保護",
+    "type": "contains",
+    "label": "包含",
+    "weight": 469
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_成長歷程",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_成長歷程",
+    "type": "contains",
+    "label": "包含",
+    "weight": 462
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_能量平衡",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_能量平衡",
+    "type": "contains",
+    "label": "包含",
+    "weight": 409
+  },
+  {
+    "id": "topic_14_修行與覺察__contains__concept_學習與成長",
+    "source": "topic_14_修行與覺察",
+    "target": "concept_學習與成長",
+    "type": "contains",
+    "label": "包含",
+    "weight": 390
+  },
+  {
+    "id": "topic_03_業力與課題__contains__concept_前世今生",
+    "source": "topic_03_業力與課題",
+    "target": "concept_前世今生",
+    "type": "contains",
+    "label": "包含",
+    "weight": 372
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_死亡與生命有限性",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_死亡與生命有限性",
+    "type": "contains",
+    "label": "包含",
+    "weight": 360
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_壓力反應",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_壓力反應",
+    "type": "contains",
+    "label": "包含",
+    "weight": 349
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_關係連結",
+    "source": "topic_06_關係與投射",
+    "target": "concept_關係連結",
+    "type": "contains",
+    "label": "包含",
+    "weight": 317
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_吸引力法則",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_吸引力法則",
+    "type": "contains",
+    "label": "包含",
+    "weight": 313
+  },
+  {
+    "id": "topic_14_修行與覺察__contains__concept_療癒",
+    "source": "topic_14_修行與覺察",
+    "target": "concept_療癒",
+    "type": "contains",
+    "label": "包含",
+    "weight": 297
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_靈性存在",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈性存在",
+    "type": "contains",
+    "label": "包含",
+    "weight": 292
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_身心狀態",
+    "source": "topic_04_身體與健康",
+    "target": "concept_身心狀態",
+    "type": "contains",
+    "label": "包含",
+    "weight": 290
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_期待與未來",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_期待與未來",
+    "type": "contains",
+    "label": "包含",
+    "weight": 275
+  },
+  {
+    "id": "topic_15_世界觀與哲學__contains__concept_生命敘事",
+    "source": "topic_15_世界觀與哲學",
+    "target": "concept_生命敘事",
+    "type": "contains",
+    "label": "包含",
+    "weight": 270
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_焦慮與擔心",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_焦慮與擔心",
+    "type": "contains",
+    "label": "包含",
+    "weight": 266
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_呼吸與調節",
+    "source": "topic_04_身體與健康",
+    "target": "concept_呼吸與調節",
+    "type": "contains",
+    "label": "包含",
+    "weight": 258
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_肌肉與身體結構",
+    "source": "topic_04_身體與健康",
+    "target": "concept_肌肉與身體結構",
+    "type": "contains",
+    "label": "包含",
+    "weight": 255
+  },
+  {
+    "id": "topic_09_信念與思維__contains__concept_內在標準",
+    "source": "topic_09_信念與思維",
+    "target": "concept_內在標準",
+    "type": "contains",
+    "label": "包含",
+    "weight": 253
+  },
+  {
+    "id": "topic_13_時間與人生階段__contains__concept_人生階段",
+    "source": "topic_13_時間與人生階段",
+    "target": "concept_人生階段",
+    "type": "contains",
+    "label": "包含",
+    "weight": 249
+  },
+  {
+    "id": "topic_05_情緒與感受__contains__concept_情緒表達",
+    "source": "topic_05_情緒與感受",
+    "target": "concept_情緒表達",
+    "type": "contains",
+    "label": "包含",
+    "weight": 243
+  },
+  {
+    "id": "topic_14_修行與覺察__contains__concept_放下與接納",
+    "source": "topic_14_修行與覺察",
+    "target": "concept_放下與接納",
+    "type": "contains",
+    "label": "包含",
+    "weight": 242
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_靈魂記憶",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈魂記憶",
+    "type": "contains",
+    "label": "包含",
+    "weight": 235
+  },
+  {
+    "id": "topic_04_身體與健康__contains__concept_飲食與身體",
+    "source": "topic_04_身體與健康",
+    "target": "concept_飲食與身體",
+    "type": "contains",
+    "label": "包含",
+    "weight": 231
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_能量工具",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_能量工具",
+    "type": "contains",
+    "label": "包含",
+    "weight": 231
+  },
+  {
+    "id": "topic_14_修行與覺察__contains__concept_面對與轉化",
+    "source": "topic_14_修行與覺察",
+    "target": "concept_面對與轉化",
+    "type": "contains",
+    "label": "包含",
+    "weight": 230
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_信任",
+    "source": "topic_06_關係與投射",
+    "target": "concept_信任",
+    "type": "contains",
+    "label": "包含",
+    "weight": 210
+  },
+  {
+    "id": "topic_07_家庭與原生經驗__contains__concept_家庭關係",
+    "source": "topic_07_家庭與原生經驗",
+    "target": "concept_家庭關係",
+    "type": "contains",
+    "label": "包含",
+    "weight": 210
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_靈魂藍圖",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈魂藍圖",
+    "type": "contains",
+    "label": "包含",
+    "weight": 208
+  },
+  {
+    "id": "topic_09_信念與思維__contains__concept_認知模式",
+    "source": "topic_09_信念與思維",
+    "target": "concept_認知模式",
+    "type": "contains",
+    "label": "包含",
+    "weight": 192
+  },
+  {
+    "id": "topic_06_關係與投射__contains__concept_關係互動",
+    "source": "topic_06_關係與投射",
+    "target": "concept_關係互動",
+    "type": "contains",
+    "label": "包含",
+    "weight": 186
+  },
+  {
+    "id": "topic_03_業力與課題__contains__concept_業力",
+    "source": "topic_03_業力與課題",
+    "target": "concept_業力",
+    "type": "contains",
+    "label": "包含",
+    "weight": 157
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_靈魂伴侶",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_靈魂伴侶",
+    "type": "contains",
+    "label": "包含",
+    "weight": 95
+  },
+  {
+    "id": "topic_02_能量與頻率__contains__concept_能量流動",
+    "source": "topic_02_能量與頻率",
+    "target": "concept_能量流動",
+    "type": "contains",
+    "label": "包含",
+    "weight": 31
+  },
+  {
+    "id": "topic_01_靈魂與意識__contains__concept_意識創造",
+    "source": "topic_01_靈魂與意識",
+    "target": "concept_意識創造",
+    "type": "contains",
+    "label": "包含",
+    "weight": 23
+  },
+  {
+    "id": "concept_靈魂本質__related_to__term_靈魂",
+    "source": "concept_靈魂本質",
+    "target": "term_靈魂",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 3701
+  },
+  {
+    "id": "concept_信念系統__related_to__term_相信",
+    "source": "concept_信念系統",
+    "target": "term_相信",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1906
+  },
+  {
+    "id": "concept_內在小孩__alias_of__term_小孩",
+    "source": "concept_內在小孩",
+    "target": "term_小孩",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 1872
+  },
+  {
+    "id": "concept_能量場__related_to__term_能量",
+    "source": "concept_能量場",
+    "target": "term_能量",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1736
+  },
+  {
+    "id": "concept_身體感受__related_to__term_身體",
+    "source": "concept_身體感受",
+    "target": "term_身體",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1586
+  },
+  {
+    "id": "concept_內在小孩__alias_of__term_小孩子",
+    "source": "concept_內在小孩",
+    "target": "term_小孩子",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 1506
+  },
+  {
+    "id": "concept_人生旅程__related_to__term_人生",
+    "source": "concept_人生旅程",
+    "target": "term_人生",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1427
+  },
+  {
+    "id": "concept_思維模式__related_to__term_思考",
+    "source": "concept_思維模式",
+    "target": "term_思考",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1384
+  },
+  {
+    "id": "concept_關係投射__related_to__term_關係",
+    "source": "concept_關係投射",
+    "target": "term_關係",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1373
+  },
+  {
+    "id": "concept_情緒流動__related_to__term_情緒",
+    "source": "concept_情緒流動",
+    "target": "term_情緒",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1270
+  },
+  {
+    "id": "concept_關係角色__related_to__term_朋友",
+    "source": "concept_關係角色",
+    "target": "term_朋友",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1225
+  },
+  {
+    "id": "concept_人生選擇__related_to__term_選擇",
+    "source": "concept_人生選擇",
+    "target": "term_選擇",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1058
+  },
+  {
+    "id": "concept_世界觀__related_to__term_世界",
+    "source": "concept_世界觀",
+    "target": "term_世界",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1029
+  },
+  {
+    "id": "concept_生命課題__related_to__term_功課",
+    "source": "concept_生命課題",
+    "target": "term_功課",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 1011
+  },
+  {
+    "id": "concept_頻率振動__alias_of__term_震動",
+    "source": "concept_頻率振動",
+    "target": "term_震動",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 968
+  },
+  {
+    "id": "concept_宇宙觀__related_to__term_宇宙",
+    "source": "concept_宇宙觀",
+    "target": "term_宇宙",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 915
+  },
+  {
+    "id": "concept_恐懼與安全感__related_to__term_恐懼",
+    "source": "concept_恐懼與安全感",
+    "target": "term_恐懼",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 887
+  },
+  {
+    "id": "concept_父母關係__related_to__term_父母",
+    "source": "concept_父母關係",
+    "target": "term_父母",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 885
+  },
+  {
+    "id": "concept_生命轉化__related_to__term_改變",
+    "source": "concept_生命轉化",
+    "target": "term_改變",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 879
+  },
+  {
+    "id": "concept_生命轉化__related_to__term_生命",
+    "source": "concept_生命轉化",
+    "target": "term_生命",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 810
+  },
+  {
+    "id": "concept_靈媒與通靈__related_to__term_靈媒",
+    "source": "concept_靈媒與通靈",
+    "target": "term_靈媒",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 776
+  },
+  {
+    "id": "concept_創造力__related_to__term_創造",
+    "source": "concept_創造力",
+    "target": "term_創造",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 743
+  },
+  {
+    "id": "concept_信念系統__related_to__term_觀念",
+    "source": "concept_信念系統",
+    "target": "term_觀念",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 739
+  },
+  {
+    "id": "concept_習慣模式__related_to__term_習慣",
+    "source": "concept_習慣模式",
+    "target": "term_習慣",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 732
+  },
+  {
+    "id": "concept_恐懼與安全感__alias_of__term_害怕",
+    "source": "concept_恐懼與安全感",
+    "target": "term_害怕",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 707
+  },
+  {
+    "id": "concept_行為模式__related_to__term_行為",
+    "source": "concept_行為模式",
+    "target": "term_行為",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 672
+  },
+  {
+    "id": "concept_自我認同__related_to__term_自我",
+    "source": "concept_自我認同",
+    "target": "term_自我",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 671
+  },
+  {
+    "id": "concept_自然觀__related_to__term_自然",
+    "source": "concept_自然觀",
+    "target": "term_自然",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 640
+  },
+  {
+    "id": "concept_靈魂本質__related_to__term_靈性",
+    "source": "concept_靈魂本質",
+    "target": "term_靈性",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 608
+  },
+  {
+    "id": "concept_靈魂本質__alias_of__term_個靈魂",
+    "source": "concept_靈魂本質",
+    "target": "term_個靈魂",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 572
+  },
+  {
+    "id": "concept_伴侶關係__alias_of__term_老公",
+    "source": "concept_伴侶關係",
+    "target": "term_老公",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 542
+  },
+  {
+    "id": "concept_正向感受__related_to__term_快樂",
+    "source": "concept_正向感受",
+    "target": "term_快樂",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 528
+  },
+  {
+    "id": "concept_覺察__alias_of__term_自覺",
+    "source": "concept_覺察",
+    "target": "term_自覺",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 508
+  },
+  {
+    "id": "concept_疾病與症狀__related_to__term_疾病",
+    "source": "concept_疾病與症狀",
+    "target": "term_疾病",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 502
+  },
+  {
+    "id": "concept_情緒流動__alias_of__term_感覺到",
+    "source": "concept_情緒流動",
+    "target": "term_感覺到",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 486
+  },
+  {
+    "id": "concept_人生哲學__related_to__term_道理",
+    "source": "concept_人生哲學",
+    "target": "term_道理",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 484
+  },
+  {
+    "id": "concept_潛意識__alias_of__term_不自覺",
+    "source": "concept_潛意識",
+    "target": "term_不自覺",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 483
+  },
+  {
+    "id": "concept_自我信任__alias_of__term_相信我",
+    "source": "concept_自我信任",
+    "target": "term_相信我",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 481
+  },
+  {
+    "id": "concept_成長歷程__related_to__term_成長",
+    "source": "concept_成長歷程",
+    "target": "term_成長",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 462
+  },
+  {
+    "id": "concept_情緒流動__alias_of__term_種感覺",
+    "source": "concept_情緒流動",
+    "target": "term_種感覺",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 429
+  },
+  {
+    "id": "concept_頻率振動__alias_of__term_振動",
+    "source": "concept_頻率振動",
+    "target": "term_振動",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 420
+  },
+  {
+    "id": "concept_能量平衡__related_to__term_平衡",
+    "source": "concept_能量平衡",
+    "target": "term_平衡",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 407
+  },
+  {
+    "id": "concept_覺察__related_to__term_觀察",
+    "source": "concept_覺察",
+    "target": "term_觀察",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 401
+  },
+  {
+    "id": "concept_學習與成長__related_to__term_學習",
+    "source": "concept_學習與成長",
+    "target": "term_學習",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 390
+  },
+  {
+    "id": "concept_創造力__alias_of__term_創造出",
+    "source": "concept_創造力",
+    "target": "term_創造出",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 382
+  },
+  {
+    "id": "concept_睡眠與休息__alias_of__term_睡覺",
+    "source": "concept_睡眠與休息",
+    "target": "term_睡覺",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 373
+  },
+  {
+    "id": "concept_生命轉化__alias_of__term_生命中",
+    "source": "concept_生命轉化",
+    "target": "term_生命中",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 370
+  },
+  {
+    "id": "concept_能量保護__related_to__term_保護",
+    "source": "concept_能量保護",
+    "target": "term_保護",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 364
+  },
+  {
+    "id": "concept_死亡與生命有限性__related_to__term_死亡",
+    "source": "concept_死亡與生命有限性",
+    "target": "term_死亡",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 360
+  },
+  {
+    "id": "concept_壓力反應__related_to__term_壓力",
+    "source": "concept_壓力反應",
+    "target": "term_壓力",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 349
+  },
+  {
+    "id": "concept_自我價值感__related_to__term_價值",
+    "source": "concept_自我價值感",
+    "target": "term_價值",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 347
+  },
+  {
+    "id": "concept_輪迴__related_to__term_投胎",
+    "source": "concept_輪迴",
+    "target": "term_投胎",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 326
+  },
+  {
+    "id": "concept_頻率振動__related_to__term_頻率",
+    "source": "concept_頻率振動",
+    "target": "term_頻率",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 325
+  },
+  {
+    "id": "concept_關係連結__related_to__term_連結",
+    "source": "concept_關係連結",
+    "target": "term_連結",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 317
+  },
+  {
+    "id": "concept_思維模式__related_to__term_想法",
+    "source": "concept_思維模式",
+    "target": "term_想法",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 311
+  },
+  {
+    "id": "concept_身體感受__alias_of__term_個身體",
+    "source": "concept_身體感受",
+    "target": "term_個身體",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 306
+  },
+  {
+    "id": "concept_意識狀態__related_to__term_心靈",
+    "source": "concept_意識狀態",
+    "target": "term_心靈",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 302
+  },
+  {
+    "id": "concept_前世今生__related_to__term_前世",
+    "source": "concept_前世今生",
+    "target": "term_前世",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 301
+  },
+  {
+    "id": "concept_身體感受__related_to__term_感受",
+    "source": "concept_身體感受",
+    "target": "term_感受",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 299
+  },
+  {
+    "id": "concept_療癒__related_to__term_療癒",
+    "source": "concept_療癒",
+    "target": "term_療癒",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 297
+  },
+  {
+    "id": "concept_靈性存在__related_to__term_精靈",
+    "source": "concept_靈性存在",
+    "target": "term_精靈",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 292
+  },
+  {
+    "id": "concept_身心狀態__related_to__term_精神",
+    "source": "concept_身心狀態",
+    "target": "term_精神",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 290
+  },
+  {
+    "id": "concept_人生旅程__related_to__term_旅程",
+    "source": "concept_人生旅程",
+    "target": "term_旅程",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 284
+  },
+  {
+    "id": "concept_情緒流動__alias_of__term_負面",
+    "source": "concept_情緒流動",
+    "target": "term_負面",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 279
+  },
+  {
+    "id": "concept_靈魂本質__alias_of__term_灵魂",
+    "source": "concept_靈魂本質",
+    "target": "term_灵魂",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 276
+  },
+  {
+    "id": "concept_期待與未來__related_to__term_期待",
+    "source": "concept_期待與未來",
+    "target": "term_期待",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 275
+  },
+  {
+    "id": "concept_生命敘事__related_to__term_故事",
+    "source": "concept_生命敘事",
+    "target": "term_故事",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 270
+  },
+  {
+    "id": "concept_焦慮與擔心__related_to__term_擔心",
+    "source": "concept_焦慮與擔心",
+    "target": "term_擔心",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 266
+  },
+  {
+    "id": "concept_世界觀__alias_of__term_世界上",
+    "source": "concept_世界觀",
+    "target": "term_世界上",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 264
+  },
+  {
+    "id": "concept_吸引力法則__related_to__term_吸引",
+    "source": "concept_吸引力法則",
+    "target": "term_吸引",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 264
+  },
+  {
+    "id": "concept_呼吸與調節__related_to__term_呼吸",
+    "source": "concept_呼吸與調節",
+    "target": "term_呼吸",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 258
+  },
+  {
+    "id": "concept_肌肉與身體結構__related_to__term_肌肉",
+    "source": "concept_肌肉與身體結構",
+    "target": "term_肌肉",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 255
+  },
+  {
+    "id": "concept_疾病與症狀__alias_of__term_生病",
+    "source": "concept_疾病與症狀",
+    "target": "term_生病",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 254
+  },
+  {
+    "id": "concept_內在標準__related_to__term_標準",
+    "source": "concept_內在標準",
+    "target": "term_標準",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 253
+  },
+  {
+    "id": "concept_意識狀態__related_to__term_意識",
+    "source": "concept_意識狀態",
+    "target": "term_意識",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 252
+  },
+  {
+    "id": "concept_信念系統__alias_of__term_不相信",
+    "source": "concept_信念系統",
+    "target": "term_不相信",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 251
+  },
+  {
+    "id": "concept_溝通與表達__related_to__term_溝通",
+    "source": "concept_溝通與表達",
+    "target": "term_溝通",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 249
+  },
+  {
+    "id": "concept_人生階段__related_to__term_階段",
+    "source": "concept_人生階段",
+    "target": "term_階段",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 249
+  },
+  {
+    "id": "concept_世界觀__alias_of__term_個世界",
+    "source": "concept_世界觀",
+    "target": "term_個世界",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 247
+  },
+  {
+    "id": "concept_溝通與表達__related_to__term_表達",
+    "source": "concept_溝通與表達",
+    "target": "term_表達",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 245
+  },
+  {
+    "id": "concept_思維模式__related_to__term_模式",
+    "source": "concept_思維模式",
+    "target": "term_模式",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 244
+  },
+  {
+    "id": "concept_情緒表達__related_to__term_抱怨",
+    "source": "concept_情緒表達",
+    "target": "term_抱怨",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 243
+  },
+  {
+    "id": "concept_放下與接納__related_to__term_放下",
+    "source": "concept_放下與接納",
+    "target": "term_放下",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 242
+  },
+  {
+    "id": "concept_自我價值感__alias_of__term_不夠好",
+    "source": "concept_自我價值感",
+    "target": "term_不夠好",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 237
+  },
+  {
+    "id": "concept_靈魂記憶__related_to__term_記憶",
+    "source": "concept_靈魂記憶",
+    "target": "term_記憶",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 234
+  },
+  {
+    "id": "concept_飲食與身體__related_to__term_食物",
+    "source": "concept_飲食與身體",
+    "target": "term_食物",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 231
+  },
+  {
+    "id": "concept_睡眠與休息__related_to__term_休息",
+    "source": "concept_睡眠與休息",
+    "target": "term_休息",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 231
+  },
+  {
+    "id": "concept_能量工具__related_to__term_水晶",
+    "source": "concept_能量工具",
+    "target": "term_水晶",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 231
+  },
+  {
+    "id": "concept_面對與轉化__related_to__term_克服",
+    "source": "concept_面對與轉化",
+    "target": "term_克服",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 230
+  },
+  {
+    "id": "concept_輪迴__related_to__term_輪迴",
+    "source": "concept_輪迴",
+    "target": "term_輪迴",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 230
+  },
+  {
+    "id": "concept_內在小孩__alias_of__term_個小孩",
+    "source": "concept_內在小孩",
+    "target": "term_個小孩",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 212
+  },
+  {
+    "id": "concept_人生旅程__alias_of__term_人生中",
+    "source": "concept_人生旅程",
+    "target": "term_人生中",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 211
+  },
+  {
+    "id": "concept_信任__alias_of__term_相信你",
+    "source": "concept_信任",
+    "target": "term_相信你",
+    "type": "alias_of",
+    "label": "詞彙",
+    "weight": 210
+  },
+  {
+    "id": "concept_家庭關係__related_to__term_家人",
+    "source": "concept_家庭關係",
+    "target": "term_家人",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 210
+  },
+  {
+    "id": "concept_認知模式__related_to__term_認知",
+    "source": "concept_認知模式",
+    "target": "term_認知",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 192
+  },
+  {
+    "id": "concept_關係互動__related_to__term_相處",
+    "source": "concept_關係互動",
+    "target": "term_相處",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 186
+  },
+  {
+    "id": "concept_生命課題__related_to__term_課題",
+    "source": "concept_生命課題",
+    "target": "term_課題",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 152
+  },
+  {
+    "id": "concept_靈魂藍圖__related_to__term_藍圖",
+    "source": "concept_靈魂藍圖",
+    "target": "term_藍圖",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 141
+  },
+  {
+    "id": "concept_能量保護__related_to__term_結界",
+    "source": "concept_能量保護",
+    "target": "term_結界",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 104
+  },
+  {
+    "id": "concept_業力__related_to__term_因果",
+    "source": "concept_業力",
+    "target": "term_因果",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 102
   },
   {
     "id": "concept_意識狀態__related_to__term_覺知",
@@ -13,6 +1365,286 @@
     "target": "term_覺知",
     "type": "related_to",
     "label": "詞彙",
+    "weight": 100
+  },
+  {
+    "id": "concept_前世今生__related_to__term_今生",
+    "source": "concept_前世今生",
+    "target": "term_今生",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 38
+  },
+  {
+    "id": "concept_能量流動__related_to__term_流動",
+    "source": "concept_能量流動",
+    "target": "term_流動",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 27
+  },
+  {
+    "id": "concept_意識創造__related_to__term_顯化",
+    "source": "concept_意識創造",
+    "target": "term_顯化",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 23
+  },
+  {
+    "id": "concept_業力__related_to__term_業力",
+    "source": "concept_業力",
+    "target": "term_業力",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 23
+  },
+  {
+    "id": "concept_能量場__related_to__term_能量場",
+    "source": "concept_能量場",
+    "target": "term_能量場",
+    "type": "related_to",
+    "label": "詞彙",
+    "weight": 3
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_一個靈魂",
+    "source": "concept_靈魂本質",
+    "target": "phrase_一個靈魂",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 267
+  },
+  {
+    "id": "concept_情緒流動__related_phrase__phrase_那種感覺",
+    "source": "concept_情緒流動",
+    "target": "phrase_那種感覺",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 257
+  },
+  {
+    "id": "concept_情緒流動__related_phrase__phrase_子的感覺",
+    "source": "concept_情緒流動",
+    "target": "phrase_子的感覺",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 252
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_這個靈魂",
+    "source": "concept_靈魂本質",
+    "target": "phrase_這個靈魂",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 247
+  },
+  {
+    "id": "concept_情緒流動__related_phrase__phrase_樣的感覺",
+    "source": "concept_情緒流動",
+    "target": "phrase_樣的感覺",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 236
+  },
+  {
+    "id": "concept_世界觀__related_phrase__phrase_這個世界",
+    "source": "concept_世界觀",
+    "target": "phrase_這個世界",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 216
+  },
+  {
+    "id": "concept_內在小孩__related_phrase__phrase_個小孩子",
+    "source": "concept_內在小孩",
+    "target": "phrase_個小孩子",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 178
+  },
+  {
+    "id": "concept_內在小孩__related_phrase__phrase_內在小孩",
+    "source": "concept_內在小孩",
+    "target": "phrase_內在小孩",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 176
+  },
+  {
+    "id": "concept_靈魂伴侶__related_phrase__phrase_靈魂伴侶",
+    "source": "concept_靈魂伴侶",
+    "target": "phrase_靈魂伴侶",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 95
+  },
+  {
+    "id": "concept_生命課題__related_phrase__phrase_人生功課",
+    "source": "concept_生命課題",
+    "target": "phrase_人生功課",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 89
+  },
+  {
+    "id": "concept_頻率振動__related_phrase__phrase_震動頻率",
+    "source": "concept_頻率振動",
+    "target": "phrase_震動頻率",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 74
+  },
+  {
+    "id": "concept_靈魂藍圖__related_phrase__phrase_人生藍圖",
+    "source": "concept_靈魂藍圖",
+    "target": "phrase_人生藍圖",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 64
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_高等靈魂",
+    "source": "concept_靈魂本質",
+    "target": "phrase_高等靈魂",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 54
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_自己的靈魂",
+    "source": "concept_靈魂本質",
+    "target": "phrase_自己的靈魂",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 49
+  },
+  {
+    "id": "concept_吸引力法則__related_phrase__phrase_吸引力法則",
+    "source": "concept_吸引力法則",
+    "target": "phrase_吸引力法則",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 49
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_靈魂進化",
+    "source": "concept_靈魂本質",
+    "target": "phrase_靈魂進化",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 48
+  },
+  {
+    "id": "concept_生命課題__related_phrase__phrase_人生課題",
+    "source": "concept_生命課題",
+    "target": "phrase_人生課題",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 34
+  },
+  {
+    "id": "concept_前世今生__related_phrase__phrase_前世今生",
+    "source": "concept_前世今生",
+    "target": "phrase_前世今生",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 33
+  },
+  {
+    "id": "concept_業力__related_phrase__phrase_因果報應",
+    "source": "concept_業力",
+    "target": "phrase_因果報應",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 32
+  },
+  {
+    "id": "concept_頻率振動__related_phrase__phrase_頻率振動",
+    "source": "concept_頻率振動",
+    "target": "phrase_頻率振動",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 7
+  },
+  {
+    "id": "concept_靈魂本質__related_phrase__phrase_靈魂本質",
+    "source": "concept_靈魂本質",
+    "target": "phrase_靈魂本質",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 7
+  },
+  {
+    "id": "concept_生命課題__related_phrase__phrase_面對你自己的恐懼",
+    "source": "concept_生命課題",
+    "target": "phrase_面對你自己的恐懼",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 6
+  },
+  {
+    "id": "concept_生命課題__related_phrase__phrase_我的人生功課",
+    "source": "concept_生命課題",
+    "target": "phrase_我的人生功課",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 5
+  },
+  {
+    "id": "concept_能量流動__related_phrase__phrase_能量流動",
+    "source": "concept_能量流動",
+    "target": "phrase_能量流動",
+    "type": "related_phrase",
+    "label": "句子",
     "weight": 4
+  },
+  {
+    "id": "concept_靈魂藍圖__related_phrase__phrase_靈魂藍圖",
+    "source": "concept_靈魂藍圖",
+    "target": "phrase_靈魂藍圖",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 3
+  },
+  {
+    "id": "concept_能量平衡__related_phrase__phrase_能量平衡",
+    "source": "concept_能量平衡",
+    "target": "phrase_能量平衡",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 2
+  },
+  {
+    "id": "concept_能量保護__related_phrase__phrase_能量保護",
+    "source": "concept_能量保護",
+    "target": "phrase_能量保護",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 1
+  },
+  {
+    "id": "concept_靈魂記憶__related_phrase__phrase_靈魂記憶",
+    "source": "concept_靈魂記憶",
+    "target": "phrase_靈魂記憶",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 1
+  },
+  {
+    "id": "concept_意識狀態__related_phrase__phrase_意識狀態",
+    "source": "concept_意識狀態",
+    "target": "phrase_意識狀態",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 1
+  },
+  {
+    "id": "concept_生命課題__related_phrase__phrase_生命課題",
+    "source": "concept_生命課題",
+    "target": "phrase_生命課題",
+    "type": "related_phrase",
+    "label": "句子",
+    "weight": 1
   }
 ]
