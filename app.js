@@ -46,7 +46,6 @@ async function init() {
     restoreSearchPanelState();
     setupCategoryChips();
     setupControls();
-    setupInfoTagsToggle();
     setupResizablePanels();
     renderGraph();
     renderDefaultInfo();
