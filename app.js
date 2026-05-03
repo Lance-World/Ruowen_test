@@ -46,6 +46,7 @@ async function init() {
     restoreSearchPanelState();
     setupCategoryChips();
     setupControls();
+    setupInfoTagsToggle();
     setupResizablePanels();
     renderGraph();
     renderDefaultInfo();
@@ -95,7 +96,7 @@ function restoreSidebarState() {
   const appShell = document.querySelector(".app-shell");
   const isCollapsed = localStorage.getItem("sidebarCollapsed") === "1";
 
-  if (isCollapsed) {
+  if (appShell && isCollapsed) {
     appShell.classList.add("sidebar-collapsed");
   }
 }
@@ -108,7 +109,7 @@ function restoreSidebarWidth() {
 
   const width = Number(savedWidth);
 
-  if (Number.isFinite(width) && width >= 220 && width <= 420) {
+  if (Number.isFinite(width) && width >= 220 && width <= 520) {
     sidebar.style.width = `${width}px`;
   }
 }
@@ -128,21 +129,21 @@ function restoreSearchPanelState() {
 
 function toggleSidebar() {
   const appShell = document.querySelector(".app-shell");
+  if (!appShell) return;
+
   appShell.classList.toggle("sidebar-collapsed");
 
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
 
-  setTimeout(() => {
-    resizeGraphAfterPanelChange();
-  }, 320);
+  setTimeout(resizeGraphAfterPanelChange, 320);
 }
 
 function toggleSearchPanel() {
   const panel = document.getElementById("sidebarSearchPanel");
   const appShell = document.querySelector(".app-shell");
 
-  if (!panel) return;
+  if (!panel || !appShell) return;
 
   if (appShell.classList.contains("sidebar-collapsed")) {
     appShell.classList.remove("sidebar-collapsed");
@@ -161,13 +162,13 @@ function toggleSearchPanel() {
     }, 120);
   }
 
-  setTimeout(() => {
-    resizeGraphAfterPanelChange();
-  }, 120);
+  setTimeout(resizeGraphAfterPanelChange, 120);
 }
 
 function setupCategoryChips() {
   const container = document.getElementById("categoryChips");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const allButton = document.createElement("button");
@@ -237,7 +238,10 @@ function setupControls() {
         state.visibleTypes.has(item)
       );
 
-      allChip.classList.toggle("active", allEnabled);
+      if (allChip) {
+        allChip.classList.toggle("active", allEnabled);
+      }
+
       updateGraph();
     });
   });
@@ -251,9 +255,7 @@ function setupControls() {
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
 
-  if (searchBtn) {
-    searchBtn.addEventListener("click", searchNode);
-  }
+  if (searchBtn) searchBtn.addEventListener("click", searchNode);
 
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener("click", () => {
@@ -264,9 +266,7 @@ function setupControls() {
 
   if (searchInput) {
     searchInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        searchNode();
-      }
+      if (event.key === "Enter") searchNode();
 
       if (event.key === "Escape") {
         const panel = document.getElementById("sidebarSearchPanel");
@@ -278,25 +278,11 @@ function setupControls() {
     });
   }
 
-  if (resetViewBtn) {
-    resetViewBtn.addEventListener("click", resetZoom);
-  }
-
-  if (expandAllBtn) {
-    expandAllBtn.addEventListener("click", showAll);
-  }
-
-  if (clearSelectionBtn) {
-    clearSelectionBtn.addEventListener("click", clearSelection);
-  }
-
-  if (sidebarToggleBtn) {
-    sidebarToggleBtn.addEventListener("click", toggleSidebar);
-  }
-
-  if (searchToggleBtn) {
-    searchToggleBtn.addEventListener("click", toggleSearchPanel);
-  }
+  if (resetViewBtn) resetViewBtn.addEventListener("click", resetZoom);
+  if (expandAllBtn) expandAllBtn.addEventListener("click", showAll);
+  if (clearSelectionBtn) clearSelectionBtn.addEventListener("click", clearSelection);
+  if (sidebarToggleBtn) sidebarToggleBtn.addEventListener("click", toggleSidebar);
+  if (searchToggleBtn) searchToggleBtn.addEventListener("click", toggleSearchPanel);
 }
 
 function setVisibleTypes(types) {
@@ -343,51 +329,105 @@ function clearSelection() {
 }
 
 /* ================================
-   Resizable Panels
+   Info Tags Toggle
+================================ */
+
+function setupInfoTagsToggle() {
+  const infoHeader = document.querySelector(".info-header");
+  const infoTitleBlock = document.querySelector(".info-title-block");
+  const infoTags = document.getElementById("infoTags");
+
+  if (!infoHeader || !infoTitleBlock || !infoTags) return;
+
+  let toggleBtn = document.getElementById("infoTagsToggleBtn");
+
+  if (!toggleBtn) {
+    toggleBtn = document.createElement("button");
+    toggleBtn.id = "infoTagsToggleBtn";
+    toggleBtn.className = "info-tags-toggle";
+    toggleBtn.type = "button";
+    toggleBtn.title = "收合 / 展開副標 Hash Tags";
+    toggleBtn.textContent = "⌄";
+
+    const title = infoTitleBlock.querySelector("h2");
+    if (title) {
+      const titleRow = document.createElement("div");
+      titleRow.className = "info-title-row";
+      title.parentNode.insertBefore(titleRow, title);
+      titleRow.appendChild(title);
+      titleRow.appendChild(toggleBtn);
+    } else {
+      infoTitleBlock.prepend(toggleBtn);
+    }
+  }
+
+  const isCollapsed = localStorage.getItem("infoTagsCollapsed") === "1";
+
+  infoTags.classList.toggle("tags-collapsed", isCollapsed);
+  toggleBtn.classList.toggle("collapsed", isCollapsed);
+
+  toggleBtn.addEventListener("click", () => {
+    infoTags.classList.toggle("tags-collapsed");
+    const collapsed = infoTags.classList.contains("tags-collapsed");
+
+    toggleBtn.classList.toggle("collapsed", collapsed);
+    localStorage.setItem("infoTagsCollapsed", collapsed ? "1" : "0");
+
+    setTimeout(resizeGraphAfterPanelChange, 80);
+  });
+}
+
+/* ================================
+   Resizable Panels - Pointer Events
 ================================ */
 
 function setupResizablePanels() {
   setupSidebarResize();
   setupMainVerticalResize();
   setupInnerHorizontalResize();
+  setupInfoRightResize();
 }
 
 function setupSidebarResize() {
   const handle = document.getElementById("sidebarResizeHandle");
   const sidebar = document.getElementById("sidebar");
   const appShell = document.querySelector(".app-shell");
+  const mainArea = document.querySelector(".main-area");
 
   if (!handle || !sidebar || !appShell) return;
 
-  let isDragging = false;
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
 
-  handle.addEventListener("mousedown", () => {
-    if (appShell.classList.contains("sidebar-collapsed")) return;
+    onStart: () => {
+      if (appShell.classList.contains("sidebar-collapsed")) return false;
+      return true;
+    },
 
-    isDragging = true;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  });
+    onMove: (event) => {
+      if (isMobileLayout()) {
+        const shellRect = appShell.getBoundingClientRect();
+        const minHeight = 88;
+        const maxHeight = Math.max(150, shellRect.height * 0.58);
+        const nextHeight = clamp(event.clientY - shellRect.top, minHeight, maxHeight);
 
-  window.addEventListener("mousemove", (event) => {
-    if (!isDragging) return;
+        sidebar.style.height = `${nextHeight}px`;
+        localStorage.setItem("sidebarMobileHeight", String(nextHeight));
 
-    const minWidth = 220;
-    const maxWidth = 420;
-    const nextWidth = Math.max(minWidth, Math.min(maxWidth, event.clientX - 18));
+        if (mainArea) {
+          mainArea.style.minHeight = "0";
+        }
+      } else {
+        const minWidth = 220;
+        const maxWidth = Math.min(520, window.innerWidth * 0.68);
+        const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
 
-    sidebar.style.width = `${nextWidth}px`;
-    localStorage.setItem("sidebarWidth", String(nextWidth));
+        sidebar.style.width = `${nextWidth}px`;
+        localStorage.setItem("sidebarWidth", String(nextWidth));
+      }
 
-    resizeGraphAfterPanelChange();
-  });
-
-  window.addEventListener("mouseup", () => {
-    if (!isDragging) return;
-
-    isDragging = false;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+      resizeGraphAfterPanelChange();
+    },
   });
 }
 
@@ -397,34 +437,22 @@ function setupMainVerticalResize() {
 
   if (!handle || !workspace) return;
 
-  let isDragging = false;
+  enablePointerResize(handle, {
+    cursor: "row-resize",
 
-  handle.addEventListener("mousedown", () => {
-    isDragging = true;
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-  });
+    onMove: (event) => {
+      const rect = workspace.getBoundingClientRect();
+      const infoHeight = rect.bottom - event.clientY;
 
-  window.addEventListener("mousemove", (event) => {
-    if (!isDragging) return;
+      const minInfo = 160;
+      const maxInfo = Math.max(230, rect.height * 0.76);
+      const nextHeight = clamp(infoHeight, minInfo, maxInfo);
 
-    const rect = workspace.getBoundingClientRect();
-    const infoHeight = rect.bottom - event.clientY;
+      workspace.style.setProperty("--info-height", `${nextHeight}px`);
+      localStorage.setItem("infoHeight", String(nextHeight));
 
-    const minInfo = 180;
-    const maxInfo = Math.max(240, rect.height * 0.62);
-    const nextHeight = Math.max(minInfo, Math.min(maxInfo, infoHeight));
-
-    workspace.style.setProperty("--info-height", `${nextHeight}px`);
-    resizeGraphAfterPanelChange();
-  });
-
-  window.addEventListener("mouseup", () => {
-    if (!isDragging) return;
-
-    isDragging = false;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+      resizeGraphAfterPanelChange();
+    },
   });
 }
 
@@ -434,31 +462,126 @@ function setupInnerHorizontalResize() {
 
   if (!handle || !splitArea) return;
 
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+
+    onMove: (event) => {
+      const rect = splitArea.getBoundingClientRect();
+
+      if (isMobileLayout()) {
+        const ratio = ((event.clientY - rect.top) / rect.height) * 100;
+        const nextRatio = clamp(ratio, 24, 76);
+
+        splitArea.style.setProperty("--sentence-height", `${nextRatio}%`);
+        localStorage.setItem("sentenceHeight", String(nextRatio));
+      } else {
+        const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+        const nextRatio = clamp(ratio, 28, 72);
+
+        splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+        localStorage.setItem("sentenceWidth", String(nextRatio));
+      }
+    },
+  });
+}
+
+function setupInfoRightResize() {
+  const infoPanel = document.getElementById("infoPanel");
+  const workspace = document.getElementById("workspace");
+
+  if (!infoPanel || !workspace) return;
+
+  let handle = document.getElementById("infoRightResizeHandle");
+
+  if (!handle) {
+    handle = document.createElement("div");
+    handle.id = "infoRightResizeHandle";
+    handle.className = "info-right-resize-handle";
+    handle.title = "拖曳調整資訊欄寬度";
+    infoPanel.appendChild(handle);
+  }
+
+  enablePointerResize(handle, {
+    cursor: "col-resize",
+
+    onMove: (event) => {
+      const rect = workspace.getBoundingClientRect();
+
+      const minWidth = Math.min(280, rect.width);
+      const maxWidth = rect.width;
+      const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
+
+      infoPanel.style.width = `${nextWidth}px`;
+      localStorage.setItem("infoPanelWidth", String(nextWidth));
+
+      resizeGraphAfterPanelChange();
+    },
+  });
+}
+
+function enablePointerResize(handle, options) {
   let isDragging = false;
 
-  handle.addEventListener("mousedown", () => {
+  handle.addEventListener("pointerdown", (event) => {
+    if (typeof options.onStart === "function") {
+      const canStart = options.onStart(event);
+      if (canStart === false) return;
+    }
+
     isDragging = true;
-    document.body.style.cursor = "col-resize";
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (_) {}
+
+    const cursor =
+      typeof options.cursor === "function" ? options.cursor(event) : options.cursor;
+
+    document.body.style.cursor = cursor || "";
     document.body.style.userSelect = "none";
+    document.body.style.touchAction = "none";
+
+    event.preventDefault();
   });
 
-  window.addEventListener("mousemove", (event) => {
+  handle.addEventListener("pointermove", (event) => {
     if (!isDragging) return;
 
-    const rect = splitArea.getBoundingClientRect();
-    const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+    if (typeof options.onMove === "function") {
+      options.onMove(event);
+    }
 
-    const nextRatio = Math.max(28, Math.min(72, ratio));
-    splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+    event.preventDefault();
   });
 
-  window.addEventListener("mouseup", () => {
+  handle.addEventListener("pointerup", (event) => {
     if (!isDragging) return;
 
     isDragging = false;
+
+    try {
+      handle.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
+    document.body.style.touchAction = "";
   });
+
+  handle.addEventListener("pointercancel", () => {
+    isDragging = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    document.body.style.touchAction = "";
+  });
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function resizeGraphAfterPanelChange() {
@@ -550,6 +673,8 @@ function renderGraph() {
   state.svg = svg;
 
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
@@ -582,6 +707,8 @@ function updateGraph() {
   }
 
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.linkSelection || !state.nodeSelection) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
@@ -597,7 +724,7 @@ function updateGraph() {
 
   state.linkSelection
     .selectAll("line")
-    .data(preparedEdges, (edge) => edge.id)
+    .data(preparedEdges, (edge) => edge.id || `${edge.source}_${edge.target}_${edge.type}`)
     .join(
       (enter) =>
         enter
@@ -773,6 +900,8 @@ function focusNode(nodeId) {
   if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
 
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
@@ -803,6 +932,8 @@ function getConnectedNodeIds(selectedId) {
 
 function highlightSelection() {
   const selectedId = state.selectedNodeId;
+
+  if (!state.nodeSelection || !state.linkSelection) return;
 
   if (!selectedId) {
     state.nodeSelection
@@ -848,15 +979,26 @@ function highlightSelection() {
 ================================ */
 
 function renderDefaultInfo() {
-  document.getElementById("infoTitle").textContent = "尚未選擇節點";
-  document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
-  document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
-  document.getElementById("relatedPhrases").innerHTML = '<span class="muted">尚無資料</span>';
-  document.getElementById("sourceList").innerHTML = '<span class="muted">尚無資料</span>';
+  const title = document.getElementById("infoTitle");
+  const tags = document.getElementById("infoTags");
+  const relatedTerms = document.getElementById("relatedTerms");
+  const relatedPhrases = document.getElementById("relatedPhrases");
+  const sourceList = document.getElementById("sourceList");
+
+  if (title) title.textContent = "尚未選擇節點";
+  if (tags) tags.innerHTML = "<span>請點選圖上的節點</span>";
+  if (relatedTerms) relatedTerms.innerHTML = '<span class="muted">尚無資料</span>';
+  if (relatedPhrases) relatedPhrases.innerHTML = '<span class="muted">尚無資料</span>';
+  if (sourceList) sourceList.innerHTML = '<span class="muted">尚無資料</span>';
 }
 
 function renderInfoPanel(node) {
-  document.getElementById("infoTitle").textContent = node.label || node.id;
+  const title = document.getElementById("infoTitle");
+  const tagsBox = document.getElementById("infoTags");
+
+  if (title) {
+    title.textContent = node.label || node.id;
+  }
 
   const tags = [
     typeLabel(node.type),
@@ -865,9 +1007,11 @@ function renderInfoPanel(node) {
     `出現次數 ${node.count || 0}`,
   ].filter(Boolean);
 
-  document.getElementById("infoTags").innerHTML = tags
-    .map((tag) => `<span>${escapeHtml(tag)}</span>`)
-    .join("");
+  if (tagsBox) {
+    tagsBox.innerHTML = tags
+      .map((tag) => `<span>${escapeHtml(tag)}</span>`)
+      .join("");
+  }
 
   renderRelatedTerms(node);
   renderRelatedPhrases(node);
@@ -876,7 +1020,6 @@ function renderInfoPanel(node) {
 
 function renderRelatedTerms(node) {
   const box = document.getElementById("relatedTerms");
-
   if (!box) return;
 
   const relatedNodes = getNeighborNodes(node.id)
@@ -908,7 +1051,6 @@ function renderRelatedTerms(node) {
 
 function renderRelatedPhrases(node) {
   const box = document.getElementById("relatedPhrases");
-
   if (!box) return;
 
   const relatedPhrases = getNeighborNodes(node.id)
@@ -951,7 +1093,6 @@ function renderRelatedPhrases(node) {
 
 function renderSources(node) {
   const box = document.getElementById("sourceList");
-
   if (!box) return;
 
   const sources = getSourcesForNodeWithFallback(node);
@@ -1076,6 +1217,8 @@ function searchNode() {
 }
 
 function resetZoom() {
+  if (!state.svg || !state.zoomBehavior) return;
+
   state.svg
     .transition()
     .duration(550)

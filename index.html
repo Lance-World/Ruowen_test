@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=ruowen_stable_20260504_02" />
+  <link rel="stylesheet" href="./css/style.css?v=ruowen_mobile_resize_20260504_03" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -79,6 +79,10 @@
 
             <div class="info-title-block">
               <h2 id="infoTitle">尚未選擇節點</h2>
+              <div class="info-tags-title-row">
+                <span>副標 / Hash Tags</span>
+                <button id="tagToggleBtn" class="tag-toggle-btn" type="button" title="收合 / 展開副標">⌄</button>
+              </div>
               <div id="infoTags" class="info-tags">
                 <span>請點選圖上的節點</span>
               </div>
@@ -109,11 +113,12 @@
               </div>
             </div>
           </div>
+          <div id="infoRightResizeHandle" class="resize-handle info-right" title="拖曳調整資訊欄寬度 / 手機高度"></div>
         </section>
       </section>
     </main>
   </div>
 
-  <script src="./app.js?v=ruowen_stable_20260504_02"></script>
+  <script src="./app.js?v=ruowen_mobile_resize_20260504_03"></script>
 </body>
 </html>
