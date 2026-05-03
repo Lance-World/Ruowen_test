@@ -71,6 +71,10 @@ async function loadData() {
   state.allEdges = edges;
   state.graphSources = sources;
   state.meta = meta;
+
+  console.log("nodes:", state.allNodes.length);
+  console.log("edges:", state.allEdges.length);
+  console.log("source nodes:", Object.keys(state.graphSources).length);
 }
 
 async function fetchJson(path) {
@@ -412,7 +416,6 @@ function setupMainVerticalResize() {
     const nextHeight = Math.max(minInfo, Math.min(maxInfo, infoHeight));
 
     workspace.style.setProperty("--info-height", `${nextHeight}px`);
-
     resizeGraphAfterPanelChange();
   });
 
@@ -871,9 +874,87 @@ function renderInfoPanel(node) {
   renderSources(node);
 }
 
+function renderRelatedTerms(node) {
+  const box = document.getElementById("relatedTerms");
+
+  if (!box) return;
+
+  const relatedNodes = getNeighborNodes(node.id)
+    .filter((item) => item.type === "term")
+    .slice(0, 30);
+
+  const matchedTerms = String(node.matched_terms || "")
+    .split("、")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const labels = Array.from(
+    new Set([
+      ...relatedNodes.map((item) => item.label),
+      ...matchedTerms,
+      node.canonical_term,
+    ].filter(Boolean))
+  ).slice(0, 36);
+
+  if (labels.length === 0) {
+    box.innerHTML = '<span class="muted">尚無資料</span>';
+    return;
+  }
+
+  box.innerHTML = labels
+    .map((label) => `<span>${escapeHtml(label)}</span>`)
+    .join("");
+}
+
+function renderRelatedPhrases(node) {
+  const box = document.getElementById("relatedPhrases");
+
+  if (!box) return;
+
+  const relatedPhrases = getNeighborNodes(node.id)
+    .filter((item) => item.type === "phrase")
+    .slice(0, 12);
+
+  const phraseTexts = [];
+
+  relatedPhrases.forEach((item) => {
+    phraseTexts.push(item.label);
+  });
+
+  if (node.text_preview) {
+    String(node.text_preview)
+      .split(" || ")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => phraseTexts.push(item));
+  }
+
+  const sources = getSourcesForNodeWithFallback(node);
+
+  sources.slice(0, 4).forEach((source) => {
+    if (source.text) {
+      phraseTexts.push(source.text);
+    }
+  });
+
+  const uniqueTexts = Array.from(new Set(phraseTexts)).slice(0, 10);
+
+  if (uniqueTexts.length === 0) {
+    box.innerHTML = '<span class="muted">尚無資料</span>';
+    return;
+  }
+
+  box.innerHTML = uniqueTexts
+    .map((text) => `<div class="quote-item">「${escapeHtml(text)}」</div>`)
+    .join("");
+}
+
 function renderSources(node) {
   const box = document.getElementById("sourceList");
-  const sources = state.graphSources[node.id] || [];
+
+  if (!box) return;
+
+  const sources = getSourcesForNodeWithFallback(node);
 
   if (sources.length === 0) {
     box.innerHTML = '<span class="muted">尚無資料</span>';
@@ -905,73 +986,38 @@ function renderSources(node) {
     .join("");
 }
 
-function renderRelatedPhrases(node) {
-  const box = document.getElementById("relatedPhrases");
+function getSourcesForNodeWithFallback(node) {
+  const directSources = state.graphSources[node.id] || [];
 
-  const relatedPhrases = getNeighborNodes(node.id)
-    .filter((item) => item.type === "phrase")
-    .slice(0, 12);
+  if (directSources.length > 0) {
+    return directSources;
+  }
 
-  const phraseTexts = [];
+  const neighborNodes = getNeighborNodes(node.id);
+  const collected = [];
 
-  relatedPhrases.forEach((item) => {
-    phraseTexts.push(item.label);
+  neighborNodes.forEach((neighbor) => {
+    const sources = state.graphSources[neighbor.id] || [];
+    sources.forEach((source) => collected.push(source));
   });
 
-  if (node.text_preview) {
-    String(node.text_preview)
-      .split(" || ")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .forEach((item) => phraseTexts.push(item));
-  }
+  const seen = new Set();
+  const unique = [];
 
-  const uniqueTexts = Array.from(new Set(phraseTexts)).slice(0, 10);
+  collected.forEach((source) => {
+    const key = [
+      source.title || "",
+      source.timestamp || "",
+      source.text || "",
+    ].join("__");
 
-  if (uniqueTexts.length === 0) {
-    box.innerHTML = '<span class="muted">尚無資料</span>';
-    return;
-  }
+    if (seen.has(key)) return;
 
-  box.innerHTML = uniqueTexts
-    .map((text) => `<div class="quote-item">「${escapeHtml(text)}」</div>`)
-    .join("");
-}
+    seen.add(key);
+    unique.push(source);
+  });
 
-function renderSources(node) {
-  const box = document.getElementById("sourceList");
-  const sources = state.graphSources[node.id] || [];
-
-  if (sources.length === 0) {
-    box.innerHTML = '<span class="muted">尚無資料</span>';
-    return;
-  }
-
-  box.innerHTML = sources
-    .slice(0, 18)
-    .map((source) => {
-      const title = source.title || source.file || "未命名來源";
-      const time = source.timestamp || "";
-      const url = source.timestamp_url || source.base_url || "";
-      const text = source.text || "";
-
-      return `
-        <div class="source-item">
-          <div class="source-title">${escapeHtml(title)}</div>
-          <div>
-            ${
-              url
-                ? `<a class="source-link" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">
-                     ▶ ${escapeHtml(time || "開啟來源")}
-                   </a>`
-                : `<span class="source-link disabled">▶ ${escapeHtml(time || "無連結")}</span>`
-            }
-          </div>
-          <div class="source-text">${escapeHtml(shortenText(text, 100))}</div>
-        </div>
-      `;
-    })
-    .join("");
+  return unique;
 }
 
 function getNeighborNodes(nodeId) {

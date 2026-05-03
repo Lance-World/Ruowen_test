@@ -2,6 +2,7 @@
   "project": "Ruowen Knowledge Graph",
   "node_count": 221,
   "edge_count": 206,
+  "source_node_count": 206,
   "level1_categories": [
     "01_靈魂與意識",
     "02_能量與頻率",
