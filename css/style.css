@@ -1,20 +1,36 @@
 :root {
-  --bg-main: #edf7f6;
+  --bg-main: #f0f4f7;
   --bg-soft: #f7fcfb;
   --bg-card: rgba(247, 252, 251, 0.88);
+  --bg-glass: rgba(255, 255, 255, 0.72);
+
+  --accent-gold: #E8C76F;
+  --accent-rose: #D6A0A8;
+  --accent-indigo: #6866A8;
+
   --teal-deep: #245b62;
   --teal-main: #5ca6a8;
   --teal-soft: #bfe7e2;
-  --blue-soft: #b9dcec;
-  --yellow-soft: #f4d982;
-  --yellow-main: #d9aa38;
+  --blue-soft: #B9DCEC;
+  --yellow-soft: #F7EAD0;
+  --yellow-main: #E8C76F;
+
   --text-main: #173c43;
   --text-secondary: #537176;
   --text-muted: #8ba0a4;
   --line-soft: #c7dcde;
-  --shadow: 0 18px 45px rgba(23, 60, 67, 0.13);
-  --radius-xl: 28px;
-  --info-height: 270px;
+
+  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --shadow: 0 12px 40px rgba(23, 60, 67, 0.12);
+  --shadow-soft: 0 12px 40px rgba(23, 60, 67, 0.12);
+
+  --sidebar-left: 20px;
+  --sidebar-top: 20px;
+  --sidebar-width: 280px;
+  --info-left: 320px;
+  --info-right: 20px;
+  --info-height: 280px;
   --sentence-width: 48%;
   --sentence-height: 50%;
 }
@@ -2217,4 +2233,325 @@ button {
 
 .node.selected .label-count {
   font-weight: 950;
+}
+
+
+/* =========================================================
+   GLASS FLOATING LAYOUT PATCH - 2026-05-04
+   1. 地圖填滿全螢幕，成為底層畫布
+   2. Sidebar / Info Panel 改為浮動玻璃卡片
+   3. 保留拖曳分隔、資訊欄收合、手機 Bottom Sheet
+========================================================= */
+
+body {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(232, 199, 111, 0.32), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(214, 160, 168, 0.22), transparent 32%),
+    radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%);
+}
+
+.app-shell {
+  position: relative !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+  background: radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%);
+}
+
+.main-area {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  min-width: 0 !important;
+}
+
+.workspace {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+}
+
+.graph-section,
+.graph-card {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.graph-card {
+  background:
+    radial-gradient(circle at 22% 20%, rgba(232, 199, 111, 0.18), transparent 26%),
+    radial-gradient(circle at 72% 28%, rgba(191, 231, 226, 0.48), transparent 32%),
+    radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%) !important;
+}
+
+.sidebar {
+  position: absolute !important;
+  left: var(--sidebar-left) !important;
+  top: var(--sidebar-top) !important;
+  bottom: 20px !important;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  height: auto !important;
+  z-index: 10 !important;
+  background: var(--bg-glass) !important;
+  backdrop-filter: blur(20px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.08) !important;
+  border-radius: var(--radius-xl) !important;
+  border: 1px solid rgba(255, 255, 255, 0.44) !important;
+  box-shadow: var(--shadow-soft) !important;
+}
+
+.sidebar-resize-handle {
+  position: absolute !important;
+  left: calc(var(--sidebar-left) + var(--sidebar-width) + 8px) !important;
+  top: 26px !important;
+  bottom: 26px !important;
+  width: 8px !important;
+  height: auto !important;
+  z-index: 11 !important;
+  cursor: col-resize !important;
+  opacity: 0.78;
+}
+
+.info-panel {
+  position: absolute !important;
+  left: var(--info-left) !important;
+  right: var(--info-right) !important;
+  bottom: 20px !important;
+  width: auto !important;
+  height: var(--info-height) !important;
+  min-height: 160px !important;
+  z-index: 10 !important;
+  background: var(--bg-glass) !important;
+  backdrop-filter: blur(20px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.08) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-soft) !important;
+  border: 1px solid rgba(255, 255, 255, 0.44) !important;
+  transition:
+    left 0.28s ease,
+    right 0.28s ease,
+    height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    max-height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    min-height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    padding 0.28s ease;
+}
+
+#mainResizeHandle.resize-handle.horizontal {
+  position: absolute !important;
+  left: var(--info-left) !important;
+  right: var(--info-right) !important;
+  bottom: calc(20px + var(--info-height) + 8px) !important;
+  width: auto !important;
+  height: 8px !important;
+  z-index: 12 !important;
+}
+
+.workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+  bottom: 106px !important;
+}
+
+.info-tags span,
+.inline-pill-list span {
+  background: rgba(232, 199, 111, 0.25) !important;
+  color: #795a12 !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(232, 199, 111, 0.3) !important;
+}
+
+.info-icon {
+  background: linear-gradient(135deg, var(--accent-gold), #fff2c1) !important;
+  color: #795a12 !important;
+  box-shadow: 0 10px 24px rgba(232, 199, 111, 0.24);
+}
+
+.side-item.active,
+.side-item:hover {
+  background: rgba(232, 199, 111, 0.25) !important;
+  border-color: rgba(232, 199, 111, 0.36) !important;
+  color: #795a12 !important;
+}
+
+.node circle {
+  stroke: rgba(255, 255, 255, 0.94);
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 11px 20px rgba(23, 60, 67, 0.17));
+}
+
+.node.selected circle {
+  stroke: var(--accent-gold);
+}
+
+.link.highlight {
+  stroke: rgba(232, 199, 111, 0.92) !important;
+}
+
+/* sidebar collapsed floating state */
+.app-shell.sidebar-collapsed .sidebar {
+  width: 64px !important;
+  bottom: 20px !important;
+}
+
+.app-shell.sidebar-collapsed .sidebar-resize-handle {
+  display: none !important;
+}
+
+/* 讓浮動按鈕不要被側欄吃掉 */
+.floating-actions {
+  left: max(18px, calc(var(--info-left) - 300px)) !important;
+}
+
+/* 手機：浮動 Header + Bottom Sheet */
+@media (max-width: 768px) {
+  .app-shell {
+    height: 100dvh !important;
+  }
+
+  .sidebar {
+    left: 20px !important;
+    right: 20px !important;
+    top: 20px !important;
+    bottom: auto !important;
+    width: calc(100% - 40px) !important;
+    height: 70px !important;
+    min-height: 70px !important;
+    max-height: 58vh !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar:not(.force-open) {
+    overflow: hidden !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    height: 128px !important;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar {
+    height: 70px !important;
+    min-height: 70px !important;
+    max-height: 70px !important;
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle {
+    left: 20px !important;
+    right: 20px !important;
+    top: 96px !important;
+    bottom: auto !important;
+    width: calc(100% - 40px) !important;
+    height: 9px !important;
+    cursor: row-resize !important;
+    z-index: 12 !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebarResizeHandle.sidebar-resize-handle {
+    top: 96px !important;
+    display: block !important;
+  }
+
+  .info-panel {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: 20px !important;
+    width: auto !important;
+    height: var(--info-height) !important;
+    min-height: 120px !important;
+    max-height: 72vh !important;
+    border-radius: 24px !important;
+  }
+
+  #mainResizeHandle.resize-handle.horizontal {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: calc(20px + var(--info-height) + 8px) !important;
+    height: 9px !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    bottom: 96px !important;
+  }
+
+  .workspace.info-compact-workspace {
+    display: block !important;
+  }
+
+  #infoPanel.info-compact {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: 20px !important;
+    height: 68px !important;
+    min-height: 68px !important;
+    max-height: 68px !important;
+    width: auto !important;
+    border-radius: 22px !important;
+  }
+
+  .floating-actions {
+    left: 10px !important;
+    right: 10px !important;
+    top: 104px !important;
+    max-width: none !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 162px !important;
+  }
+
+  .info-title-block h2,
+  #infoTitle {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    left: 12px !important;
+    right: 12px !important;
+    top: 12px !important;
+    width: calc(100% - 24px) !important;
+    border-radius: 20px !important;
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle {
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100% - 24px) !important;
+    top: 88px !important;
+  }
+
+  .info-panel,
+  #infoPanel.info-compact {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    border-radius: 20px !important;
+  }
+
+  #mainResizeHandle.resize-handle.horizontal {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(12px + var(--info-height) + 8px) !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    bottom: 84px !important;
+  }
 }
