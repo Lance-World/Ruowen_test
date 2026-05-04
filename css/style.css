@@ -14,15 +14,10 @@
   --line-soft: #c7dcde;
   --shadow: 0 18px 45px rgba(23, 60, 67, 0.13);
   --radius-xl: 28px;
-
   --info-height: 270px;
   --sentence-width: 48%;
   --sentence-height: 50%;
 }
-
-/* ================================
-   Base
-================================ */
 
 * {
   box-sizing: border-box;
@@ -56,40 +51,14 @@ button {
   user-select: none;
 }
 
-/* ================================
-   App Layout
-================================ */
-
 .app-shell {
   width: 100vw;
   height: 100vh;
   display: flex;
   padding: 18px;
   gap: 10px;
-  overflow: hidden;
   transition: gap 0.28s ease;
 }
-
-.main-area {
-  flex: 1;
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr;
-  gap: 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.workspace {
-  min-height: 0;
-  display: grid;
-  grid-template-rows: minmax(240px, 1fr) 8px var(--info-height);
-  overflow: hidden;
-}
-
-/* ================================
-   Sidebar
-================================ */
 
 .sidebar {
   width: 260px;
@@ -104,7 +73,6 @@ button {
   padding: 18px;
   overflow: hidden;
   position: relative;
-  flex-shrink: 0;
   transition:
     width 0.28s ease,
     padding 0.28s ease,
@@ -330,7 +298,6 @@ button {
   background: rgba(92, 166, 168, 0.14);
   border: 1px solid rgba(199, 220, 222, 0.42);
   transition: background 0.18s ease;
-  flex-shrink: 0;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -340,7 +307,6 @@ button {
   background: rgba(217, 170, 56, 0.34);
 }
 
-/* Sidebar collapsed */
 .app-shell.sidebar-collapsed {
   gap: 12px;
 }
@@ -384,13 +350,23 @@ button {
   overflow: hidden;
 }
 
-/* ================================
-   Graph Area
-================================ */
+.main-area {
+  flex: 1;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+  gap: 0;
+  min-width: 0;
+}
+
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(240px, 1fr) 8px var(--info-height);
+}
 
 .graph-section {
   min-height: 0;
-  overflow: hidden;
 }
 
 .graph-card {
@@ -435,7 +411,6 @@ button {
   padding: 8px 13px;
   cursor: pointer;
   font-size: 12px;
-  white-space: nowrap;
 }
 
 .floating-actions button:hover {
@@ -479,10 +454,6 @@ button {
   display: none;
 }
 
-/* ================================
-   Resize Handles
-================================ */
-
 .resize-handle.horizontal {
   height: 8px;
   cursor: row-resize;
@@ -512,10 +483,6 @@ button {
 .resize-handle.vertical:hover {
   background: rgba(217, 170, 56, 0.34);
 }
-
-/* ================================
-   Info Panel
-================================ */
 
 .info-panel {
   position: relative;
@@ -550,15 +517,10 @@ button {
   flex-shrink: 0;
 }
 
-.info-title-block {
-  min-width: 0;
-}
-
 .info-title-block h2 {
   margin: 0 0 6px;
   font-size: 20px;
   color: var(--teal-deep);
-  word-break: break-word;
 }
 
 .info-title-row {
@@ -582,9 +544,7 @@ button {
   display: grid;
   place-items: center;
   line-height: 1;
-  transition:
-    transform 0.18s ease,
-    background 0.18s ease;
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 
 .info-tags-toggle:hover {
@@ -655,7 +615,6 @@ button {
   display: grid;
   grid-template-columns: var(--sentence-width) 8px 1fr;
   gap: 8px;
-  overflow: hidden;
 }
 
 .info-box {
@@ -758,10 +717,6 @@ button {
   padding: 0 !important;
 }
 
-/* ================================
-   Graph Nodes / Links
-================================ */
-
 .node {
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -816,72 +771,45 @@ button {
   stroke-width: 3px;
 }
 
-/* ================================
-   Scrollbar
-================================ */
-
-.sidebar,
-.sidebar-category-list,
-.inline-pill-list,
-.info-panel,
-.info-box,
-.quote-list,
-.source-list,
-.info-tags {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(92, 166, 168, 0.55) rgba(199, 220, 222, 0.25);
-}
-
-.sidebar::-webkit-scrollbar,
+/* Scrollbar */
 .sidebar-category-list::-webkit-scrollbar,
 .inline-pill-list::-webkit-scrollbar,
 .info-panel::-webkit-scrollbar,
 .info-box::-webkit-scrollbar,
 .quote-list::-webkit-scrollbar,
-.source-list::-webkit-scrollbar,
-.info-tags::-webkit-scrollbar {
+.source-list::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.sidebar::-webkit-scrollbar-track,
 .sidebar-category-list::-webkit-scrollbar-track,
 .inline-pill-list::-webkit-scrollbar-track,
 .info-panel::-webkit-scrollbar-track,
 .info-box::-webkit-scrollbar-track,
 .quote-list::-webkit-scrollbar-track,
-.source-list::-webkit-scrollbar-track,
-.info-tags::-webkit-scrollbar-track {
+.source-list::-webkit-scrollbar-track {
   background: rgba(199, 220, 222, 0.25);
   border-radius: 999px;
 }
 
-.sidebar::-webkit-scrollbar-thumb,
 .sidebar-category-list::-webkit-scrollbar-thumb,
 .inline-pill-list::-webkit-scrollbar-thumb,
 .info-panel::-webkit-scrollbar-thumb,
 .info-box::-webkit-scrollbar-thumb,
 .quote-list::-webkit-scrollbar-thumb,
-.source-list::-webkit-scrollbar-thumb,
-.info-tags::-webkit-scrollbar-thumb {
+.source-list::-webkit-scrollbar-thumb {
   background: rgba(92, 166, 168, 0.5);
   border-radius: 999px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover,
 .sidebar-category-list::-webkit-scrollbar-thumb:hover,
 .inline-pill-list::-webkit-scrollbar-thumb:hover,
 .info-panel::-webkit-scrollbar-thumb:hover,
 .info-box::-webkit-scrollbar-thumb:hover,
 .quote-list::-webkit-scrollbar-thumb:hover,
-.source-list::-webkit-scrollbar-thumb:hover,
-.info-tags::-webkit-scrollbar-thumb:hover {
+.source-list::-webkit-scrollbar-thumb:hover {
   background: rgba(92, 166, 168, 0.75);
 }
-
-/* ================================
-   RWD - Tablet
-================================ */
 
 @media (max-width: 1100px) {
   .app-shell {
@@ -907,17 +835,12 @@ button {
   }
 }
 
-/* ================================
-   RWD - Mobile
-================================ */
-
 @media (max-width: 768px) {
   body {
     overflow: hidden;
   }
 
   .app-shell {
-    width: 100vw;
     height: 100dvh;
     padding: 8px;
     gap: 8px;
@@ -976,14 +899,11 @@ button {
   .main-area {
     min-height: 0;
     flex: 1;
-    width: 100%;
-    overflow: hidden;
   }
 
   .workspace {
     height: 100%;
     min-height: 0;
-    overflow: hidden;
     grid-template-rows: minmax(180px, 1fr) 9px minmax(220px, var(--info-height));
   }
 
@@ -1044,10 +964,6 @@ button {
     word-break: break-word;
   }
 
-  .info-title-row {
-    align-items: flex-start;
-  }
-
   .info-tags {
     max-height: 74px;
     overflow-y: auto;
@@ -1080,7 +996,6 @@ button {
       9px
       minmax(170px, 1fr);
     gap: 8px;
-    overflow: visible;
   }
 
   .resize-handle.vertical {
@@ -1118,6 +1033,33 @@ button {
   }
 }
 
+@media (max-width: 480px) {
+  .app-shell {
+    padding: 6px;
+  }
+
+  .sidebar {
+    border-radius: 18px;
+  }
+
+  .graph-card {
+    border-radius: 18px;
+  }
+
+  .info-panel {
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .info-split-area {
+    min-height: 390px;
+  }
+
+  .info-box {
+    min-height: 180px;
+  }
+}
+
 /* ================================
    RWD - Small Mobile
 ================================ */
@@ -1147,27 +1089,34 @@ button {
   .info-box {
     min-height: 180px;
   }
+}
 
-  /* ================================
-   Mobile Search Panel Refinement
-   手機版搜尋欄與縮排按鈕位置修正
+/* ================================
+   RWD Fine Tune - Mobile Search Input
+   手機版搜尋欄文字截斷修正
 ================================ */
 
 @media (max-width: 768px) {
   .sidebar-search-panel {
-    max-height: 220px;
+    max-height: 230px;
     padding: 12px;
   }
 
   .sidebar-search-panel:not(.search-collapsed) {
-    min-height: 116px;
+    min-height: 118px;
   }
 
   .sidebar-search {
-    min-height: 42px;
-    padding: 12px 14px;
+    height: 46px;
+    min-height: 46px;
+    padding: 0 14px;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 46px;
+    display: block;
+  }
+
+  .sidebar-search::placeholder {
+    line-height: normal;
   }
 
   .search-action-row {
@@ -1177,16 +1126,27 @@ button {
 
   .sidebar-main-btn,
   .sidebar-sub-btn {
-    min-height: 40px;
-    padding: 10px 14px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 14px;
     font-size: 13px;
+    line-height: 42px;
+  }
+}
+
+/* ================================
+   RWD Fine Tune - Mobile Collapsed Button Layout
+   手機版收合後：放大鏡左，三條 bar 右
+================================ */
+
+@media (max-width: 768px) {
+  .app-shell.sidebar-collapsed .sidebar {
+    height: 60px;
+    min-height: 60px;
+    padding: 10px 14px;
+    position: relative;
   }
 
-  /*
-    手機版 sidebar 收合時：
-    原本放大鏡在三條 bar 下方。
-    改成：放大鏡在左，三條 bar 在右。
-  */
   .app-shell.sidebar-collapsed .search-toggle {
     left: 14px;
     right: auto;
@@ -1198,15 +1158,4 @@ button {
     left: auto;
     top: 12px;
   }
-
-  /*
-    收合狀態的 sidebar 高度稍微加高，
-    避免兩個按鈕太擠。
-  */
-  .app-shell.sidebar-collapsed .sidebar {
-    height: 60px;
-    min-height: 60px;
-  }
-}
-
 }
