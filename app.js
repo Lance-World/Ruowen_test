@@ -20,7 +20,7 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
-  infoPanelCompact: false,
+  infoCompact: false,
 };
 
 const nodeColors = {
@@ -49,9 +49,9 @@ async function init() {
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
+    setupInfoCompactToggle();
     renderGraph();
     renderDefaultInfo();
-    setupInfoPanelCompact();
     setupIntroOverlay();
   } catch (error) {
     console.error(error);
@@ -347,13 +347,82 @@ function clearSelection() {
 }
 
 /* ================================
-   Resizable Panels
+   Info Panel Compact Toggle
+   所有平台：點擊資訊欄圖案即可收合 / 展開
+================================ */
+
+function setupInfoCompactToggle() {
+  const infoIcon = document.querySelector(".info-icon");
+  if (!infoIcon) return;
+
+  infoIcon.setAttribute("role", "button");
+  infoIcon.setAttribute("tabindex", "0");
+  infoIcon.setAttribute("title", "收合 / 展開資訊欄");
+
+  infoIcon.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleInfoCompact();
+  });
+
+  infoIcon.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleInfoCompact();
+    }
+  });
+
+  applyInfoCompactState();
+}
+
+function toggleInfoCompact() {
+  state.infoCompact = !state.infoCompact;
+  applyInfoCompactState();
+}
+
+function applyInfoCompactState() {
+  const infoPanel = document.getElementById("infoPanel");
+  const workspace = document.getElementById("workspace");
+
+  if (!infoPanel) return;
+
+  infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
+
+  if (workspace) {
+    workspace.classList.toggle("info-compact-workspace", Boolean(state.infoCompact));
+  }
+
+  requestAnimationFrame(() => {
+    resizeGraphAfterPanelChange();
+  });
+}
+
+function getRandomTitleNumber() {
+  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+}
+
+function setInfoTitle(titleText) {
+  const title = document.getElementById("infoTitle");
+  if (!title) return;
+
+  const safeTitle = escapeHtml(titleText || "尚未選擇節點");
+  const number = getRandomTitleNumber();
+
+  title.innerHTML = `
+    <span class="info-title-text">${safeTitle}</span>
+    <span class="info-title-random-number">${number}</span>
+  `;
+}
+
+/* ================================
+   Resizable Panels - Pointer Events
+   桌機 / 平板 / 手機共用拖曳邏輯
 ================================ */
 
 function setupResizablePanels() {
   setupSidebarResize();
   setupMainVerticalResize();
   setupInnerHorizontalResize();
+  setupInfoRightResize();
 }
 
 function setupSidebarResize() {
@@ -363,35 +432,28 @@ function setupSidebarResize() {
 
   if (!handle || !sidebar || !appShell) return;
 
-  let isDragging = false;
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    onMove: (event) => {
+      if (isMobileLayout()) {
+        const shellRect = appShell.getBoundingClientRect();
+        const minHeight = 68;
+        const maxHeight = Math.max(150, shellRect.height * 0.58);
+        const nextHeight = clamp(event.clientY - shellRect.top, minHeight, maxHeight);
 
-  handle.addEventListener("mousedown", () => {
-    if (appShell.classList.contains("sidebar-collapsed")) return;
+        sidebar.style.height = `${nextHeight}px`;
+        localStorage.setItem("sidebarMobileHeight", String(nextHeight));
+      } else {
+        const minWidth = 220;
+        const maxWidth = Math.min(520, window.innerWidth * 0.68);
+        const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
 
-    isDragging = true;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  });
+        sidebar.style.width = `${nextWidth}px`;
+        localStorage.setItem("sidebarWidth", String(nextWidth));
+      }
 
-  window.addEventListener("mousemove", (event) => {
-    if (!isDragging) return;
-
-    const minWidth = 220;
-    const maxWidth = 420;
-    const nextWidth = Math.max(minWidth, Math.min(maxWidth, event.clientX - 18));
-
-    sidebar.style.width = `${nextWidth}px`;
-    localStorage.setItem("sidebarWidth", String(nextWidth));
-
-    resizeGraphAfterPanelChange();
-  });
-
-  window.addEventListener("mouseup", () => {
-    if (!isDragging) return;
-
-    isDragging = false;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+      resizeGraphAfterPanelChange();
+    },
   });
 }
 
@@ -401,34 +463,24 @@ function setupMainVerticalResize() {
 
   if (!handle || !workspace) return;
 
-  let isDragging = false;
+  enablePointerResize(handle, {
+    cursor: "row-resize",
+    onMove: (event) => {
+      const rect = workspace.getBoundingClientRect();
+      const infoHeight = rect.bottom - event.clientY;
 
-  handle.addEventListener("mousedown", () => {
-    isDragging = true;
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-  });
+      const minInfo = isMobileLayout() ? 76 : 92;
+      const maxInfo = Math.max(240, rect.height * 0.76);
+      const nextHeight = clamp(infoHeight, minInfo, maxInfo);
 
-  window.addEventListener("mousemove", (event) => {
-    if (!isDragging) return;
+      state.infoCompact = false;
+      applyInfoCompactState();
 
-    const rect = workspace.getBoundingClientRect();
-    const infoHeight = rect.bottom - event.clientY;
+      workspace.style.setProperty("--info-height", `${nextHeight}px`);
+      localStorage.setItem("infoHeight", String(nextHeight));
 
-    const minInfo = 180;
-    const maxInfo = Math.max(240, rect.height * 0.62);
-    const nextHeight = Math.max(minInfo, Math.min(maxInfo, infoHeight));
-
-    workspace.style.setProperty("--info-height", `${nextHeight}px`);
-    resizeGraphAfterPanelChange();
-  });
-
-  window.addEventListener("mouseup", () => {
-    if (!isDragging) return;
-
-    isDragging = false;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+      resizeGraphAfterPanelChange();
+    },
   });
 }
 
@@ -438,31 +490,118 @@ function setupInnerHorizontalResize() {
 
   if (!handle || !splitArea) return;
 
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    onMove: (event) => {
+      const rect = splitArea.getBoundingClientRect();
+
+      if (isMobileLayout()) {
+        const ratio = ((event.clientY - rect.top) / rect.height) * 100;
+        const nextRatio = clamp(ratio, 24, 76);
+        splitArea.style.setProperty("--sentence-height", `${nextRatio}%`);
+        localStorage.setItem("sentenceHeight", String(nextRatio));
+      } else {
+        const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+        const nextRatio = clamp(ratio, 28, 72);
+        splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+        localStorage.setItem("sentenceWidth", String(nextRatio));
+      }
+    },
+  });
+}
+
+function setupInfoRightResize() {
+  const handle = document.getElementById("infoRightResizeHandle");
+  const infoPanel = document.getElementById("infoPanel");
+  const workspace = document.getElementById("workspace");
+
+  if (!handle || !infoPanel || !workspace) return;
+
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    onMove: (event) => {
+      const rect = workspace.getBoundingClientRect();
+
+      state.infoCompact = false;
+      applyInfoCompactState();
+
+      if (isMobileLayout()) {
+        const infoHeight = rect.bottom - event.clientY;
+        const minInfo = 76;
+        const maxInfo = Math.max(240, rect.height * 0.76);
+        const nextHeight = clamp(infoHeight, minInfo, maxInfo);
+        workspace.style.setProperty("--info-height", `${nextHeight}px`);
+        localStorage.setItem("infoHeight", String(nextHeight));
+      } else {
+        const minWidth = Math.min(280, rect.width);
+        const maxWidth = rect.width;
+        const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
+        infoPanel.style.width = `${nextWidth}px`;
+        localStorage.setItem("infoPanelWidth", String(nextWidth));
+      }
+
+      resizeGraphAfterPanelChange();
+    },
+  });
+}
+
+function enablePointerResize(handle, options) {
   let isDragging = false;
 
-  handle.addEventListener("mousedown", () => {
+  handle.addEventListener("pointerdown", (event) => {
     isDragging = true;
-    document.body.style.cursor = "col-resize";
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (_) {}
+
+    const cursor = typeof options.cursor === "function" ? options.cursor(event) : options.cursor;
+
+    document.body.style.cursor = cursor || "";
     document.body.style.userSelect = "none";
+    document.body.style.touchAction = "none";
+
+    event.preventDefault();
   });
 
-  window.addEventListener("mousemove", (event) => {
+  handle.addEventListener("pointermove", (event) => {
     if (!isDragging) return;
 
-    const rect = splitArea.getBoundingClientRect();
-    const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+    if (typeof options.onMove === "function") {
+      options.onMove(event);
+    }
 
-    const nextRatio = Math.max(28, Math.min(72, ratio));
-    splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+    event.preventDefault();
   });
 
-  window.addEventListener("mouseup", () => {
+  handle.addEventListener("pointerup", (event) => {
     if (!isDragging) return;
 
     isDragging = false;
+
+    try {
+      handle.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
+    document.body.style.touchAction = "";
   });
+
+  handle.addEventListener("pointercancel", () => {
+    isDragging = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    document.body.style.touchAction = "";
+  });
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function resizeGraphAfterPanelChange() {
@@ -483,12 +622,13 @@ function resizeGraphAfterPanelChange() {
 }
 
 
+
 /* ================================
    Intro Overlay
    進站星空短句開場
 ================================ */
 
-const INTRO_MAX_CHARS = 14;
+const INTRO_MAX_CHARS = 18;
 const INTRO_DURATION_MS = 6600;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
@@ -710,6 +850,34 @@ function getFilteredData() {
    Graph Rendering
 ================================ */
 
+
+function ensureSvgDefs(svg) {
+  const defs = svg.append("defs");
+
+  const countGradient = defs
+    .append("linearGradient")
+    .attr("id", "countGradient")
+    .attr("x1", "0%")
+    .attr("y1", "0%")
+    .attr("x2", "100%")
+    .attr("y2", "0%");
+
+  countGradient
+    .append("stop")
+    .attr("offset", "0%")
+    .attr("stop-color", "#c98f7a");
+
+  countGradient
+    .append("stop")
+    .attr("offset", "48%")
+    .attr("stop-color", "#d8a36f");
+
+  countGradient
+    .append("stop")
+    .attr("offset", "100%")
+    .attr("stop-color", "#7d7ee8");
+}
+
 function renderGraph() {
   const svg = d3.select("#graphSvg");
   state.svg = svg;
@@ -721,7 +889,9 @@ function renderGraph() {
   svg.attr("viewBox", [0, 0, width, height]);
   svg.selectAll("*").remove();
 
-  state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
+  
+  ensureSvgDefs(svg);
+state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
 
   state.linkSelection = state.zoomLayer.append("g").attr("class", "links");
   state.nodeSelection = state.zoomLayer.append("g").attr("class", "nodes");
@@ -798,10 +968,13 @@ function updateGraph() {
           .attr("fill", (node) => nodeColors[node.type] || nodeColors.unknown);
 
         g.append("text")
+          .attr("class", "node-label")
           .attr("text-anchor", "middle")
           .attr("dy", (node) => getNodeRadius(node) + 15)
           .attr("font-size", (node) => getLabelSize(node))
-          .text((node) => shortenLabel(node.label, node.type));
+          .each(function (node) {
+            renderNodeLabel(d3.select(this), node);
+          });
 
         g.on("click", (event, node) => {
           event.stopPropagation();
@@ -825,7 +998,9 @@ function updateGraph() {
           .select("text")
           .attr("dy", (node) => getNodeRadius(node) + 15)
           .attr("font-size", (node) => getLabelSize(node))
-          .text((node) => shortenLabel(node.label, node.type));
+          .each(function (node) {
+            renderNodeLabel(d3.select(this), node);
+          });
 
         return update;
       },
@@ -868,6 +1043,41 @@ function updateGraph() {
 /* ================================
    Graph Style Helpers
 ================================ */
+
+
+function renderNodeLabel(textSelection, node) {
+  textSelection.selectAll("*").remove();
+
+  const label = shortenLabel(node.label, node.type);
+  const count = Number(node.count || 0);
+
+  textSelection
+    .append("tspan")
+    .attr("class", "label-name")
+    .text(label);
+
+  if (count > 0) {
+    textSelection
+      .append("tspan")
+      .attr("class", "label-count")
+      .attr("dx", 5)
+      .text(formatCount(count));
+  }
+}
+
+function formatCount(count) {
+  const value = Number(count || 0);
+
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(1)}萬`;
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(1)}k`;
+  }
+
+  return String(value);
+}
 
 function getNodeRadius(node) {
   const size = Number(node.size || 20);
@@ -1008,77 +1218,6 @@ function highlightSelection() {
     });
 }
 
-
-/* ================================
-   Info Panel Compact / Title Number
-   各平台資訊欄：點擊圖案收合/展開，標題後方顯示隨機 0000-9999
-================================ */
-
-function setupInfoPanelCompact() {
-  const infoPanel = document.getElementById("infoPanel");
-  const infoIcon = document.querySelector(".info-icon");
-
-  if (!infoPanel || !infoIcon) return;
-
-  infoIcon.setAttribute("role", "button");
-  infoIcon.setAttribute("tabindex", "0");
-  infoIcon.setAttribute("title", "收合 / 展開資訊欄");
-
-  infoIcon.addEventListener("click", (event) => {
-    event.stopPropagation();
-    toggleInfoPanelCompact();
-  });
-
-  infoIcon.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    toggleInfoPanelCompact();
-  });
-
-  applyInfoPanelCompactState();
-}
-
-function toggleInfoPanelCompact() {
-  state.infoPanelCompact = !state.infoPanelCompact;
-  applyInfoPanelCompactState();
-
-  requestAnimationFrame(() => {
-    resizeGraphAfterPanelChange();
-  });
-}
-
-function applyInfoPanelCompactState() {
-  const infoPanel = document.getElementById("infoPanel");
-  const workspace = document.getElementById("workspace");
-
-  if (!infoPanel) return;
-
-  infoPanel.classList.toggle("info-panel-compact", state.infoPanelCompact);
-
-  if (workspace) {
-    workspace.classList.toggle("info-panel-compact-workspace", state.infoPanelCompact);
-  }
-}
-
-function setInfoTitle(titleText) {
-  const title = document.getElementById("infoTitle");
-  if (!title) return;
-
-  const text = String(titleText || "尚未選擇節點").trim() || "尚未選擇節點";
-  const code = generateInfoTitleNumber();
-
-  title.innerHTML = `
-    <span class="info-title-text">${escapeHtml(text)}</span>
-    <span class="info-title-number">${code}</span>
-  `;
-}
-
-function generateInfoTitleNumber() {
-  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
-}
-
 /* ================================
    Info Panel
 ================================ */
@@ -1089,7 +1228,6 @@ function renderDefaultInfo() {
   document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("relatedPhrases").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("sourceList").innerHTML = '<span class="muted">尚無資料</span>';
-  applyInfoPanelCompactState();
 }
 
 function renderInfoPanel(node) {
