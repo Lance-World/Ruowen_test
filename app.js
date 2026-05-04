@@ -114,8 +114,10 @@ function restoreSidebarWidth() {
 
   const width = Number(savedWidth);
 
-  if (Number.isFinite(width) && width >= 220 && width <= 420) {
+  if (Number.isFinite(width) && width >= 220 && width <= 560) {
     sidebar.style.width = `${width}px`;
+    const appShell = document.querySelector(".app-shell");
+    if (appShell) appShell.style.setProperty("--sidebar-width", `${width}px`);
     requestAnimationFrame(syncDesktopOverlayLayout);
   }
 }
@@ -490,31 +492,77 @@ function setupSidebarResize() {
 
   if (!handle || !sidebar || !appShell) return;
 
-  enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
-    onMove: (event) => {
-      if (isMobileLayout()) {
-        const shellRect = appShell.getBoundingClientRect();
-        const minHeight = 68;
-        const maxHeight = Math.max(150, shellRect.height * 0.58);
-        const nextHeight = clamp(event.clientY - shellRect.top, minHeight, maxHeight);
+  let isDragging = false;
+  let activePointerId = null;
 
-        sidebar.style.height = `${nextHeight}px`;
-        localStorage.setItem("sidebarMobileHeight", String(nextHeight));
-      } else {
-        const minWidth = 220;
-        const maxWidth = Math.min(520, window.innerWidth * 0.68);
-        const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
+  function startResize(event) {
+    if (isMobileLayout()) return;
+    if (appShell.classList.contains("sidebar-collapsed")) return;
 
-        sidebar.style.width = `${nextWidth}px`;
-        localStorage.setItem("sidebarWidth", String(nextWidth));
-        syncDesktopOverlayLayout();
-      }
+    isDragging = true;
+    activePointerId = event.pointerId;
 
-      updateFloatingLayoutVars();
-      resizeGraphAfterPanelChange();
-    },
-  });
+    appShell.classList.add("sidebar-is-resizing");
+    document.body.classList.add("is-resizing-sidebar");
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (_) {}
+
+    moveResize(event);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function moveResize(event) {
+    if (!isDragging) return;
+    if (activePointerId !== null && event.pointerId !== activePointerId) return;
+
+    const shellRect = appShell.getBoundingClientRect();
+    const sidebarLeft = Number.parseFloat(getComputedStyle(appShell).getPropertyValue("--sidebar-left")) || 20;
+    const minWidth = 220;
+    const maxWidth = Math.min(560, Math.max(260, window.innerWidth * 0.62));
+    const nextWidth = clamp(event.clientX - shellRect.left - sidebarLeft, minWidth, maxWidth);
+
+    sidebar.style.width = `${nextWidth}px`;
+    appShell.style.setProperty("--sidebar-width", `${nextWidth}px`);
+    appShell.style.setProperty("--info-left", `${sidebarLeft + nextWidth + 28}px`);
+    localStorage.setItem("sidebarWidth", String(Math.round(nextWidth)));
+
+    resizeGraphAfterPanelChange();
+    event.preventDefault();
+  }
+
+  function endResize(event) {
+    if (!isDragging) return;
+    if (activePointerId !== null && event && event.pointerId !== activePointerId) return;
+
+    isDragging = false;
+    activePointerId = null;
+
+    appShell.classList.remove("sidebar-is-resizing");
+    document.body.classList.remove("is-resizing-sidebar");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+
+    try {
+      if (event) handle.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+
+    syncDesktopOverlayLayout();
+    resizeGraphAfterPanelChange();
+  }
+
+  handle.addEventListener("pointerdown", startResize);
+  handle.addEventListener("pointermove", moveResize);
+  handle.addEventListener("pointerup", endResize);
+  handle.addEventListener("pointercancel", endResize);
+
+  window.addEventListener("pointermove", moveResize, { passive: false });
+  window.addEventListener("pointerup", endResize);
+  window.addEventListener("pointercancel", endResize);
 }
 
 function setupMainVerticalResize() {
