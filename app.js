@@ -49,7 +49,6 @@ async function init() {
     updateFloatingLayoutVars();
     setupCategoryChips();
     setupControls();
-    setupFloatingActionsMenu();
     setupResizablePanels();
     setupInfoCompactToggle();
     renderGraph();
@@ -114,11 +113,8 @@ function restoreSidebarWidth() {
 
   const width = Number(savedWidth);
 
-  if (Number.isFinite(width) && width >= 220 && width <= 560) {
+  if (Number.isFinite(width) && width >= 220 && width <= 420) {
     sidebar.style.width = `${width}px`;
-    const appShell = document.querySelector(".app-shell");
-    if (appShell) appShell.style.setProperty("--sidebar-width", `${width}px`);
-    requestAnimationFrame(syncDesktopOverlayLayout);
   }
 }
 
@@ -355,57 +351,6 @@ function clearSelection() {
   renderDefaultInfo();
 }
 
-
-/* ================================
-   Floating Actions Menu
-   手機版：重置視角 / 顯示全部 / 清除選取，收合成右上角選單
-================================ */
-
-function setupFloatingActionsMenu() {
-  const graphCard = document.querySelector(".graph-card");
-  const toggleBtn = document.getElementById("floatingActionsToggleBtn");
-  const floatingActions = document.getElementById("floatingActions");
-
-  if (!graphCard || !toggleBtn || !floatingActions) return;
-
-  function setOpen(isOpen) {
-    graphCard.classList.toggle("floating-actions-open", Boolean(isOpen));
-    toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-  }
-
-  toggleBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setOpen(!graphCard.classList.contains("floating-actions-open"));
-  });
-
-  floatingActions.addEventListener("click", (event) => {
-    event.stopPropagation();
-
-    if (event.target.closest("button") && isMobileLayout()) {
-      setOpen(false);
-    }
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!isMobileLayout()) return;
-
-    const clickedInsideSidebar = Boolean(event.target.closest("#sidebar"));
-    const clickedInsideInfo = Boolean(event.target.closest("#infoPanel"));
-    const clickedToggle = Boolean(event.target.closest("#floatingActionsToggleBtn"));
-    const clickedMenu = Boolean(event.target.closest("#floatingActions"));
-
-    if (!clickedInsideSidebar && !clickedInsideInfo && !clickedToggle && !clickedMenu) {
-      setOpen(false);
-    }
-  });
-
-  window.addEventListener("resize", () => {
-    if (!isMobileLayout()) {
-      setOpen(false);
-    }
-  });
-}
-
 /* ================================
    Info Panel Compact Toggle
    所有平台：點擊資訊欄圖案即可收合 / 展開
@@ -492,77 +437,30 @@ function setupSidebarResize() {
 
   if (!handle || !sidebar || !appShell) return;
 
-  let isDragging = false;
-  let activePointerId = null;
+  enablePointerResize(handle, {
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    onMove: (event) => {
+      if (isMobileLayout()) {
+        const shellRect = appShell.getBoundingClientRect();
+        const minHeight = 68;
+        const maxHeight = Math.max(150, shellRect.height * 0.58);
+        const nextHeight = clamp(event.clientY - shellRect.top, minHeight, maxHeight);
 
-  function startResize(event) {
-    if (isMobileLayout()) return;
-    if (appShell.classList.contains("sidebar-collapsed")) return;
+        sidebar.style.height = `${nextHeight}px`;
+        localStorage.setItem("sidebarMobileHeight", String(nextHeight));
+      } else {
+        const minWidth = 220;
+        const maxWidth = Math.min(520, window.innerWidth * 0.68);
+        const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
 
-    isDragging = true;
-    activePointerId = event.pointerId;
+        sidebar.style.width = `${nextWidth}px`;
+        localStorage.setItem("sidebarWidth", String(nextWidth));
+      }
 
-    appShell.classList.add("sidebar-is-resizing");
-    document.body.classList.add("is-resizing-sidebar");
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    try {
-      handle.setPointerCapture(event.pointerId);
-    } catch (_) {}
-
-    moveResize(event);
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  function moveResize(event) {
-    if (!isDragging) return;
-    if (activePointerId !== null && event.pointerId !== activePointerId) return;
-
-    const shellRect = appShell.getBoundingClientRect();
-    const sidebarLeft = Number.parseFloat(getComputedStyle(appShell).getPropertyValue("--sidebar-left")) || 20;
-    const minWidth = 220;
-    const maxWidth = Math.min(560, Math.max(260, window.innerWidth * 0.62));
-    const nextWidth = clamp(event.clientX - shellRect.left - sidebarLeft, minWidth, maxWidth);
-
-    sidebar.style.width = `${nextWidth}px`;
-    appShell.style.setProperty("--sidebar-width", `${nextWidth}px`);
-    appShell.style.setProperty("--info-left", `${sidebarLeft + nextWidth + 28}px`);
-    localStorage.setItem("sidebarWidth", String(Math.round(nextWidth)));
-
-    resizeGraphAfterPanelChange();
-    event.preventDefault();
-  }
-
-  function endResize(event) {
-    if (!isDragging) return;
-    if (activePointerId !== null && event && event.pointerId !== activePointerId) return;
-
-    isDragging = false;
-    activePointerId = null;
-
-    appShell.classList.remove("sidebar-is-resizing");
-    document.body.classList.remove("is-resizing-sidebar");
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-
-    try {
-      if (event) handle.releasePointerCapture(event.pointerId);
-    } catch (_) {}
-
-    syncDesktopOverlayLayout();
-    resizeGraphAfterPanelChange();
-  }
-
-  handle.addEventListener("pointerdown", startResize);
-  handle.addEventListener("pointermove", moveResize);
-  handle.addEventListener("pointerup", endResize);
-  handle.addEventListener("pointercancel", endResize);
-
-  window.addEventListener("pointermove", moveResize, { passive: false });
-  window.addEventListener("pointerup", endResize);
-  window.addEventListener("pointercancel", endResize);
+      updateFloatingLayoutVars();
+      resizeGraphAfterPanelChange();
+    },
+  });
 }
 
 function setupMainVerticalResize() {
@@ -742,25 +640,7 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function syncDesktopOverlayLayout() {
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-
-  if (!appShell || !sidebar || isMobileLayout()) return;
-
-  const sidebarRect = sidebar.getBoundingClientRect();
-  const sidebarWidth = Math.round(sidebarRect.width || 280);
-  const sidebarLeft = 20;
-  const panelGap = 20;
-  const infoLeft = sidebarLeft + sidebarWidth + panelGap;
-
-  appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
-  appShell.style.setProperty("--info-left", `${infoLeft}px`);
-}
-
 function resizeGraphAfterPanelChange() {
-  syncDesktopOverlayLayout();
-
   if (!state.svg) return;
 
   const graphCard = document.querySelector(".graph-card");
