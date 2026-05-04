@@ -1680,13 +1680,17 @@ button {
 
   /* 收合狀態：只留下圖案與標題 */
   #infoPanel.mobile-info-compact {
-    min-height: 92px !important;
+    align-self: end !important;
+    justify-self: stretch !important;
+    min-height: 76px !important;
     height: auto !important;
-    max-height: 118px !important;
+    max-height: 88px !important;
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
-    padding: 14px 16px !important;
+    padding: 10px 14px !important;
   }
 
   #infoPanel.mobile-info-compact .info-header {
@@ -1699,9 +1703,9 @@ button {
   }
 
   #infoPanel.mobile-info-compact .info-icon {
-    width: 50px !important;
-    height: 50px !important;
-    font-size: 22px !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 18px !important;
     flex-shrink: 0 !important;
   }
 
@@ -1715,8 +1719,9 @@ button {
   #infoPanel.mobile-info-compact .info-title-block h2,
   #infoPanel.mobile-info-compact #infoTitle {
     margin: 0 !important;
-    font-size: clamp(22px, 6vw, 28px) !important;
-    line-height: 1.18 !important;
+    font-size: clamp(17px, 4.8vw, 22px) !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
     color: var(--teal-deep) !important;
     word-break: break-word !important;
   }
@@ -1787,20 +1792,21 @@ button {
 
 @media (max-width: 480px) {
   #infoPanel.mobile-info-compact {
-    min-height: 86px !important;
-    max-height: 108px !important;
-    padding: 12px 14px !important;
+    align-self: end !important;
+    min-height: 72px !important;
+    max-height: 82px !important;
+    padding: 9px 12px !important;
   }
 
   #infoPanel.mobile-info-compact .info-icon {
-    width: 46px !important;
-    height: 46px !important;
-    font-size: 20px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 17px !important;
   }
 
   #infoPanel.mobile-info-compact .info-title-block h2,
   #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(20px, 6vw, 25px) !important;
+    font-size: clamp(16px, 4.8vw, 20px) !important;
   }
 
   #infoPanel:not(.mobile-info-compact) .sentence-box {
@@ -1809,5 +1815,71 @@ button {
 
   #infoPanel:not(.mobile-info-compact) .source-box {
     max-height: 38vh !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL MOBILE COMPACT INFO BAR POSITION
+   手機版資訊欄收合時：固定貼齊下方，字體縮小
+========================================================= */
+
+@media (max-width: 768px) {
+  #workspace {
+    align-items: stretch;
+  }
+
+  #infoPanel.mobile-info-compact {
+    align-self: end !important;
+    justify-self: stretch !important;
+    min-height: 74px !important;
+    max-height: 86px !important;
+    height: auto !important;
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+    padding: 9px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-header {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 17px !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-title-block h2,
+  #infoPanel.mobile-info-compact #infoTitle {
+    font-size: clamp(17px, 4.6vw, 21px) !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #infoPanel.mobile-info-compact {
+    min-height: 68px !important;
+    max-height: 78px !important;
+    padding: 8px 12px !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-title-block h2,
+  #infoPanel.mobile-info-compact #infoTitle {
+    font-size: clamp(16px, 4.8vw, 19px) !important;
   }
 }
