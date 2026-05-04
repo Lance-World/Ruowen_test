@@ -710,7 +710,7 @@ function resizeGraphAfterPanelChange() {
 ================================ */
 
 const INTRO_MAX_CHARS = 18;
-const INTRO_DURATION_MS = 6600;
+const INTRO_DURATION_MS = 10000;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
   "讓心安靜下來",
