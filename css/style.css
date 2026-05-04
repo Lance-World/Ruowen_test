@@ -3713,3 +3713,180 @@ body {
     top: calc(max(8px, env(safe-area-inset-top)) + min(70dvh, calc(100dvh - 18px)) + 54px) !important;
   }
 }
+
+
+/* =========================================================
+   FINAL FIX 20260504_03
+   1. Desktop：左側 sidebar resize handle 可拖曳，且跟著 sidebar 寬度移動
+   2. Mobile：三條 bar 展開後，上方卡片內部可上下滑動
+   3. Mobile：按鈕 / 分類 chip 不再吃掉 pan-y 捲動手勢
+========================================================= */
+
+@media (min-width: 769px) {
+  .app-shell {
+    --sidebar-left: 20px;
+    --sidebar-top: 20px;
+  }
+
+  #sidebar.sidebar {
+    width: var(--sidebar-width, 280px) !important;
+    transition: box-shadow 0.22s ease, background 0.22s ease !important;
+  }
+
+  .app-shell.sidebar-is-resizing #sidebar.sidebar {
+    transition: none !important;
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle {
+    position: absolute !important;
+    left: calc(var(--sidebar-left, 20px) + var(--sidebar-width, 280px) + 10px) !important;
+    top: 22px !important;
+    bottom: 22px !important;
+    width: 14px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 0.42 !important;
+    pointer-events: auto !important;
+    cursor: col-resize !important;
+    touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    z-index: 260 !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.16) !important;
+    border: 1px solid rgba(92, 166, 168, 0.20) !important;
+    box-shadow: none !important;
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle::before {
+    content: "";
+    position: absolute;
+    inset: 0 4px;
+    border-radius: 999px;
+    background: rgba(92, 166, 168, 0.22);
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle:hover,
+  .app-shell.sidebar-is-resizing #sidebarResizeHandle.sidebar-resize-handle {
+    opacity: 0.95 !important;
+    background: rgba(92, 166, 168, 0.24) !important;
+    border-color: rgba(92, 166, 168, 0.34) !important;
+  }
+
+  body.is-resizing-sidebar,
+  body.is-resizing-sidebar * {
+    cursor: col-resize !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebarResizeHandle.sidebar-resize-handle {
+    left: calc(var(--sidebar-left, 20px) + 64px + 8px) !important;
+    opacity: 0 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+
+  #floatingActions.floating-actions {
+    left: auto !important;
+    right: 20px !important;
+    top: 22px !important;
+    z-index: 240 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 手機：上方卡片本體負責捲動，像下方資訊欄一樣 */
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar {
+    position: fixed !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    bottom: auto !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: min(74dvh, calc(100dvh - 20px)) !important;
+    min-height: 86px !important;
+    display: block !important;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    pointer-events: auto !important;
+    z-index: 180 !important;
+    padding: 14px 14px 18px !important;
+    scrollbar-width: thin !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar::after {
+    content: "";
+    display: block;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+
+  /* 這些元素在手機上原本 touch-action: manipulation，會造成滑動手勢被吃掉；改回 pan-y */
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar button,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar input,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .side-item,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .category-chip,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-search-panel,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-section,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-category-section,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-category-list {
+    touch-action: pan-y !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-category-list {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding-bottom: 18px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-search-panel,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-section {
+    flex: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 搜尋 / 三條 bar 保持可點，但不阻擋 sidebar 其他區域滑動 */
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .search-toggle,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-toggle {
+    touch-action: manipulation !important;
+  }
+
+  /* 手機不使用 sidebar resize handle，避免蓋住可滑動區 */
+  #sidebarResizeHandle.sidebar-resize-handle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions-toggle {
+    top: calc(max(10px, env(safe-area-inset-top)) + min(74dvh, calc(100dvh - 20px)) + 10px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #floatingActions.floating-actions {
+    top: calc(max(10px, env(safe-area-inset-top)) + min(74dvh, calc(100dvh - 20px)) + 58px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar {
+    max-height: min(76dvh, calc(100dvh - 16px)) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions-toggle {
+    top: calc(max(8px, env(safe-area-inset-top)) + min(76dvh, calc(100dvh - 16px)) + 8px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #floatingActions.floating-actions {
+    top: calc(max(8px, env(safe-area-inset-top)) + min(76dvh, calc(100dvh - 16px)) + 54px) !important;
+  }
+}
