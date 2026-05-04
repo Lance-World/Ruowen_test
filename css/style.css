@@ -4,16 +4,16 @@
   --bg-card: rgba(247, 252, 251, 0.88);
   --bg-glass: rgba(255, 255, 255, 0.72);
 
-  --accent-gold: #E8C76F;
-  --accent-rose: #D6A0A8;
-  --accent-indigo: #6866A8;
+  --accent-gold: #F1DFAC;
+  --accent-rose: #EBCAD0;
+  --accent-indigo: #B8B4DD;
 
   --teal-deep: #245b62;
   --teal-main: #5ca6a8;
   --teal-soft: #bfe7e2;
-  --blue-soft: #B9DCEC;
-  --yellow-soft: #F7EAD0;
-  --yellow-main: #E8C76F;
+  --blue-soft: #CFEAF4;
+  --yellow-soft: #FFF3DF;
+  --yellow-main: #E9D49A;
 
   --text-main: #173c43;
   --text-secondary: #537176;
@@ -276,7 +276,7 @@ button {
 .side-item:hover {
   background: rgba(244, 217, 130, 0.42);
   border-color: rgba(217, 170, 56, 0.42);
-  color: #684f14;
+  color: #6F6039;
 }
 
 .sidebar-category-list {
@@ -525,10 +525,10 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--yellow-soft), #fff2c1);
+  background: linear-gradient(135deg, var(--yellow-soft), #FFF8DD);
   display: grid;
   place-items: center;
-  color: #795a12;
+  color: #6F6039;
   font-size: 20px;
   flex-shrink: 0;
 }
@@ -586,7 +586,7 @@ button {
   align-items: center;
   border-radius: 999px;
   background: rgba(244, 217, 130, 0.36);
-  color: #684f14;
+  color: #6F6039;
   padding: 5px 10px;
   font-size: 12px;
 }
@@ -620,7 +620,7 @@ button {
   align-items: center;
   border-radius: 999px;
   background: rgba(244, 217, 130, 0.36);
-  color: #684f14;
+  color: #6F6039;
   padding: 5px 10px;
   font-size: 12px;
   flex-shrink: 0;
@@ -745,7 +745,7 @@ button {
 }
 
 .node.selected circle {
-  stroke: #d9aa38;
+  stroke: #DFC98E;
   stroke-width: 4px;
 }
 
@@ -1977,7 +1977,7 @@ button {
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.02em;
-  background: linear-gradient(135deg, #b36b76 0%, #e7b49a 35%, #563e88 72%, #253b73 100%);
+  background: linear-gradient(135deg, #C99AA3 0%, #EBCBB8 38%, #B9B4DD 74%, #88A9BF 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -2369,23 +2369,23 @@ body {
 
 .info-tags span,
 .inline-pill-list span {
-  background: rgba(232, 199, 111, 0.25) !important;
-  color: #795a12 !important;
+  background: rgba(241, 223, 172, 0.34) !important;
+  color: #6F6039 !important;
   font-weight: 600 !important;
-  border: 1px solid rgba(232, 199, 111, 0.3) !important;
+  border: 1px solid rgba(241, 223, 172, 0.42) !important;
 }
 
 .info-icon {
-  background: linear-gradient(135deg, var(--accent-gold), #fff2c1) !important;
-  color: #795a12 !important;
-  box-shadow: 0 10px 24px rgba(232, 199, 111, 0.24);
+  background: linear-gradient(135deg, var(--accent-gold), #FFF8DD) !important;
+  color: #6F6039 !important;
+  box-shadow: 0 10px 24px rgba(241, 223, 172, 0.26);
 }
 
 .side-item.active,
 .side-item:hover {
-  background: rgba(232, 199, 111, 0.25) !important;
-  border-color: rgba(232, 199, 111, 0.36) !important;
-  color: #795a12 !important;
+  background: rgba(241, 223, 172, 0.34) !important;
+  border-color: rgba(241, 223, 172, 0.46) !important;
+  color: #6F6039 !important;
 }
 
 .node circle {
@@ -2399,7 +2399,7 @@ body {
 }
 
 .link.highlight {
-  stroke: rgba(232, 199, 111, 0.92) !important;
+  stroke: rgba(229, 205, 145, 0.82) !important;
 }
 
 /* sidebar collapsed floating state */
