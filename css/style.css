@@ -1902,4 +1902,170 @@ button {
   #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
     font-size: clamp(15px, 4.7vw, 18px) !important;
   }
+  /* =========================================================
+   FINAL FIX - Mobile Compact Info Panel Expands Graph
+   手機版資訊欄收合時，中間知識網絡區塊同步放大
+========================================================= */
+
+@media (max-width: 768px) {
+  /*
+    關鍵：
+    收合時不能只讓 infoPanel 變矮，
+    workspace 的第三列也要同步變矮，
+    中間 graph 才會真正放大。
+  */
+  #workspace.mobile-info-compact-active {
+    grid-template-rows: minmax(0, 1fr) 9px 74px !important;
+  }
+
+  /*
+    保留中間拖曳 bar，但高度固定，不要吃掉太多空間。
+  */
+  #workspace.mobile-info-compact-active #mainResizeHandle {
+    height: 9px !important;
+    min-height: 9px !important;
+    max-height: 9px !important;
+    display: block !important;
+    flex-shrink: 0 !important;
+  }
+
+  /*
+    收合後的資訊欄貼下方，且高度固定。
+  */
+  #workspace.mobile-info-compact-active #infoPanel.mobile-info-compact {
+    align-self: end !important;
+    width: 100% !important;
+    min-height: 74px !important;
+    height: 74px !important;
+    max-height: 74px !important;
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-header {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-title-block {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-title-block h2,
+  #infoPanel.mobile-info-compact #infoTitle {
+    margin: 0 !important;
+    font-size: clamp(16px, 4.5vw, 20px) !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /*
+    收合時把所有下方資訊完全拿掉，
+    避免它們雖然看不到，卻還佔高度。
+  */
+  #infoPanel.mobile-info-compact .info-tags,
+  #infoPanel.mobile-info-compact .info-related-row,
+  #infoPanel.mobile-info-compact .info-split-area,
+  #infoPanel.mobile-info-compact #infoRightResizeHandle,
+  #infoPanel.mobile-info-compact .info-right-resize-handle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /*
+    展開狀態：
+    相關句子 / 相關出處內容自適應，不再強制留下大空白。
+  */
+  #infoPanel:not(.mobile-info-compact) .info-split-area {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .resize-handle.vertical {
+    width: 100% !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .info-box {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .sentence-box {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .source-box {
+    max-height: 42vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #workspace.mobile-info-compact-active {
+    grid-template-rows: minmax(0, 1fr) 8px 68px !important;
+  }
+
+  #workspace.mobile-info-compact-active #infoPanel.mobile-info-compact {
+    min-height: 68px !important;
+    height: 68px !important;
+    max-height: 68px !important;
+    padding: 7px 12px !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 15px !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-title-block h2,
+  #infoPanel.mobile-info-compact #infoTitle {
+    font-size: clamp(15px, 4.4vw, 18px) !important;
+  }
+}
 }
