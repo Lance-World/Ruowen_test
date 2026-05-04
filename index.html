@@ -8,18 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
-
-  <div id="introOverlay" class="intro-overlay intro-hidden" aria-hidden="true">
-    <div class="intro-meteor intro-meteor-1"></div>
-    <div class="intro-meteor intro-meteor-2"></div>
-    <div class="intro-meteor intro-meteor-3"></div>
-    <div class="intro-message-wrap" aria-live="polite">
-      <span class="intro-sparkle intro-sparkle-tr intro-sparkle-a">✦</span>
-      <span class="intro-sparkle intro-sparkle-tr intro-sparkle-b">✧</span>
-      <span class="intro-sparkle intro-sparkle-bl">✦</span>
-      <div id="introMessage" class="intro-message"></div>
-    </div>
-  </div>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
       <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">🔍</button>
@@ -125,6 +113,21 @@
         </section>
       </section>
     </main>
+  </div>
+
+
+  <div id="introOverlay" class="intro-overlay" aria-hidden="false">
+    <div class="intro-glass">
+      <div class="intro-message-wrap">
+        <span class="intro-star intro-star-top intro-star-top-a">✦</span>
+        <span class="intro-star intro-star-top intro-star-top-b">✧</span>
+        <span class="intro-star intro-star-bottom">✦</span>
+        <div id="introMessageText" class="intro-message-text">慢慢靠近自己</div>
+      </div>
+      <div class="meteor meteor-one"></div>
+      <div class="meteor meteor-two"></div>
+      <div class="meteor meteor-three"></div>
+    </div>
   </div>
 
   <script src="./app.js?v=intro_sparkle_20260504_06"></script>
