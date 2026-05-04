@@ -1615,103 +1615,127 @@ button {
 
 
 /* =========================================================
-   INTRO OVERLAY - Starry Entrance
-   剛進網站中央短句、透明霧灰背景、白金/玫瑰金流星
+   INTRO OVERLAY - Entry Message With Meteors
+   進站短句：透明灰背景、粉金星星、流星特效
 ========================================================= */
 
 .intro-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   display: grid;
   place-items: center;
   overflow: hidden;
+  cursor: pointer;
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.12), transparent 30%),
-    linear-gradient(135deg, rgba(40, 48, 52, 0.38), rgba(92, 96, 102, 0.28));
-  backdrop-filter: blur(5px) saturate(1.04);
-  -webkit-backdrop-filter: blur(5px) saturate(1.04);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.65s ease;
-}
-
-.intro-overlay-visible {
+    radial-gradient(circle at 50% 50%, rgba(255, 244, 236, 0.10), transparent 34%),
+    rgba(35, 41, 46, 0.46);
+  backdrop-filter: blur(5px) saturate(108%);
+  -webkit-backdrop-filter: blur(5px) saturate(108%);
   opacity: 1;
-  pointer-events: auto;
+  transition: opacity 0.68s ease, visibility 0.68s ease;
 }
 
-.intro-overlay-hidden {
+.intro-overlay.intro-hidden {
   opacity: 0;
+  visibility: hidden;
+}
+
+.intro-overlay.intro-leaving {
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
 }
 
-.intro-overlay-leaving {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.intro-card {
+.intro-message-wrap {
   position: relative;
-  min-width: min(460px, calc(100vw - 52px));
-  min-height: 160px;
-  padding: 42px 42px 34px;
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  gap: 18px;
-  border-radius: 30px;
-  border: 1px solid rgba(255, 246, 230, 0.28);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 235, 210, 0.16), transparent 36%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
-  box-shadow:
-    0 28px 80px rgba(20, 28, 32, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  padding: 10px 18px;
+  isolation: isolate;
 }
 
 .intro-message {
-  color: rgba(255, 248, 235, 0.96);
-  font-size: clamp(24px, 5.3vw, 44px);
+  position: relative;
+  z-index: 2;
+  max-width: min(86vw, 720px);
+  color: rgba(255, 248, 238, 0.96);
+  font-size: clamp(28px, 5.8vw, 58px);
   font-weight: 800;
-  line-height: 1.18;
+  line-height: 1.12;
   letter-spacing: 0.08em;
   text-align: center;
   text-shadow:
-    0 0 12px rgba(255, 247, 230, 0.34),
-    0 4px 24px rgba(230, 182, 154, 0.26);
+    0 0 12px rgba(255, 227, 197, 0.58),
+    0 0 30px rgba(225, 175, 155, 0.34),
+    0 8px 30px rgba(0, 0, 0, 0.28);
+  animation: introTextFloat 3.8s ease-in-out infinite;
 }
 
-.intro-skip {
-  border: 1px solid rgba(255, 240, 220, 0.38);
-  border-radius: 999px;
-  padding: 7px 16px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 250, 242, 0.9);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform 0.18s ease, background 0.18s ease;
+.intro-sparkle {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #f6d2bd;
+  font-size: 22px;
+  line-height: 1;
+  text-shadow:
+    0 0 8px rgba(255, 245, 224, 0.9),
+    0 0 18px rgba(232, 167, 149, 0.7),
+    0 0 32px rgba(255, 232, 190, 0.55);
+  animation: introSparklePulse 1.75s ease-in-out infinite;
 }
 
-.intro-skip:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.2);
+.intro-sparkle-a {
+  top: -22px;
+  right: -34px;
+  font-size: 24px;
+  color: #fff2cf;
+  animation-delay: 0.05s;
+}
+
+.intro-sparkle-b {
+  top: -44px;
+  right: 4px;
+  font-size: 18px;
+  color: #eec0ae;
+  animation-delay: 0.42s;
+}
+
+.intro-sparkle-bl {
+  left: -34px;
+  bottom: -26px;
+  font-size: 20px;
+  color: #f3c7b4;
+  animation-delay: 0.88s;
+}
+
+.intro-sparkle::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  filter: blur(2px);
+  opacity: 0.65;
 }
 
 .intro-meteor {
   position: absolute;
-  width: 150px;
+  width: 120px;
   height: 2px;
   border-radius: 999px;
-  opacity: 0;
-  transform: rotate(-24deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 244, 220, 0.96), rgba(229, 177, 154, 0.72));
+  background: linear-gradient(90deg, transparent, rgba(255, 241, 214, 0.98), rgba(231, 169, 151, 0.86));
   box-shadow:
-    0 0 14px rgba(255, 242, 216, 0.82),
-    0 0 28px rgba(229, 177, 154, 0.36);
-  animation: introMeteor 1.45s ease-out forwards;
+    0 0 10px rgba(255, 237, 208, 0.72),
+    0 0 22px rgba(231, 169, 151, 0.54);
+  transform: rotate(-24deg);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .intro-meteor::after {
@@ -1719,137 +1743,100 @@ button {
   position: absolute;
   right: 0;
   top: 50%;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 250, 235, 0.96);
+  background: #fff2cf;
   box-shadow:
-    0 0 10px rgba(255, 244, 220, 0.9),
-    0 0 18px rgba(226, 180, 160, 0.6);
+    0 0 8px rgba(255, 242, 207, 0.95),
+    0 0 18px rgba(232, 167, 149, 0.68);
 }
 
 .intro-meteor-1 {
+  top: 22%;
   left: -18%;
-  top: 24%;
-  animation-delay: 0.3s;
+  animation: introMeteorFly 1.15s ease-out 0.25s forwards;
 }
 
 .intro-meteor-2 {
-  left: -24%;
-  top: 54%;
-  width: 124px;
-  animation-delay: 0.95s;
-  background: linear-gradient(90deg, transparent, rgba(255, 248, 232, 0.95), rgba(255, 218, 190, 0.58));
+  top: 38%;
+  left: -22%;
+  width: 92px;
+  animation: introMeteorFly 1.05s ease-out 1.15s forwards;
 }
 
 .intro-meteor-3 {
-  left: -20%;
-  top: 72%;
-  width: 108px;
-  animation-delay: 1.55s;
-  background: linear-gradient(90deg, transparent, rgba(255, 250, 230, 0.94), rgba(220, 185, 150, 0.58));
+  top: 68%;
+  left: -24%;
+  width: 106px;
+  animation: introMeteorFly 1.22s ease-out 2.05s forwards;
 }
 
-.intro-sparkle {
-  position: absolute;
-  color: rgba(255, 244, 222, 0.94);
-  text-shadow:
-    0 0 10px rgba(255, 244, 222, 0.74),
-    0 0 20px rgba(226, 180, 160, 0.42);
-  opacity: 0;
-  animation: introSparkle 2.3s ease-in-out infinite;
-}
-
-.intro-sparkle-1 {
-  left: 23%;
-  top: 31%;
-  font-size: 16px;
-  animation-delay: 1.3s;
-}
-
-.intro-sparkle-2 {
-  right: 24%;
-  top: 28%;
-  font-size: 14px;
-  color: rgba(244, 199, 178, 0.95);
-  animation-delay: 1.75s;
-}
-
-.intro-sparkle-3 {
-  left: 31%;
-  bottom: 27%;
-  font-size: 13px;
-  animation-delay: 2.05s;
-}
-
-.intro-sparkle-4 {
-  right: 29%;
-  bottom: 32%;
-  font-size: 17px;
-  color: rgba(255, 235, 215, 0.95);
-  animation-delay: 2.35s;
-}
-
-@keyframes introMeteor {
+@keyframes introMeteorFly {
   0% {
     opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.65);
+    transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.72);
   }
-  12% {
-    opacity: 1;
-  }
-  72% {
+  15% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate3d(138vw, 44vh, 0) rotate(-24deg) scaleX(1);
+    transform: translate3d(140vw, 48vh, 0) rotate(-24deg) scaleX(1);
   }
 }
 
-@keyframes introSparkle {
+@keyframes introSparklePulse {
   0%, 100% {
-    opacity: 0;
-    transform: scale(0.75) rotate(0deg);
+    opacity: 0.62;
+    transform: scale(0.82) rotate(0deg);
+    filter: brightness(0.96);
   }
-  35% {
-    opacity: 0.98;
-    transform: scale(1.12) rotate(12deg);
+  50% {
+    opacity: 1;
+    transform: scale(1.18) rotate(10deg);
+    filter: brightness(1.2);
   }
-  64% {
-    opacity: 0.45;
-    transform: scale(0.9) rotate(-8deg);
+}
+
+@keyframes introTextFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
   }
 }
 
 @media (max-width: 768px) {
-  .intro-card {
-    min-width: min(360px, calc(100vw - 36px));
-    min-height: 132px;
-    padding: 34px 28px 26px;
-    border-radius: 24px;
-  }
-
   .intro-message {
-    font-size: clamp(24px, 8vw, 34px);
+    font-size: clamp(28px, 8vw, 44px);
     letter-spacing: 0.06em;
   }
 
-  .intro-meteor {
-    width: 118px;
+  .intro-sparkle-a {
+    top: -20px;
+    right: -26px;
+  }
+
+  .intro-sparkle-b {
+    top: -38px;
+    right: 6px;
+  }
+
+  .intro-sparkle-bl {
+    left: -26px;
+    bottom: -24px;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .intro-meteor,
-  .intro-sparkle {
-    animation: none !important;
-    opacity: 0.72;
+@media (max-width: 480px) {
+  .intro-message {
+    font-size: clamp(26px, 9vw, 38px);
   }
 
-  .intro-overlay,
-  .intro-skip {
-    transition: none !important;
+  .intro-message-wrap {
+    padding: 8px 14px;
   }
 }
