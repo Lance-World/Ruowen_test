@@ -1,4 +1,4 @@
-:root {
+::root {
   --bg-main: #edf7f6;
   --bg-soft: #f7fcfb;
   --bg-card: rgba(247, 252, 251, 0.88);
@@ -1613,9 +1613,10 @@ button {
   }
 }
 
+
 /* =========================================================
    INTRO OVERLAY - Center Text + Rose Gold Stars
-   進站星空短句開場：點擊可跳過，文字自動換行
+   進站星空短句開場：6.6 秒自動淡出，點一下可跳過
 ========================================================= */
 
 .intro-overlay {
@@ -1629,7 +1630,6 @@ button {
   -webkit-backdrop-filter: blur(7px) saturate(1.04);
   opacity: 1;
   pointer-events: auto;
-  cursor: pointer;
   transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
@@ -1644,14 +1644,14 @@ button {
 
 .intro-glass {
   position: relative;
-  width: min(88vw, 620px);
-  min-height: 220px;
+  width: min(86vw, 520px);
+  min-height: 180px;
   display: grid;
   place-items: center;
-  border-radius: 34px;
+  border-radius: 32px;
   background:
-    radial-gradient(circle at 24% 18%, rgba(255, 220, 205, 0.18), transparent 36%),
-    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.14), transparent 38%),
+    radial-gradient(circle at 25% 20%, rgba(255, 220, 205, 0.16), transparent 36%),
+    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.13), transparent 38%),
     rgba(235, 238, 239, 0.17);
   border: 1px solid rgba(255, 238, 225, 0.34);
   box-shadow:
@@ -1662,31 +1662,24 @@ button {
 
 .intro-message-wrap {
   position: relative;
-  width: min(100%, 560px);
-  min-height: 138px;
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  padding: 32px 76px;
+  padding: 28px 58px;
 }
 
 .intro-message-text {
   position: relative;
   z-index: 2;
-  max-width: min(9em, 100%);
   color: rgba(255, 248, 240, 0.96);
-  font-size: clamp(28px, 4.2vw, 44px);
+  font-size: clamp(22px, 5vw, 32px);
   font-weight: 800;
-  line-height: 1.16;
-  letter-spacing: 0.06em;
+  line-height: 1.18;
+  letter-spacing: 0.08em;
   text-align: center;
   text-shadow:
     0 2px 12px rgba(71, 48, 42, 0.38),
     0 0 22px rgba(255, 214, 195, 0.32);
-  white-space: normal;
-  word-break: break-all;
-  overflow-wrap: anywhere;
-  margin-left: auto;
-  margin-right: auto;
+  white-space: nowrap;
 }
 
 .intro-star {
@@ -1702,24 +1695,24 @@ button {
 }
 
 .intro-star-top-a {
-  right: 34px;
-  top: 18px;
-  font-size: clamp(18px, 3.4vw, 26px);
+  right: 24px;
+  top: 10px;
+  font-size: clamp(16px, 3.6vw, 23px);
   animation-delay: 0.12s;
 }
 
 .intro-star-top-b {
-  right: 16px;
-  top: 50px;
-  font-size: clamp(13px, 2.6vw, 19px);
+  right: -2px;
+  top: 31px;
+  font-size: clamp(12px, 2.8vw, 18px);
   color: #ffe8c8;
   animation-delay: 0.48s;
 }
 
 .intro-star-bottom {
-  left: 20px;
-  bottom: 18px;
-  font-size: clamp(14px, 2.8vw, 20px);
+  left: 4px;
+  bottom: 12px;
+  font-size: clamp(13px, 3vw, 19px);
   color: #f8c9bd;
   animation-delay: 0.72s;
 }
@@ -1803,27 +1796,6 @@ button {
 }
 
 /* =========================================================
-   INFO TITLE RANDOM NUMBER
-   資訊欄標題後方隨機數字樣式
-========================================================= */
-
-.info-title-number {
-  display: inline-block;
-  margin-left: 0.42em;
-  font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", sans-serif;
-  font-size: 1em;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.035em;
-  background: linear-gradient(135deg, #c98d83 0%, #f0c8b4 32%, #46507f 72%, #272a63 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 1px 12px rgba(201, 141, 131, 0.22);
-  vertical-align: baseline;
-}
-
-/* =========================================================
    SEARCH INPUT FIX - Desktop + RWD
    修正搜尋欄文字上下截斷
 ========================================================= */
@@ -1853,36 +1825,16 @@ button {
 @media (max-width: 768px) {
   .intro-glass {
     width: min(88vw, 430px);
-    min-height: 178px;
-    border-radius: 28px;
+    min-height: 160px;
+    border-radius: 26px;
   }
 
   .intro-message-wrap {
-    width: 100%;
-    min-height: 124px;
-    padding: 26px 54px;
+    padding: 24px 48px;
   }
 
   .intro-message-text {
-    max-width: min(9em, 100%);
-    font-size: clamp(24px, 7vw, 34px);
-    line-height: 1.16;
-    letter-spacing: 0.055em;
-  }
-
-  .intro-star-top-a {
-    right: 22px;
-    top: 12px;
-  }
-
-  .intro-star-top-b {
-    right: 6px;
-    top: 38px;
-  }
-
-  .intro-star-bottom {
-    left: 10px;
-    bottom: 12px;
+    font-size: clamp(22px, 6vw, 30px);
   }
 
   .sidebar-search {
@@ -1896,34 +1848,306 @@ button {
 @media (max-width: 480px) {
   .intro-glass {
     width: min(90vw, 360px);
-    min-height: 158px;
-    border-radius: 24px;
+    min-height: 148px;
   }
 
   .intro-message-wrap {
-    width: 100%;
-    min-height: 112px;
-    padding: 24px 46px;
+    padding: 22px 42px;
   }
 
   .intro-message-text {
-    max-width: min(9em, 100%);
-    font-size: clamp(22px, 7vw, 31px);
-    letter-spacing: 0.045em;
+    font-size: clamp(21px, 6.4vw, 28px);
+    letter-spacing: 0.06em;
   }
 
   .intro-star-top-a {
-    right: 17px;
-    top: 10px;
+    right: 18px;
+    top: 8px;
   }
 
   .intro-star-top-b {
-    right: 1px;
-    top: 34px;
+    right: -3px;
+    top: 28px;
   }
 
   .intro-star-bottom {
-    left: 6px;
-    bottom: 10px;
+    left: 2px;
+    bottom: 9px;
+  }
+}
+
+
+/* =========================================================
+   INTRO OVERLAY RESPONSIVE TYPE FINAL
+   桌機與手機 overlay 文字自動換行、避免被裁切
+========================================================= */
+
+.intro-message-text {
+  max-width: min(9em, 100%) !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  text-align: center !important;
+  line-height: 1.15 !important;
+  font-size: clamp(28px, 4.2vw, 44px) !important;
+}
+
+.intro-message-wrap {
+  width: min(92vw, 520px) !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .intro-message-text {
+    max-width: 9em !important;
+    font-size: clamp(25px, 7vw, 34px) !important;
+    line-height: 1.18 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .intro-message-text {
+    max-width: 9em !important;
+    font-size: clamp(23px, 7vw, 31px) !important;
+    letter-spacing: 0.04em !important;
+  }
+}
+
+/* =========================================================
+   INFO PANEL TITLE NUMBER
+   資訊欄標題後方 0000-9999 隨機數字
+========================================================= */
+
+#infoTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.48em;
+  flex-wrap: wrap;
+}
+
+.info-title-text {
+  display: inline-block;
+  min-width: 0;
+}
+
+.info-title-number {
+  display: inline-block;
+  font-family: "Montserrat", "Poppins", "Lato", system-ui, sans-serif;
+  font-size: 1em;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.035em;
+  background: linear-gradient(135deg, #c58a78 0%, #e7b8a2 35%, #27345f 72%, #4b2f73 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 3px rgba(57, 47, 86, 0.18));
+}
+
+/* =========================================================
+   INFO PANEL COMPACT - ALL PLATFORMS
+   點擊資訊欄圖案：收合資訊，只留下 圖案 > 標題節點 > 數字
+========================================================= */
+
+.info-icon {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.info-icon:active {
+  transform: scale(0.96);
+  filter: brightness(0.98);
+}
+
+.workspace.info-panel-compact-workspace {
+  grid-template-rows: minmax(0, 1fr) 8px 84px !important;
+}
+
+.workspace.info-panel-compact-workspace .graph-section,
+.workspace.info-panel-compact-workspace .graph-card {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.workspace.info-panel-compact-workspace #mainResizeHandle {
+  height: 8px !important;
+  min-height: 8px !important;
+  max-height: 8px !important;
+  display: block !important;
+}
+
+#infoPanel.info-panel-compact {
+  width: 100% !important;
+  min-height: 84px !important;
+  height: 84px !important;
+  max-height: 84px !important;
+  margin: 0 !important;
+  padding: 10px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+#infoPanel.info-panel-compact .info-header {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+#infoPanel.info-panel-compact .info-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+#infoPanel.info-panel-compact .info-title-block {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+#infoPanel.info-panel-compact #infoTitle {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.48em !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(18px, 2.4vw, 24px) !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+}
+
+#infoPanel.info-panel-compact .info-title-text {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+#infoPanel.info-panel-compact .info-title-number {
+  flex-shrink: 0 !important;
+}
+
+#infoPanel.info-panel-compact .info-tags,
+#infoPanel.info-panel-compact .info-related-row,
+#infoPanel.info-panel-compact .info-split-area,
+#infoPanel.info-panel-compact #infoRightResizeHandle,
+#infoPanel.info-panel-compact .info-right-resize-handle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 展開狀態：避免相關句子 / 相關出處留下過多空白 */
+@media (max-width: 768px) {
+  #infoPanel:not(.info-panel-compact) .info-split-area {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.info-panel-compact) .resize-handle.vertical {
+    width: 100% !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    flex-shrink: 0 !important;
+  }
+
+  #infoPanel:not(.info-panel-compact) .info-box {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.info-panel-compact) .sentence-box {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #infoPanel:not(.info-panel-compact) .source-box {
+    max-height: 42vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .workspace.info-panel-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 70px !important;
+  }
+
+  .workspace.info-panel-compact-workspace #mainResizeHandle {
+    height: 9px !important;
+    min-height: 9px !important;
+    max-height: 9px !important;
+  }
+
+  #infoPanel.info-panel-compact {
+    min-height: 70px !important;
+    height: 70px !important;
+    max-height: 70px !important;
+    padding: 8px 14px !important;
+  }
+
+  #infoPanel.info-panel-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  #infoPanel.info-panel-compact #infoTitle {
+    font-size: clamp(16px, 4.5vw, 20px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace.info-panel-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 64px !important;
+  }
+
+  #infoPanel.info-panel-compact {
+    min-height: 64px !important;
+    height: 64px !important;
+    max-height: 64px !important;
+    padding: 7px 12px !important;
+  }
+
+  #infoPanel.info-panel-compact .info-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 15px !important;
+  }
+
+  #infoPanel.info-panel-compact #infoTitle {
+    font-size: clamp(15px, 4.7vw, 18px) !important;
   }
 }
