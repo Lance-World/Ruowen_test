@@ -1,11 +1,14 @@
 /* =========================================================
-   RUOWEN KNOWLEDGE GRAPH - CONSOLIDATED STYLE.CSS
-   整合原始 CSS 與後續補丁，以後面的視覺與手機版邏輯為主
-
-   Layout target:
-   1. Desktop：全螢幕地圖 + 左側浮動玻璃 Sidebar + 底部浮動資訊欄
-   2. Mobile：上方浮動 Sidebar / 收合只留右上角 ☰ / 三個操作按鈕右側直排
-   3. 移除 Sidebar resize bar，但保留資訊欄上下拖曳與內部分隔拖曳
+   RUOWEN KNOWLEDGE GRAPH - INTEGRATED STYLE.CSS
+   設計決策：
+   1B：手機 Sidebar 收合後只留右上角 ☰
+   2B：Sidebar resize bar 桌機保留，手機刪除
+   3：桌機右上橫排；手機收合時左上橫排
+   4D/JS-4A：floating-note 顯示 20 秒後隱藏
+   5A：Info 收合後留 ✦ + 節點標題 + 隨機數字
+   6A：桌機 Info 底部浮動卡片，避開 Sidebar
+   7A：桌機 Sidebar 收合後保留 64px 窄欄
+   8B：保留 1100 / 768 / 480 / 380 RWD
 ========================================================= */
 
 :root {
@@ -31,8 +34,8 @@
 
   --radius-xl: 32px;
   --radius-lg: 24px;
-  --shadow: 0 12px 40px rgba(23, 60, 67, 0.12);
   --shadow-soft: 0 12px 40px rgba(23, 60, 67, 0.12);
+  --shadow-subtle: 0 10px 28px rgba(23, 60, 67, 0.08);
 
   --sidebar-left: 20px;
   --sidebar-top: 20px;
@@ -77,7 +80,7 @@ button {
 }
 
 /* =========================================================
-   APP LAYOUT - Fullscreen map canvas
+   APP LAYOUT - Fullscreen canvas
 ========================================================= */
 
 .app-shell {
@@ -85,7 +88,6 @@ button {
   width: 100vw;
   height: 100vh;
   padding: 0;
-  gap: 0;
   display: block;
   overflow: hidden;
   background: radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%);
@@ -108,17 +110,16 @@ button {
 }
 
 .workspace {
-  display: block;
   overflow: hidden;
 }
 
 .graph-card {
   overflow: hidden;
-  border-radius: 0;
   border: 0;
+  border-radius: 0;
   box-shadow: none;
   background:
-    radial-gradient(circle at 22% 20%, rgba(232, 199, 111, 0.14), transparent 26%),
+    radial-gradient(circle at 22% 20%, rgba(232, 199, 111, 0.12), transparent 26%),
     radial-gradient(circle at 72% 28%, rgba(191, 231, 226, 0.48), transparent 32%),
     radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%);
 }
@@ -138,10 +139,10 @@ button {
   left: var(--sidebar-left);
   top: var(--sidebar-top);
   bottom: 20px;
-  width: 280px;
+  width: var(--sidebar-width);
   max-width: calc(100vw - 40px);
   height: auto;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   padding: 18px;
@@ -152,7 +153,10 @@ button {
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(20px) saturate(1.08);
   -webkit-backdrop-filter: blur(20px) saturate(1.08);
-  transition: width 0.28s ease, padding 0.28s ease, opacity 0.28s ease;
+  transition:
+    width 0.28s ease,
+    padding 0.28s ease,
+    opacity 0.28s ease;
 }
 
 .sidebar-toggle,
@@ -163,13 +167,13 @@ button {
   height: 34px;
   border: 0;
   border-radius: 999px;
-  color: white;
+  color: #ffffff;
   cursor: pointer;
   font-size: 15px;
   display: grid;
   place-items: center;
   box-shadow: 0 8px 18px rgba(92, 166, 168, 0.22);
-  z-index: 20;
+  z-index: 30;
 }
 
 .sidebar-toggle {
@@ -184,9 +188,9 @@ button {
 
 .sidebar-toggle:hover,
 .search-toggle:hover,
+.floating-actions button:hover,
 .sidebar-main-btn:hover,
-.sidebar-sub-btn:hover,
-.floating-actions button:hover {
+.sidebar-sub-btn:hover {
   filter: brightness(0.96);
 }
 
@@ -200,14 +204,22 @@ button {
   color: var(--teal-deep);
   font-size: 22px;
   margin-bottom: 12px;
-  transition: width 0.28s ease, height 0.28s ease, margin 0.28s ease, font-size 0.28s ease;
+  transition:
+    width 0.28s ease,
+    height 0.28s ease,
+    margin 0.28s ease,
+    font-size 0.28s ease;
 }
 
 .sidebar-title {
   display: grid;
   gap: 2px;
   margin-bottom: 14px;
-  transition: opacity 0.18s ease, visibility 0.18s ease, height 0.18s ease, margin 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease,
+    height 0.18s ease,
+    margin 0.18s ease;
 }
 
 .sidebar-title strong {
@@ -228,7 +240,11 @@ button {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(199, 220, 222, 0.72);
-  transition: opacity 0.18s ease, max-height 0.22s ease, margin 0.18s ease, padding 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    max-height 0.22s ease,
+    margin 0.18s ease,
+    padding 0.18s ease;
 }
 
 .sidebar-search-panel.search-collapsed {
@@ -241,20 +257,36 @@ button {
   border-color: transparent;
 }
 
+.sidebar-section {
+  margin-bottom: 18px;
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease,
+    height 0.18s ease,
+    margin 0.18s ease;
+}
+
+.sidebar-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 .sidebar-search {
   width: 100%;
-  min-height: 44px;
   height: 44px;
-  line-height: normal;
-  display: block;
-  padding: 0 14px;
-  margin-bottom: 8px;
-  outline: none;
+  min-height: 44px;
   border: 1px solid rgba(199, 220, 222, 0.9);
-  border-radius: 999px;
   background: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  padding: 0 14px;
+  outline: none;
   color: var(--text-main);
   font-size: 13px;
+  line-height: normal;
+  margin-bottom: 8px;
 }
 
 .sidebar-search::placeholder {
@@ -269,18 +301,18 @@ button {
 
 .search-action-row {
   display: flex;
-  align-items: stretch;
   gap: 8px;
+  align-items: stretch;
 }
 
 .sidebar-main-btn,
 .sidebar-sub-btn {
   min-height: 42px;
-  line-height: normal;
   border: 0;
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 0 14px;
   cursor: pointer;
+  line-height: normal;
 }
 
 .sidebar-main-btn {
@@ -294,19 +326,6 @@ button {
   min-width: 64px;
   background: rgba(83, 113, 118, 0.13);
   color: var(--text-secondary);
-}
-
-.sidebar-section {
-  margin-bottom: 18px;
-  transition: opacity 0.18s ease, visibility 0.18s ease, height 0.18s ease, margin 0.18s ease;
-}
-
-.sidebar-label {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 8px;
 }
 
 .side-item,
@@ -348,11 +367,38 @@ button {
   padding-right: 4px;
 }
 
+/* Desktop：保留 Sidebar resize bar */
+.sidebar-resize-handle {
+  position: absolute;
+  left: calc(var(--sidebar-left) + var(--sidebar-width) + 8px);
+  top: 26px;
+  bottom: 26px;
+  width: 8px;
+  height: auto;
+  z-index: 21;
+  cursor: col-resize;
+  border-radius: 999px;
+  background: rgba(92, 166, 168, 0.14);
+  border: 1px solid rgba(199, 220, 222, 0.42);
+  opacity: 0.78;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sidebar-resize-handle:hover {
+  background: rgba(167, 200, 201, 0.34);
+}
+
+/* Desktop：Sidebar 收合後保留 64px 窄欄 */
 .app-shell.sidebar-collapsed .sidebar {
-  width: 64px;
-  bottom: 20px;
+  width: 64px !important;
   padding: 14px 10px;
   align-items: center;
+}
+
+.app-shell.sidebar-collapsed .sidebar-resize-handle {
+  display: none;
 }
 
 .app-shell.sidebar-collapsed .sidebar-toggle {
@@ -384,23 +430,8 @@ button {
   overflow: hidden;
 }
 
-/* Sidebar resize bar intentionally removed. */
-#sidebarResizeHandle,
-.sidebar-resize-handle {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: 0 !important;
-  max-height: 0 !important;
-  pointer-events: none !important;
-}
-
 /* =========================================================
-   FLOATING ACTIONS - Desktop right top
+   FLOATING ACTIONS + NOTE
 ========================================================= */
 
 .floating-actions {
@@ -419,7 +450,7 @@ button {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(199, 220, 222, 0.72);
-  box-shadow: 0 10px 28px rgba(23, 60, 67, 0.08);
+  box-shadow: var(--shadow-subtle);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -431,15 +462,42 @@ button {
   padding: 0 15px;
   border: 0;
   border-radius: 999px;
+  cursor: pointer;
   background: rgba(92, 166, 168, 0.88);
-  color: #fff;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 700;
-  cursor: pointer;
 }
 
 .floating-note {
-  display: none;
+  position: absolute;
+  right: 20px;
+  top: 82px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(199, 220, 222, 0.8);
+  color: var(--text-secondary);
+  font-size: 12px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 34;
+  opacity: 1;
+  transition: opacity 0.36s ease, visibility 0.36s ease, transform 0.36s ease;
+}
+
+.floating-note strong {
+  color: var(--teal-deep);
+  font-size: 13px;
+}
+
+.floating-note.floating-note-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
 }
 
 .empty-state {
@@ -452,6 +510,7 @@ button {
   border-radius: 18px;
   padding: 14px 20px;
   color: var(--text-secondary);
+  z-index: 15;
 }
 
 .hidden {
@@ -459,34 +518,27 @@ button {
 }
 
 /* =========================================================
-   RESIZE HANDLES - Info panel only
+   INFO PANEL + RESIZE HANDLES
 ========================================================= */
 
-#mainResizeHandle,
-#innerResizeHandle,
-#infoRightResizeHandle,
 .resize-handle {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
-#mainResizeHandle.resize-handle.horizontal,
 .resize-handle.horizontal {
-  height: 8px;
-  cursor: row-resize;
-  border-radius: 999px;
-  background: rgba(92, 166, 168, 0.18);
-  border: 1px solid rgba(199, 220, 222, 0.52);
-}
-
-#mainResizeHandle.resize-handle.horizontal {
   position: absolute;
   left: var(--info-left);
   right: var(--info-right);
   bottom: calc(20px + var(--info-height) + 8px);
   width: auto;
-  z-index: 12;
+  height: 8px;
+  z-index: 22;
+  cursor: row-resize;
+  border-radius: 999px;
+  background: rgba(92, 166, 168, 0.18);
+  border: 1px solid rgba(199, 220, 222, 0.52);
 }
 
 .resize-handle.vertical {
@@ -497,32 +549,11 @@ button {
   border: 1px solid rgba(199, 220, 222, 0.52);
 }
 
-#infoRightResizeHandle,
-.resize-handle.info-right,
-.info-right-resize-handle {
-  position: absolute;
-  top: 16px;
-  right: 4px;
-  bottom: 16px;
-  width: 8px;
-  cursor: col-resize;
-  border-radius: 999px;
-  background: rgba(92, 166, 168, 0.16);
-  border: 1px solid rgba(199, 220, 222, 0.45);
-  z-index: 25;
+.resize-handle.horizontal:hover,
+.resize-handle.vertical:hover,
+.resize-handle.info-right:hover {
+  background: rgba(167, 200, 201, 0.34);
 }
-
-#mainResizeHandle:hover,
-#innerResizeHandle:hover,
-#infoRightResizeHandle:hover,
-.resize-handle:hover,
-.info-right-resize-handle:hover {
-  background: rgba(217, 170, 56, 0.34);
-}
-
-/* =========================================================
-   INFO PANEL - Desktop bottom glass card
-========================================================= */
 
 .info-panel {
   position: absolute;
@@ -532,7 +563,7 @@ button {
   width: auto;
   height: var(--info-height);
   min-height: 160px;
-  z-index: 10;
+  z-index: 20;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 9px;
@@ -544,7 +575,17 @@ button {
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(20px) saturate(1.08);
   -webkit-backdrop-filter: blur(20px) saturate(1.08);
-  transition: left 0.28s ease, right 0.28s ease, height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1), padding 0.28s ease;
+  transition:
+    left 0.28s ease,
+    right 0.28s ease,
+    height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    max-height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    min-height 0.34s cubic-bezier(0.165, 0.84, 0.44, 1),
+    padding 0.28s ease;
+}
+
+.workspace.info-compact-workspace .resize-handle.horizontal {
+  bottom: 106px;
 }
 
 .info-header {
@@ -584,6 +625,7 @@ button {
   margin: 0 0 6px;
   color: var(--teal-deep);
   font-size: 20px;
+  line-height: 1.25;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
@@ -617,31 +659,21 @@ button {
 .inline-pill-list {
   display: flex;
   gap: 7px;
-}
-
-.info-tags {
   flex-wrap: wrap;
-}
-
-.inline-pill-list {
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  padding-bottom: 2px;
 }
 
 .info-tags span,
 .inline-pill-list span {
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
   border-radius: 999px;
   background: rgba(215, 238, 233, 0.52);
   color: #315b63;
-  border: 1px solid rgba(241, 223, 172, 0.42);
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
+  border: 1px solid rgba(241, 223, 172, 0.42);
+  flex-shrink: 0;
 }
 
 .info-related-row {
@@ -657,6 +689,14 @@ button {
   color: var(--teal-deep);
   font-size: 13px;
   flex-shrink: 0;
+}
+
+.inline-pill-list {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding-bottom: 2px;
+  flex-wrap: nowrap;
 }
 
 .info-split-area {
@@ -730,19 +770,35 @@ button {
   text-decoration: underline;
 }
 
-.source-link.disabled,
+.source-link.disabled {
+  color: var(--text-muted);
+  cursor: default;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.resize-handle.info-right {
+  position: absolute;
+  top: 16px;
+  right: 4px;
+  bottom: 16px;
+  width: 8px;
+  cursor: col-resize;
+  border-radius: 999px;
+  background: rgba(92, 166, 168, 0.16);
+  border: 1px solid rgba(199, 220, 222, 0.45);
+  z-index: 25;
+}
+
 .muted {
   color: var(--text-muted) !important;
   background: transparent !important;
-  text-decoration: none;
-}
-
-.muted {
   padding: 0 !important;
+  border: 0 !important;
 }
 
-/* Info compact */
-.workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+/* Info compact：只留下 ✦ + 標題 + 隨機數字 */
+.workspace.info-compact-workspace .resize-handle.horizontal {
   bottom: 106px;
 }
 
@@ -784,16 +840,16 @@ button {
 
 #infoPanel.info-compact #infoTitle {
   margin: 0;
-  max-width: 100%;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.36em;
   font-size: clamp(18px, 2.1vw, 24px);
   line-height: 1.15;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.36em;
 }
 
 #infoPanel.info-compact .info-title-text,
@@ -812,38 +868,21 @@ button {
 #infoPanel.info-compact .info-tags,
 #infoPanel.info-compact .info-related-row,
 #infoPanel.info-compact .info-split-area,
-#infoPanel.info-compact #infoRightResizeHandle,
-#infoPanel.info-compact .info-right-resize-handle,
 #infoPanel.info-compact .resize-handle.info-right {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-}
-
-/* Compatibility with older JS/class names, if any. */
-#infoPanel.mobile-info-compact {
-  min-height: 78px;
-  height: 78px;
-  max-height: 78px;
-}
-
-#infoPanel.mobile-info-compact .info-tags,
-#infoPanel.mobile-info-compact .info-related-row,
-#infoPanel.mobile-info-compact .info-split-area,
-#infoPanel.mobile-info-compact #infoRightResizeHandle,
-#infoPanel.mobile-info-compact .info-right-resize-handle {
-  display: none !important;
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+  height: 0;
+  min-height: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* =========================================================
-   GRAPH NODES AND LINKS
+   GRAPH NODES / LINKS
 ========================================================= */
 
 .node {
@@ -911,7 +950,7 @@ button {
 }
 
 .link.highlight {
-  stroke: rgba(122, 169, 174, 0.78);
+  stroke: rgba(122, 169, 174, 0.78) !important;
   stroke-opacity: 1;
   stroke-width: 3px;
 }
@@ -925,7 +964,8 @@ button {
 .info-panel::-webkit-scrollbar,
 .info-box::-webkit-scrollbar,
 .quote-list::-webkit-scrollbar,
-.source-list::-webkit-scrollbar {
+.source-list::-webkit-scrollbar,
+.floating-actions::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
@@ -935,7 +975,8 @@ button {
 .info-panel::-webkit-scrollbar-track,
 .info-box::-webkit-scrollbar-track,
 .quote-list::-webkit-scrollbar-track,
-.source-list::-webkit-scrollbar-track {
+.source-list::-webkit-scrollbar-track,
+.floating-actions::-webkit-scrollbar-track {
   background: rgba(199, 220, 222, 0.25);
   border-radius: 999px;
 }
@@ -945,18 +986,10 @@ button {
 .info-panel::-webkit-scrollbar-thumb,
 .info-box::-webkit-scrollbar-thumb,
 .quote-list::-webkit-scrollbar-thumb,
-.source-list::-webkit-scrollbar-thumb {
+.source-list::-webkit-scrollbar-thumb,
+.floating-actions::-webkit-scrollbar-thumb {
   background: rgba(92, 166, 168, 0.5);
   border-radius: 999px;
-}
-
-.sidebar-category-list::-webkit-scrollbar-thumb:hover,
-.inline-pill-list::-webkit-scrollbar-thumb:hover,
-.info-panel::-webkit-scrollbar-thumb:hover,
-.info-box::-webkit-scrollbar-thumb:hover,
-.quote-list::-webkit-scrollbar-thumb:hover,
-.source-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(92, 166, 168, 0.75);
 }
 
 /* =========================================================
@@ -998,7 +1031,9 @@ button {
     radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.13), transparent 38%),
     rgba(235, 238, 239, 0.17);
   border: 1px solid rgba(255, 238, 225, 0.34);
-  box-shadow: 0 28px 80px rgba(23, 35, 38, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.36);
+  box-shadow:
+    0 28px 80px rgba(23, 35, 38, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36);
   overflow: hidden;
 }
 
@@ -1019,17 +1054,38 @@ button {
   line-height: 1.16;
   letter-spacing: 0.08em;
   text-align: center;
-  text-shadow: 0 2px 12px rgba(71, 48, 42, 0.38), 0 0 22px rgba(255, 214, 195, 0.32);
+  text-shadow:
+    0 2px 12px rgba(71, 48, 42, 0.38),
+    0 0 22px rgba(255, 214, 195, 0.32);
   white-space: normal;
   word-break: break-all;
   overflow-wrap: anywhere;
+}
+
+.intro-skip-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  z-index: 5;
+  border: 1px solid rgba(255, 238, 225, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 248, 240, 0.92);
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .intro-star {
   position: absolute;
   z-index: 3;
   color: #ffd8c9;
-  text-shadow: 0 0 8px rgba(255, 211, 197, 0.92), 0 0 18px rgba(255, 236, 210, 0.58), 0 0 34px rgba(235, 194, 170, 0.38);
+  text-shadow:
+    0 0 8px rgba(255, 211, 197, 0.92),
+    0 0 18px rgba(255, 236, 210, 0.58),
+    0 0 34px rgba(235, 194, 170, 0.38);
   animation: introStarTwinkle 1.58s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -1079,7 +1135,9 @@ button {
   border-radius: 999px;
   background: #fff7ee;
   transform: translateY(-50%);
-  box-shadow: 0 0 8px rgba(255, 239, 224, 0.95), 0 0 14px rgba(248, 197, 183, 0.8);
+  box-shadow:
+    0 0 8px rgba(255, 239, 224, 0.95),
+    0 0 14px rgba(248, 197, 183, 0.8);
 }
 
 .meteor-one {
@@ -1134,21 +1192,31 @@ button {
 }
 
 /* =========================================================
-   RESPONSIVE - Tablet
+   RWD <= 1100px
 ========================================================= */
 
 @media (max-width: 1100px) {
+  .sidebar {
+    width: 240px;
+  }
+
   .app-shell.sidebar-collapsed .sidebar {
-    width: 58px;
+    width: 58px !important;
+  }
+
+  .floating-actions {
+    max-width: calc(100vw - 36px);
+    overflow-x: auto;
   }
 
   .floating-note {
-    display: none;
+    top: 76px;
+    max-width: 260px;
   }
 }
 
 /* =========================================================
-   RESPONSIVE - Mobile
+   RWD <= 768px - Mobile
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -1161,25 +1229,23 @@ button {
     overflow: hidden;
   }
 
+  /* 手機版 Sidebar 展開：上方玻璃卡 */
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 12px;
     right: 12px;
     top: 12px;
     bottom: auto;
-    width: calc(100% - 24px);
+    width: calc(100% - 24px) !important;
     height: auto;
     min-height: 132px;
     max-height: 58vh;
     padding: 14px;
     border-radius: 22px;
-    background: var(--bg-glass);
-    border: 1px solid rgba(255, 255, 255, 0.44);
-    box-shadow: var(--shadow-soft);
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar .logo {
+  .sidebar .logo {
     position: absolute;
     left: 14px;
     top: 12px;
@@ -1191,19 +1257,7 @@ button {
     z-index: 18;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar .search-toggle {
-    right: 58px;
-    left: auto;
-    top: 12px;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .sidebar .sidebar-toggle {
-    right: 14px;
-    left: auto;
-    top: 12px;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+  .sidebar-title {
     position: relative;
     width: 100%;
     min-height: 48px;
@@ -1219,63 +1273,60 @@ button {
     visibility: visible;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar-title strong {
-    display: block;
-    width: 100%;
+  .sidebar-title strong {
     font-size: 22px;
     font-weight: 800;
     line-height: 1.02;
-    text-align: center;
     white-space: nowrap;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar-title span {
-    display: block;
-    width: 100%;
+  .sidebar-title span {
     font-size: 14px;
     line-height: 1.05;
-    text-align: center;
     white-space: nowrap;
+  }
+
+  .search-toggle {
+    right: 58px;
+    top: 12px;
+  }
+
+  .sidebar-toggle {
+    right: 14px;
+    top: 12px;
   }
 
   .sidebar-search-panel {
-    margin-top: 4px;
+    margin-top: 10px;
     max-height: 230px;
     padding: 12px;
+    width: 100%;
   }
 
   .sidebar-search-panel:not(.search-collapsed) {
     min-height: 118px;
-    margin-top: 10px;
-    width: 100%;
   }
 
   .sidebar-search {
     height: 46px;
     min-height: 46px;
-    padding: 0 14px;
     font-size: 14px;
-  }
-
-  .search-action-row {
-    min-height: 42px;
   }
 
   .sidebar-main-btn,
   .sidebar-sub-btn {
     height: 42px;
     min-height: 42px;
-    padding: 0 14px;
     font-size: 13px;
-    line-height: 42px;
   }
 
+  /* 手機版 Sidebar 收合：只留右上角 ☰ */
   .app-shell.sidebar-collapsed .sidebar {
     left: auto;
     right: 10px;
     top: 10px;
     bottom: auto;
-    width: 54px;
+    width: 54px !important;
     height: 54px;
     min-height: 54px;
     max-height: 54px;
@@ -1287,7 +1338,7 @@ button {
     -webkit-backdrop-filter: none;
     border-radius: 0;
     overflow: visible;
-    z-index: 40;
+    z-index: 50;
     pointer-events: none;
   }
 
@@ -1303,11 +1354,11 @@ button {
     transform: none;
     border-radius: 999px;
     background: rgba(92, 166, 168, 0.88);
-    color: #fff;
+    color: #ffffff;
     box-shadow: 0 10px 26px rgba(23, 60, 67, 0.16);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    z-index: 60;
+    z-index: 70;
     pointer-events: auto;
   }
 
@@ -1331,21 +1382,39 @@ button {
     pointer-events: none;
   }
 
-  .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions,
+  /* 手機版：刪除 Sidebar resize bar */
+  #sidebarResizeHandle,
+  .sidebar-resize-handle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* 手機版操作按鈕：展開時在 Sidebar 下方；收合時左上橫排，避開右側 ☰ */
   .app-shell:not(.sidebar-collapsed) .floating-actions {
-    position: fixed;
-    top: 72px;
-    right: 10px;
-    left: auto;
-    bottom: auto;
+    top: 176px;
+    left: 12px;
+    right: 12px;
     width: auto;
-    max-width: 120px;
-    z-index: 58;
+    max-width: none;
+    overflow-x: auto;
+    border-radius: 18px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: fixed;
+    top: 12px;
+    left: 10px;
+    right: 68px;
+    width: auto;
+    max-width: none;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: flex-start;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
     padding: 0;
     background: transparent;
@@ -1353,24 +1422,29 @@ button {
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    overflow: visible;
+    overflow-x: auto;
+    scrollbar-width: none;
+    z-index: 60;
   }
 
-  .floating-actions button,
-  .app-shell.sidebar-collapsed .floating-actions button,
-  .app-shell:not(.sidebar-collapsed) .floating-actions button {
-    width: auto;
-    min-width: max-content;
-    height: 38px;
-    padding: 0 12px;
-    border-radius: 999px;
-    background: rgba(92, 166, 168, 0.84);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(23, 60, 67, 0.13);
+  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 44px;
+    padding: 0 15px;
+    font-size: 13px;
+    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  .floating-note {
+    top: 68px;
+    right: 12px;
+    max-width: min(260px, calc(100vw - 24px));
+    z-index: 36;
   }
 
   .info-panel,
@@ -1386,117 +1460,24 @@ button {
     padding: 13px 14px 16px;
     overflow-y: auto;
     overflow-x: hidden;
+    display: block;
     -webkit-overflow-scrolling: touch;
   }
 
-  #mainResizeHandle.resize-handle.horizontal {
+  .resize-handle.horizontal {
     left: 12px;
     right: 12px;
-    width: auto;
-    height: 9px;
     bottom: calc(12px + var(--info-height) + 8px);
+    height: 9px;
     z-index: 35;
   }
 
-  .workspace:not(.info-compact-workspace) #mainResizeHandle.resize-handle.horizontal {
-    background: rgba(92, 166, 168, 0.18);
-    border: 1px solid rgba(199, 220, 222, 0.50);
-    opacity: 1;
-  }
-
-  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+  .workspace.info-compact-workspace .resize-handle.horizontal {
     bottom: 84px;
     background: transparent;
     border: 0;
     box-shadow: none;
     opacity: 0;
-  }
-
-  #infoRightResizeHandle,
-  .resize-handle.info-right,
-  .info-right-resize-handle {
-    display: none;
-  }
-
-  .info-header {
-    align-items: flex-start;
-    margin-bottom: 10px;
-  }
-
-  .info-icon {
-    width: 38px;
-    height: 38px;
-    font-size: 17px;
-  }
-
-  .info-title-block h2,
-  #infoTitle {
-    font-size: 18px;
-    line-height: 1.3;
-  }
-
-  .info-tags {
-    max-height: 74px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .info-related-row {
-    display: block;
-    margin-bottom: 10px;
-    overflow: visible;
-  }
-
-  .info-related-row h3 {
-    margin-bottom: 8px;
-  }
-
-  .info-split-area,
-  #infoPanel:not(.info-compact) .info-split-area {
-    min-height: 0;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow: visible;
-  }
-
-  .resize-handle.vertical,
-  #innerResizeHandle.resize-handle.vertical {
-    width: 100%;
-    height: 9px;
-    min-height: 9px;
-    cursor: row-resize;
-    display: block;
-    flex-shrink: 0;
-  }
-
-  .info-box,
-  #infoPanel:not(.info-compact) .info-box {
-    min-height: 0;
-    height: auto;
-    max-height: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  #infoPanel:not(.info-compact) .sentence-box {
-    max-height: 34vh;
-  }
-
-  #infoPanel:not(.info-compact) .source-box {
-    max-height: 38vh;
-  }
-
-  .quote-list,
-  .source-list {
-    max-height: none;
-    overflow: visible;
-  }
-
-  .source-item,
-  .quote-item {
-    word-break: break-word;
   }
 
   #infoPanel.info-compact {
@@ -1514,13 +1495,6 @@ button {
     box-shadow: 0 12px 34px rgba(23, 60, 67, 0.10);
   }
 
-  #infoPanel.info-compact .info-header {
-    width: 100%;
-    height: 100%;
-    align-items: center;
-    margin: 0;
-  }
-
   #infoPanel.info-compact .info-icon {
     width: 36px;
     height: 36px;
@@ -1530,9 +1504,83 @@ button {
   }
 
   #infoPanel.info-compact #infoTitle {
-    margin: 0;
     font-size: clamp(15px, 4.6vw, 18px);
-    line-height: 1.15;
+  }
+
+  .info-header {
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .info-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .info-related-row {
+    display: block;
+    margin-bottom: 10px;
+    overflow: visible;
+  }
+
+  .info-related-row h3 {
+    margin-bottom: 8px;
+  }
+
+  .inline-pill-list {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .info-split-area,
+  #infoPanel:not(.info-compact) .info-split-area {
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .resize-handle.vertical {
+    width: 100%;
+    height: 9px;
+    min-height: 9px;
+    cursor: row-resize;
+    flex-shrink: 0;
+  }
+
+  .info-box {
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sentence-box {
+    max-height: 34vh;
+  }
+
+  .source-box {
+    max-height: 38vh;
+  }
+
+  .quote-list,
+  .source-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .source-item,
+  .quote-item {
+    word-break: break-word;
+  }
+
+  .resize-handle.info-right {
+    display: none;
   }
 
   .intro-glass {
@@ -1551,15 +1599,15 @@ button {
 }
 
 /* =========================================================
-   RESPONSIVE - Small mobile
+   RWD <= 480px
 ========================================================= */
 
 @media (max-width: 480px) {
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 12px;
-    right: 12px;
-    top: 12px;
-    width: calc(100% - 24px);
+    left: 10px;
+    right: 10px;
+    top: 10px;
+    width: calc(100% - 20px) !important;
     border-radius: 20px;
   }
 
@@ -1570,47 +1618,47 @@ button {
     height: 46px;
   }
 
-  .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 66px;
-    right: 8px;
-    max-width: 108px;
+  .app-shell.sidebar-collapsed .floating-actions {
+    left: 8px;
+    right: 64px;
     gap: 7px;
   }
 
-  .floating-actions button,
-  .app-shell.sidebar-collapsed .floating-actions button,
-  .app-shell:not(.sidebar-collapsed) .floating-actions button {
-    height: 36px;
-    padding: 0 10px;
-    font-size: 11.5px;
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 42px;
+    padding: 0 13px;
+    font-size: 12px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 168px;
+    left: 10px;
+    right: 10px;
   }
 
   .info-panel,
-  #infoPanel.info-compact,
-  #infoPanel:not(.info-compact) {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+  #infoPanel:not(.info-compact),
+  #infoPanel.info-compact {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
     border-radius: 20px;
   }
 
-  #mainResizeHandle.resize-handle.horizontal {
-    left: 12px;
-    right: 12px;
-    bottom: calc(12px + var(--info-height) + 8px);
+  .resize-handle.horizontal {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + var(--info-height) + 8px);
   }
 
-  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
-    bottom: 84px;
+  .workspace.info-compact-workspace .resize-handle.horizontal {
+    bottom: 80px;
   }
 
   #infoPanel.info-compact {
-    min-height: 64px;
-    height: 64px;
-    max-height: 64px;
-    padding: 7px 12px;
+    height: 62px;
+    min-height: 62px;
+    max-height: 62px;
   }
 
   #infoPanel.info-compact .info-icon {
@@ -1623,14 +1671,6 @@ button {
 
   #infoPanel.info-compact #infoTitle {
     font-size: clamp(14px, 4.5vw, 17px);
-  }
-
-  #infoPanel:not(.info-compact) .sentence-box {
-    max-height: 34vh;
-  }
-
-  #infoPanel:not(.info-compact) .source-box {
-    max-height: 38vh;
   }
 
   .intro-glass {
@@ -1660,5 +1700,38 @@ button {
   .intro-star-bottom {
     left: 2px;
     bottom: 9px;
+  }
+}
+
+/* =========================================================
+   RWD <= 380px
+========================================================= */
+
+@media (max-width: 380px) {
+  .sidebar-title strong {
+    font-size: 18px;
+  }
+
+  .sidebar-title span {
+    font-size: 12px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    right: 8px;
+    top: 8px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    left: 6px;
+    right: 56px;
+    gap: 6px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
   }
 }
