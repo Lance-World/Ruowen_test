@@ -1248,3 +1248,200 @@ button {
     right: 58px;
   }
 }
+
+/* ================================
+   RWD Mobile Header Title Final Tune
+   只針對手機版：
+   1. 收合狀態仍顯示 Ruowen Knowledge Graph 並置中
+   2. 標題字級加大
+   3. 兩排文字上下留白縮小
+   4. 星星保留左側，放大鏡在三條 bar 左側
+================================ */
+
+@media (max-width: 768px) {
+  /* 展開與收合共用：標題兩排更緊湊、比例更大 */
+  .sidebar-title {
+    position: relative;
+    width: 100%;
+    min-height: 46px;
+    margin: 0 0 10px;
+    padding: 0 108px;
+    display: grid !important;
+    grid-template-rows: auto auto;
+    justify-items: center;
+    align-content: center;
+    gap: 0;
+    text-align: center;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .sidebar-title strong {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--teal-deep);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: 0.2px;
+    text-align: center;
+  }
+
+  .sidebar-title span {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.05;
+    letter-spacing: 0.1px;
+    text-align: center;
+  }
+
+  /* 收合狀態：sidebar 高度稍微保留，讓標題、星星、兩顆按鈕同列 */
+  .app-shell.sidebar-collapsed .sidebar {
+    width: 100% !important;
+    height: 64px;
+    min-height: 64px;
+    padding: 10px 14px;
+    align-items: stretch;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 收合狀態：星星保留左上角 */
+  .app-shell.sidebar-collapsed .logo {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    margin: 0;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    z-index: 18;
+  }
+
+  /* 收合狀態：標題仍然置中顯示，不再被隱藏 */
+  .app-shell.sidebar-collapsed .sidebar-title {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 9px;
+    height: 46px;
+    min-height: 46px;
+    margin: 0;
+    padding: 0 108px 0 74px;
+    grid-template-rows: auto auto;
+    justify-items: center;
+    align-content: center;
+    gap: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title strong {
+    font-size: 21px;
+    line-height: 1.02;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title span {
+    font-size: 13px;
+    line-height: 1.05;
+  }
+
+  /* 收合狀態：放大鏡在三條 bar 左側 */
+  .app-shell.sidebar-collapsed .search-toggle {
+    left: auto;
+    right: 62px;
+    top: 12px;
+    z-index: 20;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    left: auto;
+    right: 14px;
+    top: 12px;
+    z-index: 20;
+  }
+
+  /* 收合狀態：只隱藏搜尋面板與分類內容，不隱藏標題 */
+  .app-shell.sidebar-collapsed .sidebar-search-panel,
+  .app-shell.sidebar-collapsed .sidebar-section {
+    display: none !important;
+  }
+
+  /* 收合狀態：下方拖曳 bar 繼續保留 */
+  .app-shell.sidebar-collapsed .sidebar-resize-handle {
+    display: block !important;
+    width: 100%;
+    height: 9px;
+    min-height: 9px;
+    cursor: row-resize;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-title {
+    padding: 0 96px 0 70px;
+  }
+
+  .sidebar-title strong {
+    font-size: 21px;
+    line-height: 1.02;
+  }
+
+  .sidebar-title span {
+    font-size: 13px;
+    line-height: 1.05;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title {
+    padding: 0 100px 0 68px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title strong {
+    font-size: 20px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title span {
+    font-size: 12.5px;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle {
+    right: 58px;
+  }
+}
+
+@media (max-width: 380px) {
+  .sidebar-title strong {
+    font-size: 19px;
+  }
+
+  .sidebar-title span {
+    font-size: 12px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title {
+    padding: 0 96px 0 64px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title strong {
+    font-size: 18px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title span {
+    font-size: 11.5px;
+  }
+}
