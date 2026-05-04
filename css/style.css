@@ -4,16 +4,16 @@
   --bg-card: rgba(247, 252, 251, 0.88);
   --bg-glass: rgba(255, 255, 255, 0.72);
 
-  --accent-gold: #F1DFAC;
-  --accent-rose: #EBCAD0;
-  --accent-indigo: #B8B4DD;
+  --accent-gold: #D7EEE9;
+  --accent-rose: #DCD9EA;
+  --accent-indigo: #A9B6D8;
 
   --teal-deep: #245b62;
   --teal-main: #5ca6a8;
   --teal-soft: #bfe7e2;
   --blue-soft: #CFEAF4;
-  --yellow-soft: #FFF3DF;
-  --yellow-main: #E9D49A;
+  --yellow-soft: #F6F1E8;
+  --yellow-main: #A7C8C9;
 
   --text-main: #173c43;
   --text-secondary: #537176;
@@ -131,7 +131,7 @@ button {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--teal-soft), var(--yellow-soft));
+  background: linear-gradient(135deg, var(--teal-soft), #F6F1E8);
   display: grid;
   place-items: center;
   color: var(--teal-deep);
@@ -276,7 +276,7 @@ button {
 .side-item:hover {
   background: rgba(244, 217, 130, 0.42);
   border-color: rgba(217, 170, 56, 0.42);
-  color: #6F6039;
+  color: #315B63;
 }
 
 .sidebar-category-list {
@@ -525,10 +525,10 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--yellow-soft), #FFF8DD);
+  background: linear-gradient(135deg, #D7EEE9, #F6F1E8);
   display: grid;
   place-items: center;
-  color: #6F6039;
+  color: #315B63;
   font-size: 20px;
   flex-shrink: 0;
 }
@@ -586,7 +586,7 @@ button {
   align-items: center;
   border-radius: 999px;
   background: rgba(244, 217, 130, 0.36);
-  color: #6F6039;
+  color: #315B63;
   padding: 5px 10px;
   font-size: 12px;
 }
@@ -620,7 +620,7 @@ button {
   align-items: center;
   border-radius: 999px;
   background: rgba(244, 217, 130, 0.36);
-  color: #6F6039;
+  color: #315B63;
   padding: 5px 10px;
   font-size: 12px;
   flex-shrink: 0;
@@ -671,8 +671,8 @@ button {
 
 .source-item {
   border-radius: 14px;
-  background: rgba(255, 248, 232, 0.86);
-  border: 1px solid rgba(244, 217, 130, 0.48);
+  background: rgba(246, 251, 249, 0.86);
+  border: 1px solid rgba(199, 220, 222, 0.58);
   padding: 8px 10px;
   display: grid;
   gap: 4px;
@@ -2245,8 +2245,8 @@ button {
 
 body {
   background:
-    radial-gradient(circle at 18% 12%, rgba(232, 199, 111, 0.32), transparent 30%),
-    radial-gradient(circle at 82% 22%, rgba(214, 160, 168, 0.22), transparent 32%),
+    radial-gradient(circle at 18% 12%, rgba(191, 231, 226, 0.34), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(207, 234, 244, 0.30), transparent 32%),
     radial-gradient(circle at 50% 50%, #f9fffd 0%, #e0eceb 100%);
 }
 
@@ -2369,23 +2369,23 @@ body {
 
 .info-tags span,
 .inline-pill-list span {
-  background: rgba(241, 223, 172, 0.34) !important;
-  color: #6F6039 !important;
+  background: rgba(215, 238, 233, 0.52) !important;
+  color: #315B63 !important;
   font-weight: 600 !important;
   border: 1px solid rgba(241, 223, 172, 0.42) !important;
 }
 
 .info-icon {
-  background: linear-gradient(135deg, var(--accent-gold), #FFF8DD) !important;
-  color: #6F6039 !important;
-  box-shadow: 0 10px 24px rgba(241, 223, 172, 0.26);
+  background: linear-gradient(135deg, #D7EEE9, #F6F1E8) !important;
+  color: #315B63 !important;
+  box-shadow: 0 10px 24px rgba(92, 166, 168, 0.18);
 }
 
 .side-item.active,
 .side-item:hover {
-  background: rgba(241, 223, 172, 0.34) !important;
-  border-color: rgba(241, 223, 172, 0.46) !important;
-  color: #6F6039 !important;
+  background: rgba(215, 238, 233, 0.52) !important;
+  border-color: rgba(167, 200, 201, 0.50) !important;
+  color: #315B63 !important;
 }
 
 .node circle {
@@ -2399,7 +2399,7 @@ body {
 }
 
 .link.highlight {
-  stroke: rgba(229, 205, 145, 0.82) !important;
+  stroke: rgba(122, 169, 174, 0.78) !important;
 }
 
 /* sidebar collapsed floating state */
@@ -2553,5 +2553,178 @@ body {
 
   .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
     bottom: 84px !important;
+  }
+}
+
+/* =========================================================
+   MOBILE FLOATING CONTROL PATCH - 20260504
+   只影響手機版：
+   1. 上方側欄收合後：移除白底，只留下右側懸浮按鈕
+   2. 上方收合後：操作按鈕移到最上方，背景透明
+   3. 上方 / 下方收合狀態：中間拖曳 bar 透明，但保留可拖曳區域
+========================================================= */
+
+@media (max-width: 768px) {
+  /* 收合後不要留下側邊欄白底：只保留右上角浮動按鈕 */
+  .app-shell.sidebar-collapsed .sidebar {
+    left: auto !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    pointer-events: none !important;
+    z-index: 80 !important;
+  }
+
+  /* 收合後隱藏 logo / 標題，避免壓住地圖與操作按鈕 */
+  .app-shell.sidebar-collapsed .logo,
+  .app-shell.sidebar-collapsed .sidebar-title,
+  .app-shell.sidebar-collapsed .sidebar-search-panel,
+  .app-shell.sidebar-collapsed .sidebar-section {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* 收合後：搜尋與三字 bar 改成右側懸浮，不再依附白底 */
+  .app-shell.sidebar-collapsed .search-toggle,
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    position: fixed !important;
+    top: max(12px, env(safe-area-inset-top)) !important;
+    transform: none !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 999px !important;
+    pointer-events: auto !important;
+    z-index: 120 !important;
+    box-shadow: 0 8px 22px rgba(23, 60, 67, 0.16) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    right: max(12px, env(safe-area-inset-right)) !important;
+    background: rgba(92, 166, 168, 0.78) !important;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle {
+    right: calc(max(12px, env(safe-area-inset-right)) + 50px) !important;
+    background: rgba(36, 91, 98, 0.62) !important;
+  }
+
+  /* 上方收合後：不要顯示上方拖曳 bar，但保留觸控區域 */
+  .app-shell.sidebar-collapsed #sidebarResizeHandle.sidebar-resize-handle {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 12px !important;
+    min-height: 12px !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    opacity: 0 !important;
+    z-index: 40 !important;
+  }
+
+  /* 上方收合後：紅圈那排操作按鈕直接移到最上面，且外框透明 */
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: absolute !important;
+    top: max(12px, env(safe-area-inset-top)) !important;
+    left: 12px !important;
+    right: 112px !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow-x: auto !important;
+    z-index: 70 !important;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    flex: 0 0 auto !important;
+    min-height: 42px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.78) !important;
+    color: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 8px 22px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  /* 上方展開時：保留原本位置，不讓按鈕卡進 header */
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 162px !important;
+  }
+
+  /* 下方資訊欄收合時：中間分隔 bar 變透明，但仍可拖曳 */
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    opacity: 0 !important;
+  }
+
+  /* 上下都收合時，地圖視覺上不再被 bar 切出白線 */
+  .app-shell.sidebar-collapsed .graph-card,
+  .workspace.info-compact-workspace .graph-card {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell.sidebar-collapsed .floating-actions {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    left: 10px !important;
+    right: 104px !important;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    min-height: 40px !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle,
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle {
+    right: calc(max(10px, env(safe-area-inset-right)) + 46px) !important;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    right: max(10px, env(safe-area-inset-right)) !important;
   }
 }
