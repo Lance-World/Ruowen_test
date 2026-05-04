@@ -49,6 +49,7 @@ async function init() {
     updateFloatingLayoutVars();
     setupCategoryChips();
     setupControls();
+    setupFloatingActionsMenu();
     setupResizablePanels();
     setupInfoCompactToggle();
     renderGraph();
@@ -349,6 +350,50 @@ function clearSelection() {
   state.selectedNodeId = null;
   highlightSelection();
   renderDefaultInfo();
+}
+
+
+/* ================================
+   Floating Actions Menu
+   手機版：重置視角 / 顯示全部 / 清除選取，收合成右上角選單
+================================ */
+
+function setupFloatingActionsMenu() {
+  const graphCard = document.querySelector(".graph-card");
+  const toggleBtn = document.getElementById("floatingActionsToggleBtn");
+  const floatingActions = document.getElementById("floatingActions");
+
+  if (!graphCard || !toggleBtn || !floatingActions) return;
+
+  function setOpen(isOpen) {
+    graphCard.classList.toggle("floating-actions-open", Boolean(isOpen));
+    toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+
+  toggleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setOpen(!graphCard.classList.contains("floating-actions-open"));
+  });
+
+  floatingActions.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    if (event.target.closest("button") && isMobileLayout()) {
+      setOpen(false);
+    }
+  });
+
+  document.addEventListener("click", () => {
+    if (isMobileLayout()) {
+      setOpen(false);
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (!isMobileLayout()) {
+      setOpen(false);
+    }
+  });
 }
 
 /* ================================
