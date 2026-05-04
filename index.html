@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=glass_float_20260504_01" />
+  <link rel="stylesheet" href="./css/style.css?v=integrated_20260504_03" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
-      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">🔍</button>
-      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄">☰</button>
+      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋" aria-label="搜尋 / 收合搜尋">🔍</button>
+      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄" aria-label="收合 / 展開側邊欄">☰</button>
 
       <div class="logo">✦</div>
 
@@ -28,8 +28,8 @@
           placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
         />
         <div class="search-action-row">
-          <button id="searchBtn" class="sidebar-main-btn">搜尋</button>
-          <button id="clearSearchBtn" class="sidebar-sub-btn">清除</button>
+          <button type="button" id="searchBtn" class="sidebar-main-btn">搜尋</button>
+          <button type="button" id="clearSearchBtn" class="sidebar-sub-btn">清除</button>
         </div>
       </div>
 
@@ -53,9 +53,9 @@
         <section class="graph-section">
           <div class="graph-card">
             <div class="floating-actions">
-              <button id="resetViewBtn">重置視角</button>
-              <button id="expandAllBtn">顯示全部</button>
-              <button id="clearSelectionBtn">清除選取</button>
+              <button type="button" id="resetViewBtn">重置視角</button>
+              <button type="button" id="expandAllBtn">顯示全部</button>
+              <button type="button" id="clearSelectionBtn">清除選取</button>
             </div>
 
             <svg id="graphSvg"></svg>
@@ -75,12 +75,10 @@
 
         <section id="infoPanel" class="info-panel">
           <div class="info-header">
-            <div class="info-icon" title="點擊收合/展開卡片">✦</div>
+            <div class="info-icon">◎</div>
 
             <div class="info-title-block">
-              <h2 id="infoTitle">
-                <span class="info-title-text">尚未選擇節點</span>
-              </h2>
+              <h2 id="infoTitle">尚未選擇節點</h2>
               <div id="infoTags" class="info-tags">
                 <span>請點選圖上的節點</span>
               </div>
@@ -126,12 +124,13 @@
         <span class="intro-star intro-star-bottom">✦</span>
         <div id="introMessageText" class="intro-message-text">慢慢靠近自己</div>
       </div>
+      <button type="button" id="introSkipBtn" class="intro-skip-btn">跳過</button>
       <div class="meteor meteor-one"></div>
       <div class="meteor meteor-two"></div>
       <div class="meteor meteor-three"></div>
     </div>
   </div>
 
-  <script src="./app.js?v=glass_float_20260504_01"></script>
+  <script src="./app.js?v=integrated_20260504_03"></script>
 </body>
 </html>
