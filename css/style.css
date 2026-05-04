@@ -1613,10 +1613,31 @@ button {
   }
 }
 
+/* =========================================================
+   INFO TITLE RANDOM NUMBER
+   資訊欄標題後方 0000-9999 隨機數字
+========================================================= */
+
+#infoTitle .info-title-number {
+  display: inline-block;
+  margin-left: 0.48em;
+  font-family: "Montserrat", "Poppins", "Lato", system-ui, sans-serif;
+  font-size: 1em;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  vertical-align: baseline;
+  background: linear-gradient(135deg, #c98676 0%, #eac0a3 34%, #39416f 72%, #1e2d59 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 8px 18px rgba(57, 65, 111, 0.16);
+}
 
 /* =========================================================
    INTRO OVERLAY - Center Text + Rose Gold Stars
-   進站星空短句開場：6.6 秒自動淡出，點一下可跳過
+   進站星空短句開場：點擊可進入主畫面
 ========================================================= */
 
 .intro-overlay {
@@ -1630,6 +1651,7 @@ button {
   -webkit-backdrop-filter: blur(7px) saturate(1.04);
   opacity: 1;
   pointer-events: auto;
+  cursor: pointer;
   transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
@@ -1644,19 +1666,19 @@ button {
 
 .intro-glass {
   position: relative;
-  width: min(86vw, 520px);
-  min-height: 180px;
+  width: min(88vw, 600px);
+  min-height: 220px;
   display: grid;
   place-items: center;
-  border-radius: 32px;
+  border-radius: 34px;
   background:
-    radial-gradient(circle at 25% 20%, rgba(255, 220, 205, 0.16), transparent 36%),
-    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.13), transparent 38%),
-    rgba(235, 238, 239, 0.17);
-  border: 1px solid rgba(255, 238, 225, 0.34);
+    radial-gradient(circle at 25% 20%, rgba(255, 220, 205, 0.18), transparent 36%),
+    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.14), transparent 38%),
+    rgba(235, 238, 239, 0.18);
+  border: 1px solid rgba(255, 238, 225, 0.38);
   box-shadow:
-    0 28px 80px rgba(23, 35, 38, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.36);
+    0 30px 88px rgba(23, 35, 38, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
   overflow: hidden;
 }
 
@@ -1664,21 +1686,21 @@ button {
   position: relative;
   display: inline-grid;
   place-items: center;
-  padding: 28px 58px;
+  padding: 32px 66px;
 }
 
 .intro-message-text {
   position: relative;
   z-index: 2;
-  color: rgba(255, 248, 240, 0.96);
-  font-size: clamp(22px, 5vw, 32px);
-  font-weight: 800;
-  line-height: 1.18;
+  color: rgba(255, 248, 240, 0.98);
+  font-size: clamp(32px, 6.2vw, 56px);
+  font-weight: 900;
+  line-height: 1.12;
   letter-spacing: 0.08em;
   text-align: center;
   text-shadow:
-    0 2px 12px rgba(71, 48, 42, 0.38),
-    0 0 22px rgba(255, 214, 195, 0.32);
+    0 3px 14px rgba(71, 48, 42, 0.42),
+    0 0 26px rgba(255, 214, 195, 0.36);
   white-space: nowrap;
 }
 
@@ -1697,14 +1719,14 @@ button {
 .intro-star-top-a {
   right: 24px;
   top: 10px;
-  font-size: clamp(16px, 3.6vw, 23px);
+  font-size: clamp(18px, 3.8vw, 26px);
   animation-delay: 0.12s;
 }
 
 .intro-star-top-b {
   right: -2px;
-  top: 31px;
-  font-size: clamp(12px, 2.8vw, 18px);
+  top: 34px;
+  font-size: clamp(13px, 2.9vw, 20px);
   color: #ffe8c8;
   animation-delay: 0.48s;
 }
@@ -1712,14 +1734,14 @@ button {
 .intro-star-bottom {
   left: 4px;
   bottom: 12px;
-  font-size: clamp(13px, 3vw, 19px);
+  font-size: clamp(15px, 3.1vw, 22px);
   color: #f8c9bd;
   animation-delay: 0.72s;
 }
 
 .meteor {
   position: absolute;
-  width: 108px;
+  width: 120px;
   height: 2px;
   border-radius: 999px;
   background: linear-gradient(90deg, transparent, rgba(255, 227, 211, 0.98), transparent);
@@ -1753,46 +1775,28 @@ button {
 .meteor-two {
   top: 52%;
   left: -36%;
-  width: 88px;
+  width: 96px;
   animation: introMeteorFly 1.08s ease-out 1.18s 1 forwards;
 }
 
 .meteor-three {
   top: 70%;
   left: -40%;
-  width: 96px;
+  width: 106px;
   animation: introMeteorFly 1.12s ease-out 2.02s 1 forwards;
 }
 
 @keyframes introMeteorFly {
-  0% {
-    opacity: 0;
-    transform: rotate(-20deg) translate3d(0, 0, 0);
-  }
-  12% {
-    opacity: 1;
-  }
-  82% {
-    opacity: 0.88;
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(-20deg) translate3d(760px, 0, 0);
-  }
+  0% { opacity: 0; transform: rotate(-20deg) translate3d(0, 0, 0); }
+  12% { opacity: 1; }
+  82% { opacity: 0.88; }
+  100% { opacity: 0; transform: rotate(-20deg) translate3d(820px, 0, 0); }
 }
 
 @keyframes introStarTwinkle {
-  0% {
-    opacity: 0.58;
-    transform: scale(0.82) rotate(0deg);
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.9;
-    transform: scale(1.18) rotate(8deg);
-  }
+  0% { opacity: 0.58; transform: scale(0.82) rotate(0deg); }
+  55% { opacity: 1; }
+  100% { opacity: 0.9; transform: scale(1.18) rotate(8deg); }
 }
 
 /* =========================================================
@@ -1808,33 +1812,32 @@ button {
   display: block;
 }
 
-.sidebar-search::placeholder {
-  line-height: normal;
-}
-
-.search-action-row {
-  align-items: stretch;
-}
-
+.sidebar-search::placeholder { line-height: normal; }
+.search-action-row { align-items: stretch; }
 .sidebar-main-btn,
-.sidebar-sub-btn {
-  min-height: 42px;
-  line-height: normal;
-}
+.sidebar-sub-btn { min-height: 42px; line-height: normal; }
 
 @media (max-width: 768px) {
   .intro-glass {
-    width: min(88vw, 430px);
-    min-height: 160px;
-    border-radius: 26px;
+    width: min(88vw, 460px);
+    min-height: 176px;
+    border-radius: 28px;
   }
 
   .intro-message-wrap {
-    padding: 24px 48px;
+    padding: 26px 48px;
   }
 
   .intro-message-text {
-    font-size: clamp(22px, 6vw, 30px);
+    max-width: 9em;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    text-align: center;
+    line-height: 1.14;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: clamp(30px, 8.2vw, 44px);
   }
 
   .sidebar-search {
@@ -1843,53 +1846,29 @@ button {
     padding: 0 14px;
     font-size: 14px;
   }
+
+  #infoTitle .info-title-number {
+    margin-left: 0.35em;
+  }
 }
 
 @media (max-width: 480px) {
   .intro-glass {
-    width: min(90vw, 360px);
-    min-height: 148px;
+    width: min(90vw, 380px);
+    min-height: 158px;
   }
 
   .intro-message-wrap {
-    padding: 22px 42px;
+    padding: 24px 42px;
   }
 
   .intro-message-text {
-    font-size: clamp(21px, 6.4vw, 28px);
-    letter-spacing: 0.06em;
+    max-width: 9em;
+    font-size: clamp(28px, 8.6vw, 38px);
+    letter-spacing: 0.055em;
   }
 
-  .intro-star-top-a {
-    right: 18px;
-    top: 8px;
-  }
-
-  .intro-star-top-b {
-    right: -3px;
-    top: 28px;
-  }
-
-  .intro-star-bottom {
-    left: 2px;
-    bottom: 9px;
-  }
-  /* =========================================================
-   MOBILE INTRO TEXT WRAP
-   手機版 overlay 文字超過 9 個字自動換行
-========================================================= */
-
-@media (max-width: 768px) {
-  .intro-text,
-  .intro-message {
-    max-width: 9em !important;
-    white-space: normal !important;
-    word-break: break-all !important;
-    overflow-wrap: anywhere !important;
-    text-align: center !important;
-    line-height: 1.18 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-}
+  .intro-star-top-a { right: 18px; top: 8px; }
+  .intro-star-top-b { right: -3px; top: 28px; }
+  .intro-star-bottom { left: 2px; bottom: 9px; }
 }
