@@ -20,6 +20,7 @@ const state = {
   nodeSelection: null,
   zoomBehavior: null,
   mobileInfoCompact: false,
+  mobileInfoCompact: false,
 };
 
 const nodeColors = {
@@ -382,7 +383,6 @@ function toggleMobileInfoCompact() {
 
   state.mobileInfoCompact = !state.mobileInfoCompact;
   applyMobileInfoCompactState();
-  resizeGraphAfterPanelChange();
 }
 
 function applyMobileInfoCompactState() {
@@ -393,31 +393,19 @@ function applyMobileInfoCompactState() {
 
   if (!isMobileLayout()) {
     infoPanel.classList.remove("mobile-info-compact");
-
-    if (workspace) {
-      workspace.classList.remove("mobile-info-compact-active");
-    }
-
+    if (workspace) workspace.classList.remove("mobile-info-compact-workspace");
     return;
   }
 
   infoPanel.classList.toggle("mobile-info-compact", state.mobileInfoCompact);
 
   if (workspace) {
-    workspace.classList.toggle(
-      "mobile-info-compact-active",
-      state.mobileInfoCompact
-    );
+    workspace.classList.toggle("mobile-info-compact-workspace", state.mobileInfoCompact);
   }
 
   requestAnimationFrame(() => {
     resizeGraphAfterPanelChange();
   });
-}
-
-  if (workspace) {
-    workspace.classList.toggle("mobile-info-compact-workspace", state.mobileInfoCompact);
-  }
 }
 
 /* ================================
