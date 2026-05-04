@@ -1615,228 +1615,263 @@ button {
 
 
 /* =========================================================
-   INTRO OVERLAY - Entry Message With Meteors
-   進站短句：透明灰背景、粉金星星、流星特效
+   INTRO OVERLAY - Center Text + Rose Gold Stars
+   進站星空短句開場：6.6 秒自動淡出，點一下可跳過
 ========================================================= */
 
 .intro-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 9999;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  cursor: pointer;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 244, 236, 0.10), transparent 34%),
-    rgba(35, 41, 46, 0.46);
-  backdrop-filter: blur(5px) saturate(108%);
-  -webkit-backdrop-filter: blur(5px) saturate(108%);
+  background: rgba(42, 48, 51, 0.38);
+  backdrop-filter: blur(7px) saturate(1.04);
+  -webkit-backdrop-filter: blur(7px) saturate(1.04);
   opacity: 1;
-  transition: opacity 0.68s ease, visibility 0.68s ease;
+  pointer-events: auto;
+  transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
-.intro-overlay.intro-hidden {
+.intro-overlay.intro-overlay-leaving {
   opacity: 0;
-  visibility: hidden;
 }
 
-.intro-overlay.intro-leaving {
-  opacity: 0;
+.intro-overlay.intro-overlay-hidden {
   visibility: hidden;
   pointer-events: none;
+}
+
+.intro-glass {
+  position: relative;
+  width: min(86vw, 520px);
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 25% 20%, rgba(255, 220, 205, 0.16), transparent 36%),
+    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.13), transparent 38%),
+    rgba(235, 238, 239, 0.17);
+  border: 1px solid rgba(255, 238, 225, 0.34);
+  box-shadow:
+    0 28px 80px rgba(23, 35, 38, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36);
+  overflow: hidden;
 }
 
 .intro-message-wrap {
   position: relative;
   display: inline-grid;
   place-items: center;
-  padding: 10px 18px;
-  isolation: isolate;
+  padding: 28px 58px;
 }
 
-.intro-message {
+.intro-message-text {
   position: relative;
   z-index: 2;
-  max-width: min(86vw, 720px);
-  color: rgba(255, 248, 238, 0.96);
-  font-size: clamp(28px, 5.8vw, 58px);
+  color: rgba(255, 248, 240, 0.96);
+  font-size: clamp(22px, 5vw, 32px);
   font-weight: 800;
-  line-height: 1.12;
+  line-height: 1.18;
   letter-spacing: 0.08em;
   text-align: center;
   text-shadow:
-    0 0 12px rgba(255, 227, 197, 0.58),
-    0 0 30px rgba(225, 175, 155, 0.34),
-    0 8px 30px rgba(0, 0, 0, 0.28);
-  animation: introTextFloat 3.8s ease-in-out infinite;
+    0 2px 12px rgba(71, 48, 42, 0.38),
+    0 0 22px rgba(255, 214, 195, 0.32);
+  white-space: nowrap;
 }
 
-.intro-sparkle {
+.intro-star {
   position: absolute;
   z-index: 3;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  color: #f6d2bd;
-  font-size: 22px;
-  line-height: 1;
+  color: #ffd8c9;
   text-shadow:
-    0 0 8px rgba(255, 245, 224, 0.9),
-    0 0 18px rgba(232, 167, 149, 0.7),
-    0 0 32px rgba(255, 232, 190, 0.55);
-  animation: introSparklePulse 1.75s ease-in-out infinite;
-}
-
-.intro-sparkle-a {
-  top: -22px;
-  right: -34px;
-  font-size: 24px;
-  color: #fff2cf;
-  animation-delay: 0.05s;
-}
-
-.intro-sparkle-b {
-  top: -44px;
-  right: 4px;
-  font-size: 18px;
-  color: #eec0ae;
-  animation-delay: 0.42s;
-}
-
-.intro-sparkle-bl {
-  left: -34px;
-  bottom: -26px;
-  font-size: 20px;
-  color: #f3c7b4;
-  animation-delay: 0.88s;
-}
-
-.intro-sparkle::after {
-  content: "";
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  filter: blur(2px);
-  opacity: 0.65;
-}
-
-.intro-meteor {
-  position: absolute;
-  width: 120px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(255, 241, 214, 0.98), rgba(231, 169, 151, 0.86));
-  box-shadow:
-    0 0 10px rgba(255, 237, 208, 0.72),
-    0 0 22px rgba(231, 169, 151, 0.54);
-  transform: rotate(-24deg);
-  opacity: 0;
+    0 0 8px rgba(255, 211, 197, 0.92),
+    0 0 18px rgba(255, 236, 210, 0.58),
+    0 0 34px rgba(235, 194, 170, 0.38);
+  animation: introStarTwinkle 1.58s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
-.intro-meteor::after {
+.intro-star-top-a {
+  right: 24px;
+  top: 10px;
+  font-size: clamp(16px, 3.6vw, 23px);
+  animation-delay: 0.12s;
+}
+
+.intro-star-top-b {
+  right: -2px;
+  top: 31px;
+  font-size: clamp(12px, 2.8vw, 18px);
+  color: #ffe8c8;
+  animation-delay: 0.48s;
+}
+
+.intro-star-bottom {
+  left: 4px;
+  bottom: 12px;
+  font-size: clamp(13px, 3vw, 19px);
+  color: #f8c9bd;
+  animation-delay: 0.72s;
+}
+
+.meteor {
+  position: absolute;
+  width: 108px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 227, 211, 0.98), transparent);
+  filter: drop-shadow(0 0 8px rgba(255, 215, 198, 0.9));
+  opacity: 0;
+  transform: rotate(-20deg) translate3d(0, 0, 0);
+  pointer-events: none;
+}
+
+.meteor::after {
   content: "";
   position: absolute;
-  right: 0;
+  right: 18px;
   top: 50%;
   width: 5px;
   height: 5px;
-  border-radius: 50%;
+  border-radius: 999px;
+  background: #fff7ee;
   transform: translateY(-50%);
-  background: #fff2cf;
   box-shadow:
-    0 0 8px rgba(255, 242, 207, 0.95),
-    0 0 18px rgba(232, 167, 149, 0.68);
+    0 0 8px rgba(255, 239, 224, 0.95),
+    0 0 14px rgba(248, 197, 183, 0.8);
 }
 
-.intro-meteor-1 {
-  top: 22%;
-  left: -18%;
-  animation: introMeteorFly 1.15s ease-out 0.25s forwards;
+.meteor-one {
+  top: 28%;
+  left: -32%;
+  animation: introMeteorFly 1.18s ease-out 0.42s 1 forwards;
 }
 
-.intro-meteor-2 {
-  top: 38%;
-  left: -22%;
-  width: 92px;
-  animation: introMeteorFly 1.05s ease-out 1.15s forwards;
+.meteor-two {
+  top: 52%;
+  left: -36%;
+  width: 88px;
+  animation: introMeteorFly 1.08s ease-out 1.18s 1 forwards;
 }
 
-.intro-meteor-3 {
-  top: 68%;
-  left: -24%;
-  width: 106px;
-  animation: introMeteorFly 1.22s ease-out 2.05s forwards;
+.meteor-three {
+  top: 70%;
+  left: -40%;
+  width: 96px;
+  animation: introMeteorFly 1.12s ease-out 2.02s 1 forwards;
 }
 
 @keyframes introMeteorFly {
   0% {
     opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.72);
+    transform: rotate(-20deg) translate3d(0, 0, 0);
   }
-  15% {
+  12% {
     opacity: 1;
+  }
+  82% {
+    opacity: 0.88;
   }
   100% {
     opacity: 0;
-    transform: translate3d(140vw, 48vh, 0) rotate(-24deg) scaleX(1);
+    transform: rotate(-20deg) translate3d(760px, 0, 0);
   }
 }
 
-@keyframes introSparklePulse {
-  0%, 100% {
-    opacity: 0.62;
+@keyframes introStarTwinkle {
+  0% {
+    opacity: 0.58;
     transform: scale(0.82) rotate(0deg);
-    filter: brightness(0.96);
   }
-  50% {
+  55% {
     opacity: 1;
-    transform: scale(1.18) rotate(10deg);
-    filter: brightness(1.2);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1.18) rotate(8deg);
   }
 }
 
-@keyframes introTextFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
+/* =========================================================
+   SEARCH INPUT FIX - Desktop + RWD
+   修正搜尋欄文字上下截斷
+========================================================= */
+
+.sidebar-search {
+  min-height: 44px;
+  height: 44px;
+  line-height: normal;
+  padding: 0 14px;
+  display: block;
+}
+
+.sidebar-search::placeholder {
+  line-height: normal;
+}
+
+.search-action-row {
+  align-items: stretch;
+}
+
+.sidebar-main-btn,
+.sidebar-sub-btn {
+  min-height: 42px;
+  line-height: normal;
 }
 
 @media (max-width: 768px) {
-  .intro-message {
-    font-size: clamp(28px, 8vw, 44px);
-    letter-spacing: 0.06em;
+  .intro-glass {
+    width: min(88vw, 430px);
+    min-height: 160px;
+    border-radius: 26px;
   }
 
-  .intro-sparkle-a {
-    top: -20px;
-    right: -26px;
+  .intro-message-wrap {
+    padding: 24px 48px;
   }
 
-  .intro-sparkle-b {
-    top: -38px;
-    right: 6px;
+  .intro-message-text {
+    font-size: clamp(22px, 6vw, 30px);
   }
 
-  .intro-sparkle-bl {
-    left: -26px;
-    bottom: -24px;
+  .sidebar-search {
+    height: 46px;
+    min-height: 46px;
+    padding: 0 14px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 480px) {
-  .intro-message {
-    font-size: clamp(26px, 9vw, 38px);
+  .intro-glass {
+    width: min(90vw, 360px);
+    min-height: 148px;
   }
 
   .intro-message-wrap {
-    padding: 8px 14px;
+    padding: 22px 42px;
+  }
+
+  .intro-message-text {
+    font-size: clamp(21px, 6.4vw, 28px);
+    letter-spacing: 0.06em;
+  }
+
+  .intro-star-top-a {
+    right: 18px;
+    top: 8px;
+  }
+
+  .intro-star-top-b {
+    right: -3px;
+    top: 28px;
+  }
+
+  .intro-star-bottom {
+    left: 2px;
+    bottom: 9px;
   }
 }
