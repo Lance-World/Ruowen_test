@@ -1612,3 +1612,244 @@ button {
     right: 14px !important;
   }
 }
+
+
+/* =========================================================
+   INTRO OVERLAY - Starry Entrance
+   剛進網站中央短句、透明霧灰背景、白金/玫瑰金流星
+========================================================= */
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.12), transparent 30%),
+    linear-gradient(135deg, rgba(40, 48, 52, 0.38), rgba(92, 96, 102, 0.28));
+  backdrop-filter: blur(5px) saturate(1.04);
+  -webkit-backdrop-filter: blur(5px) saturate(1.04);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.65s ease;
+}
+
+.intro-overlay-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.intro-overlay-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-overlay-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-card {
+  position: relative;
+  min-width: min(460px, calc(100vw - 52px));
+  min-height: 160px;
+  padding: 42px 42px 34px;
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 246, 230, 0.28);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 235, 210, 0.16), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+  box-shadow:
+    0 28px 80px rgba(20, 28, 32, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.intro-message {
+  color: rgba(255, 248, 235, 0.96);
+  font-size: clamp(24px, 5.3vw, 44px);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow:
+    0 0 12px rgba(255, 247, 230, 0.34),
+    0 4px 24px rgba(230, 182, 154, 0.26);
+}
+
+.intro-skip {
+  border: 1px solid rgba(255, 240, 220, 0.38);
+  border-radius: 999px;
+  padding: 7px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 250, 242, 0.9);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.intro-skip:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.intro-meteor {
+  position: absolute;
+  width: 150px;
+  height: 2px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: rotate(-24deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 244, 220, 0.96), rgba(229, 177, 154, 0.72));
+  box-shadow:
+    0 0 14px rgba(255, 242, 216, 0.82),
+    0 0 28px rgba(229, 177, 154, 0.36);
+  animation: introMeteor 1.45s ease-out forwards;
+}
+
+.intro-meteor::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 250, 235, 0.96);
+  box-shadow:
+    0 0 10px rgba(255, 244, 220, 0.9),
+    0 0 18px rgba(226, 180, 160, 0.6);
+}
+
+.intro-meteor-1 {
+  left: -18%;
+  top: 24%;
+  animation-delay: 0.3s;
+}
+
+.intro-meteor-2 {
+  left: -24%;
+  top: 54%;
+  width: 124px;
+  animation-delay: 0.95s;
+  background: linear-gradient(90deg, transparent, rgba(255, 248, 232, 0.95), rgba(255, 218, 190, 0.58));
+}
+
+.intro-meteor-3 {
+  left: -20%;
+  top: 72%;
+  width: 108px;
+  animation-delay: 1.55s;
+  background: linear-gradient(90deg, transparent, rgba(255, 250, 230, 0.94), rgba(220, 185, 150, 0.58));
+}
+
+.intro-sparkle {
+  position: absolute;
+  color: rgba(255, 244, 222, 0.94);
+  text-shadow:
+    0 0 10px rgba(255, 244, 222, 0.74),
+    0 0 20px rgba(226, 180, 160, 0.42);
+  opacity: 0;
+  animation: introSparkle 2.3s ease-in-out infinite;
+}
+
+.intro-sparkle-1 {
+  left: 23%;
+  top: 31%;
+  font-size: 16px;
+  animation-delay: 1.3s;
+}
+
+.intro-sparkle-2 {
+  right: 24%;
+  top: 28%;
+  font-size: 14px;
+  color: rgba(244, 199, 178, 0.95);
+  animation-delay: 1.75s;
+}
+
+.intro-sparkle-3 {
+  left: 31%;
+  bottom: 27%;
+  font-size: 13px;
+  animation-delay: 2.05s;
+}
+
+.intro-sparkle-4 {
+  right: 29%;
+  bottom: 32%;
+  font-size: 17px;
+  color: rgba(255, 235, 215, 0.95);
+  animation-delay: 2.35s;
+}
+
+@keyframes introMeteor {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.65);
+  }
+  12% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(138vw, 44vh, 0) rotate(-24deg) scaleX(1);
+  }
+}
+
+@keyframes introSparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.75) rotate(0deg);
+  }
+  35% {
+    opacity: 0.98;
+    transform: scale(1.12) rotate(12deg);
+  }
+  64% {
+    opacity: 0.45;
+    transform: scale(0.9) rotate(-8deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .intro-card {
+    min-width: min(360px, calc(100vw - 36px));
+    min-height: 132px;
+    padding: 34px 28px 26px;
+    border-radius: 24px;
+  }
+
+  .intro-message {
+    font-size: clamp(24px, 8vw, 34px);
+    letter-spacing: 0.06em;
+  }
+
+  .intro-meteor {
+    width: 118px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-meteor,
+  .intro-sparkle {
+    animation: none !important;
+    opacity: 0.72;
+  }
+
+  .intro-overlay,
+  .intro-skip {
+    transition: none !important;
+  }
+}
