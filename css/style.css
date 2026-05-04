@@ -1646,3 +1646,199 @@ button {
     right: 14px !important;
   }
 }
+
+/* =========================================================
+   Mobile Final Overrides
+   - Random / clickable info icon visual
+   - Mobile compact info panel
+   - Mobile adaptive sentence/source height
+   ========================================================= */
+
+.info-icon-action {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.info-icon-action:hover {
+  filter: brightness(0.98);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.info-icon-action:active {
+  transform: scale(0.96);
+}
+
+.info-icon-action.is-collapsed {
+  box-shadow: 0 0 0 4px rgba(92, 166, 168, 0.12);
+}
+
+.info-tags-title-row {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  /* 手機版：資訊欄整體可滾動，但內容少時不再硬撐高度 */
+  .info-panel {
+    width: 100% !important;
+    min-height: 130px !important;
+    max-height: 76vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+
+  /* 手機版：圖案可點擊，做成可收合資訊的入口 */
+  .info-icon {
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+  }
+
+  .info-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .info-title-block {
+    min-width: 0 !important;
+  }
+
+  .info-title-block h2 {
+    margin: 0 !important;
+    line-height: 1.25 !important;
+  }
+
+  /*
+    手機版下方資訊：改成內容自適應。
+    原本 min-height: 360px / minmax(170px, ...)
+    會讓相關句子參考內容少時留下大片空白。
+  */
+  .info-split-area {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  .resize-handle.vertical {
+    width: 100% !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    flex-shrink: 0 !important;
+  }
+
+  .info-box {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 12px !important;
+  }
+
+  .sentence-box,
+  .source-box {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* 內容很多時才在該區塊內滾動 */
+  .sentence-box {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .source-box {
+    max-height: 42vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .quote-list,
+  .source-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .quote-item,
+  .source-item {
+    word-break: break-word !important;
+  }
+
+  /*
+    手機版：點擊左側圖案後，收合下方所有內容。
+    只留下圖案 + 節點標題，並垂直置中。
+  */
+  .info-panel.mobile-compact-info {
+    min-height: 82px !important;
+    max-height: 96px !important;
+    padding: 12px 14px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .info-panel.mobile-compact-info .info-header {
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .info-panel.mobile-compact-info .info-icon {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 18px !important;
+  }
+
+  .info-panel.mobile-compact-info .info-title-block {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 42px !important;
+  }
+
+  .info-panel.mobile-compact-info .info-title-block h2 {
+    margin: 0 !important;
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+  }
+
+  .info-panel.mobile-compact-info .info-tags,
+  .info-panel.mobile-compact-info .info-tags-title-row,
+  .info-panel.mobile-compact-info .info-related-row,
+  .info-panel.mobile-compact-info .info-split-area,
+  .info-panel.mobile-compact-info .info-right-resize-handle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .sentence-box {
+    max-height: 34vh !important;
+  }
+
+  .source-box {
+    max-height: 38vh !important;
+  }
+
+  .info-panel.mobile-compact-info {
+    min-height: 78px !important;
+    max-height: 90px !important;
+  }
+
+  .info-panel.mobile-compact-info .info-title-block h2 {
+    font-size: 19px !important;
+  }
+}
