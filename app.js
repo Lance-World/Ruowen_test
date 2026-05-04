@@ -21,21 +21,22 @@ const state = {
   nodeSelection: null,
   zoomBehavior: null,
   infoCompact: false,
+  lastMobileTapNodeId: null,
 };
 
 const nodeColors = {
-  topic: "#CFEAF4",      // 第一層：霧感淡藍
-  concept: "#D7EEE9",    // 第二層：霧青綠，與背景融合
-  term: "#DCD9EA",       // 第三層：低飽和灰紫，不再偏紅
-  phrase: "#F6F1E8",     // 第四層：奶霜米白
-  unknown: "#E8F3F1",
+  topic: "#b9dcec",
+  concept: "#bfe7e2",
+  term: "#f4d982",
+  phrase: "#f7ead0",
+  unknown: "#d8eeee",
 };
 
 const edgeColors = {
   contains: "rgba(92, 142, 157, 0.62)",
   related_to: "rgba(92, 166, 168, 0.62)",
-  alias_of: "rgba(126, 156, 168, 0.42)",
-  related_phrase: "rgba(150, 168, 176, 0.34)",
+  alias_of: "rgba(217, 170, 56, 0.62)",
+  related_phrase: "rgba(196, 166, 95, 0.56)",
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -46,13 +47,13 @@ async function init() {
     restoreSidebarState();
     restoreSidebarWidth();
     restoreSearchPanelState();
-    updateFloatingLayoutVars();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
     renderGraph();
     renderDefaultInfo();
+    setupFloatingNoteAutoHide();
     setupIntroOverlay();
   } catch (error) {
     console.error(error);
@@ -98,24 +99,23 @@ async function fetchJson(path) {
 
 function restoreSidebarState() {
   const appShell = document.querySelector(".app-shell");
-  const isCollapsed = localStorage.getItem("sidebarCollapsed") === "1";
+  if (!appShell) return;
 
-  if (isCollapsed) {
+  // JS-1C:
+  // 桌機：記住上一次 Sidebar 收合狀態。
+  // 手機：每次載入都預設收合，讓地圖空間最大化。
+  if (isMobileLayout()) {
     appShell.classList.add("sidebar-collapsed");
+    return;
   }
+
+  const isCollapsed = localStorage.getItem("sidebarCollapsed") === "1";
+  appShell.classList.toggle("sidebar-collapsed", isCollapsed);
 }
 
 function restoreSidebarWidth() {
-  const sidebar = document.getElementById("sidebar");
-  const savedWidth = localStorage.getItem("sidebarWidth");
-
-  if (!sidebar || !savedWidth) return;
-
-  const width = Number(savedWidth);
-
-  if (Number.isFinite(width) && width >= 220 && width <= 420) {
-    sidebar.style.width = `${width}px`;
-  }
+  // JS-2B：桌機 Sidebar 可拖曳，但重新整理後回到預設寬度。
+  localStorage.removeItem("sidebarWidth");
 }
 
 function restoreSearchPanelState() {
@@ -137,8 +137,6 @@ function toggleSidebar() {
 
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
-
-  updateFloatingLayoutVars();
 
   setTimeout(() => {
     resizeGraphAfterPanelChange();
@@ -167,8 +165,6 @@ function toggleSearchPanel() {
       if (input) input.focus();
     }, 120);
   }
-
-  updateFloatingLayoutVars();
 
   setTimeout(() => {
     resizeGraphAfterPanelChange();
@@ -424,7 +420,11 @@ function setInfoTitle(titleText) {
 ================================ */
 
 function setupResizablePanels() {
-  setupSidebarResize();
+  // JS-2B / JS-3A：Sidebar resize 只在桌機啟用；手機完全停用。
+  if (!isMobileLayout()) {
+    setupSidebarResize();
+  }
+
   setupMainVerticalResize();
   setupInnerHorizontalResize();
   setupInfoRightResize();
@@ -433,30 +433,22 @@ function setupResizablePanels() {
 function setupSidebarResize() {
   const handle = document.getElementById("sidebarResizeHandle");
   const sidebar = document.getElementById("sidebar");
-  const appShell = document.querySelector(".app-shell");
 
-  if (!handle || !sidebar || !appShell) return;
+  if (!handle || !sidebar) return;
 
   enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    cursor: "col-resize",
     onMove: (event) => {
-      if (isMobileLayout()) {
-        const shellRect = appShell.getBoundingClientRect();
-        const minHeight = 68;
-        const maxHeight = Math.max(150, shellRect.height * 0.58);
-        const nextHeight = clamp(event.clientY - shellRect.top, minHeight, maxHeight);
+      // JS-3A：手機完全停用 Sidebar resize。
+      if (isMobileLayout()) return;
 
-        sidebar.style.height = `${nextHeight}px`;
-        localStorage.setItem("sidebarMobileHeight", String(nextHeight));
-      } else {
-        const minWidth = 220;
-        const maxWidth = Math.min(520, window.innerWidth * 0.68);
-        const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
+      const minWidth = 220;
+      const maxWidth = Math.min(520, window.innerWidth * 0.68);
+      const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
 
-        sidebar.style.width = `${nextWidth}px`;
-        localStorage.setItem("sidebarWidth", String(nextWidth));
-      }
+      sidebar.style.width = `${nextWidth}px`;
 
+      // JS-2B：不寫入 localStorage，重新整理後回到預設寬度。
       updateFloatingLayoutVars();
       resizeGraphAfterPanelChange();
     },
@@ -483,7 +475,11 @@ function setupMainVerticalResize() {
       applyInfoCompactState();
 
       workspace.style.setProperty("--info-height", `${nextHeight}px`);
-      localStorage.setItem("infoHeight", String(nextHeight));
+      if (!isMobileLayout()) {
+        localStorage.setItem("infoHeight", String(nextHeight));
+      } else {
+        localStorage.removeItem("infoHeight");
+      }
 
       resizeGraphAfterPanelChange();
     },
@@ -505,7 +501,7 @@ function setupInnerHorizontalResize() {
         const ratio = ((event.clientY - rect.top) / rect.height) * 100;
         const nextRatio = clamp(ratio, 24, 76);
         splitArea.style.setProperty("--sentence-height", `${nextRatio}%`);
-        localStorage.setItem("sentenceHeight", String(nextRatio));
+        localStorage.removeItem("sentenceHeight");
       } else {
         const ratio = ((event.clientX - rect.left) / rect.width) * 100;
         const nextRatio = clamp(ratio, 28, 72);
@@ -537,7 +533,7 @@ function setupInfoRightResize() {
         const maxInfo = Math.max(240, rect.height * 0.76);
         const nextHeight = clamp(infoHeight, minInfo, maxInfo);
         workspace.style.setProperty("--info-height", `${nextHeight}px`);
-        localStorage.setItem("infoHeight", String(nextHeight));
+        localStorage.removeItem("infoHeight");
       } else {
         const minWidth = Math.min(280, rect.width);
         const maxWidth = rect.width;
@@ -602,34 +598,40 @@ function enablePointerResize(handle, options) {
   });
 }
 
+function restorePanelPreferences() {
+  const workspace = document.getElementById("workspace");
+  const splitArea = document.querySelector(".info-split-area");
 
-function updateFloatingLayoutVars() {
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
+  if (!workspace) return;
 
-  if (!appShell || !sidebar) return;
+  // JS-11C：桌機恢復資訊欄高度；手機不記住高度。
+  if (!isMobileLayout()) {
+    const savedInfoHeight = Number(localStorage.getItem("infoHeight"));
+    if (Number.isFinite(savedInfoHeight) && savedInfoHeight >= 160 && savedInfoHeight <= window.innerHeight * 0.76) {
+      workspace.style.setProperty("--info-height", `${savedInfoHeight}px`);
+    }
 
-  if (isMobileLayout()) {
-    appShell.style.setProperty("--sidebar-left", "20px");
-    appShell.style.setProperty("--sidebar-top", "20px");
-    appShell.style.setProperty("--sidebar-width", "calc(100% - 40px)");
-    appShell.style.setProperty("--info-left", "20px");
-    appShell.style.setProperty("--info-right", "20px");
-    return;
+    // JS-12B：桌機恢復句子 / 出處左右比例；手機不記住上下比例。
+    const savedSentenceWidth = Number(localStorage.getItem("sentenceWidth"));
+    if (splitArea && Number.isFinite(savedSentenceWidth) && savedSentenceWidth >= 28 && savedSentenceWidth <= 72) {
+      splitArea.style.setProperty("--sentence-width", `${savedSentenceWidth}%`);
+    }
+  } else {
+    localStorage.removeItem("infoHeight");
+    localStorage.removeItem("sentenceHeight");
   }
+}
 
-  const shellRect = appShell.getBoundingClientRect();
-  const sidebarRect = sidebar.getBoundingClientRect();
-  const isCollapsed = appShell.classList.contains("sidebar-collapsed");
-  const sidebarWidth = Math.round(sidebarRect.width || (isCollapsed ? 64 : 280));
-  const sidebarLeft = 20;
-  const infoLeft = isCollapsed ? 104 : Math.max(320, sidebarLeft + sidebarWidth + 40);
+function setupFloatingNoteAutoHide() {
+  // JS-4A：每次進頁面都顯示 floating-note，20 秒後自動隱藏。
+  const note = document.querySelector(".floating-note");
+  if (!note) return;
 
-  appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
-  appShell.style.setProperty("--sidebar-top", "20px");
-  appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
-  appShell.style.setProperty("--info-left", `${infoLeft}px`);
-  appShell.style.setProperty("--info-right", "20px");
+  note.classList.remove("floating-note-hidden");
+
+  window.setTimeout(() => {
+    note.classList.add("floating-note-hidden");
+  }, 20000);
 }
 
 function isMobileLayout() {
@@ -702,6 +704,14 @@ async function setupIntroOverlay() {
   }
 
   overlay.addEventListener("click", closeIntroOverlay);
+
+  const skipBtn = document.getElementById("introSkipBtn");
+  if (skipBtn) {
+    skipBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closeIntroOverlay();
+    });
+  }
 
   window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
 }
@@ -901,17 +911,17 @@ function ensureSvgDefs(svg) {
   countGradient
     .append("stop")
     .attr("offset", "0%")
-    .attr("stop-color", "#6FAFB1");
+    .attr("stop-color", "#c98f7a");
 
   countGradient
     .append("stop")
     .attr("offset", "48%")
-    .attr("stop-color", "#9BB9C6");
+    .attr("stop-color", "#d8a36f");
 
   countGradient
     .append("stop")
     .attr("offset", "100%")
-    .attr("stop-color", "#9A98C8");
+    .attr("stop-color", "#7d7ee8");
 }
 
 function renderGraph() {
@@ -925,16 +935,16 @@ function renderGraph() {
   svg.attr("viewBox", [0, 0, width, height]);
   svg.selectAll("*").remove();
 
-  
+
   ensureSvgDefs(svg);
-state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
+  state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
 
   state.linkSelection = state.zoomLayer.append("g").attr("class", "links");
   state.nodeSelection = state.zoomLayer.append("g").attr("class", "nodes");
 
   state.zoomBehavior = d3
     .zoom()
-    .scaleExtent([0.15, 5])
+    .scaleExtent([0.22, 4])
     .on("zoom", (event) => {
       state.zoomLayer.attr("transform", event.transform);
     });
@@ -1014,12 +1024,26 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
+
+          // JS-9B：手機點同一節點第二次才聚焦；桌機維持單擊選取。
+          if (isMobileLayout()) {
+            if (state.selectedNodeId === node.id && state.lastMobileTapNodeId === node.id) {
+              focusNode(node.id);
+            } else {
+              selectNode(node.id);
+              state.lastMobileTapNodeId = node.id;
+            }
+            return;
+          }
+
           selectNode(node.id);
         });
 
         g.on("dblclick", (event, node) => {
           event.stopPropagation();
-          focusNode(node.id);
+          if (!isMobileLayout()) {
+            focusNode(node.id);
+          }
         });
 
         return g;
@@ -1044,7 +1068,10 @@ function updateGraph() {
     );
 
   state.svg.on("click", () => {
-    clearSelection();
+    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
+    if (!isMobileLayout()) {
+      clearSelection();
+    }
   });
 
   state.simulation = d3
@@ -1170,6 +1197,12 @@ function selectNode(nodeId) {
   const node = state.allNodes.find((item) => item.id === nodeId);
   if (node) {
     renderInfoPanel(node);
+
+    // JS-7C：手機點節點後自動展開資訊欄，桌機維持目前狀態。
+    if (isMobileLayout()) {
+      state.infoCompact = false;
+      applyInfoCompactState();
+    }
   }
 }
 
@@ -1457,19 +1490,46 @@ function searchNode() {
 
   if (!keyword) return;
 
+  const matchedNodes = state.allNodes.filter((node) => {
+    return buildSearchHaystack(node).includes(keyword);
+  });
+
+  if (matchedNodes.length === 0) {
+    appendSearchFeedback(0);
+    return;
+  }
+
+  const matchedNode = matchedNodes[0];
+  setVisibleTypes(["topic", "concept", "term", "phrase"]);
+
+  // JS-6C：手機搜尋後自動收合 Sidebar，桌機維持原狀。
+  if (isMobileLayout()) {
+    const appShell = document.querySelector(".app-shell");
+    const panel = document.getElementById("sidebarSearchPanel");
+    if (appShell) appShell.classList.add("sidebar-collapsed");
+    if (panel) panel.classList.add("search-collapsed");
+    localStorage.setItem("searchPanelOpen", "0");
+    updateFloatingLayoutVars();
+  }
+
   setTimeout(() => {
-    const matchedNode = state.allNodes.find((node) => {
-      return buildSearchHaystack(node).includes(keyword);
-    });
-
-    if (matchedNode) {
-      setVisibleTypes(["topic", "concept", "term", "phrase"]);
-
-      setTimeout(() => {
-        focusNode(matchedNode.id);
-      }, 280);
-    }
+    focusNode(matchedNode.id);
+    appendSearchFeedback(matchedNodes.length);
   }, 280);
+}
+
+function appendSearchFeedback(count) {
+  // JS-10C：搜尋後先聚焦第一個結果，並在資訊欄標籤顯示找到幾個。
+  const tags = document.getElementById("infoTags");
+  if (!tags) return;
+
+  const old = tags.querySelector(".search-result-pill");
+  if (old) old.remove();
+
+  const pill = document.createElement("span");
+  pill.className = "search-result-pill";
+  pill.textContent = count > 0 ? `搜尋結果 ${count} 個` : "搜尋結果 0 個";
+  tags.appendChild(pill);
 }
 
 function resetZoom() {
@@ -1543,6 +1603,5 @@ function dragEnded(event, node) {
 ================================ */
 
 window.addEventListener("resize", () => {
-  updateFloatingLayoutVars();
   resizeGraphAfterPanelChange();
 });
