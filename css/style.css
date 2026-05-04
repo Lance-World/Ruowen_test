@@ -1671,7 +1671,7 @@ button {
   position: relative;
   z-index: 2;
   color: rgba(255, 248, 240, 0.96);
-  font-size: clamp(22px, 5vw, 32px);
+  font-size: clamp(20px, 4vw, 28px);
   font-weight: 800;
   line-height: 1.18;
   letter-spacing: 0.08em;
