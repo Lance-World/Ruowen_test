@@ -2,7 +2,7 @@
    RUOWEN KNOWLEDGE GRAPH - INTEGRATED STYLE.CSS
    設計決策：
    1B：手機 Sidebar 收合後只留右上角 ☰
-   2B：Sidebar resize bar 桌機保留，手機刪除
+   2B：Sidebar resize bar 桌機保留，手機刪除；桌機 bar 視覺淡化但保留熱區
    3：桌機右上橫排；手機收合時左上橫排
    4D/JS-4A：floating-note 顯示 20 秒後隱藏
    5A：Info 收合後留 ✦ + 節點標題 + 隨機數字
@@ -281,17 +281,17 @@ button {
   border: 1px solid rgba(199, 220, 222, 0.9);
   background: rgba(255, 255, 255, 0.88);
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0 16px;
   outline: none;
   color: var(--text-main);
-  font-size: 13px;
-  line-height: normal;
-  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 50px;
+  margin-bottom: 10px;
 }
 
 .sidebar-search::placeholder {
-  color: rgba(83, 113, 118, 0.48);
-  line-height: normal;
+  color: rgba(83, 113, 118, 0.55);
+  line-height: 50px;
 }
 
 .sidebar-search:focus {
@@ -307,12 +307,13 @@ button {
 
 .sidebar-main-btn,
 .sidebar-sub-btn {
-  min-height: 42px;
+  height: 44px;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0 16px;
   cursor: pointer;
-  line-height: normal;
+  line-height: 44px;
 }
 
 .sidebar-main-btn {
@@ -367,27 +368,48 @@ button {
   padding-right: 4px;
 }
 
-/* Desktop：保留 Sidebar resize bar */
+/* Desktop：保留 Sidebar resize 熱區，但視覺淡化，避免畫面中央出現明顯直條 */
 .sidebar-resize-handle {
   position: absolute;
-  left: calc(var(--sidebar-left) + var(--sidebar-width) + 8px);
-  top: 26px;
-  bottom: 26px;
-  width: 8px;
+  left: calc(var(--sidebar-left) + var(--sidebar-width) + 4px);
+  top: 28px;
+  bottom: 28px;
+  width: 14px;
   height: auto;
   z-index: 21;
   cursor: col-resize;
   border-radius: 999px;
-  background: rgba(92, 166, 168, 0.14);
-  border: 1px solid rgba(199, 220, 222, 0.42);
-  opacity: 0.78;
+  background: transparent;
+  border: 0;
+  opacity: 0.18;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  transition: opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
-.sidebar-resize-handle:hover {
-  background: rgba(167, 200, 201, 0.34);
+.sidebar-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 96px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: rgba(92, 166, 168, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  opacity: 0.78;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:active::after {
+  background: rgba(92, 166, 168, 0.54);
 }
 
 /* Desktop：Sidebar 收合後保留 64px 窄欄 */
@@ -1231,11 +1253,11 @@ button {
 
   /* 手機版 Sidebar 展開：上方玻璃卡 */
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 12px;
-    right: 12px;
-    top: 12px;
+    left: 8px;
+    right: 8px;
+    top: 8px;
     bottom: auto;
-    width: calc(100% - 24px) !important;
+    width: calc(100% - 16px) !important;
     height: auto;
     min-height: 132px;
     max-height: 58vh;
@@ -1308,16 +1330,19 @@ button {
   }
 
   .sidebar-search {
-    height: 46px;
-    min-height: 46px;
+    height: 50px;
+    min-height: 50px;
+    padding: 0 16px;
     font-size: 14px;
+    line-height: 50px;
   }
 
   .sidebar-main-btn,
   .sidebar-sub-btn {
-    height: 42px;
-    min-height: 42px;
+    height: 44px;
+    min-height: 44px;
     font-size: 13px;
+    line-height: 44px;
   }
 
   /* 手機版 Sidebar 收合：只留右上角 ☰ */
@@ -1395,9 +1420,9 @@ button {
 
   /* 手機版操作按鈕：展開時在 Sidebar 下方；收合時左上橫排，避開右側 ☰ */
   .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 176px;
-    left: 12px;
-    right: 12px;
+    top: 168px;
+    left: 8px;
+    right: 8px;
     width: auto;
     max-width: none;
     overflow-x: auto;
@@ -1441,17 +1466,17 @@ button {
   }
 
   .floating-note {
-    top: 68px;
-    right: 12px;
+    top: 64px;
+    right: 8px;
     max-width: min(260px, calc(100vw - 24px));
     z-index: 36;
   }
 
   .info-panel,
   #infoPanel:not(.info-compact) {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
     width: auto;
     height: var(--info-height);
     min-height: 120px;
@@ -1604,10 +1629,10 @@ button {
 
 @media (max-width: 480px) {
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 10px;
-    right: 10px;
-    top: 10px;
-    width: calc(100% - 20px) !important;
+    left: 6px;
+    right: 6px;
+    top: 6px;
+    width: calc(100% - 12px) !important;
     border-radius: 20px;
   }
 
@@ -1631,17 +1656,17 @@ button {
   }
 
   .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 168px;
-    left: 10px;
-    right: 10px;
+    top: 162px;
+    left: 6px;
+    right: 6px;
   }
 
   .info-panel,
   #infoPanel:not(.info-compact),
   #infoPanel.info-compact {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
+    left: 6px;
+    right: 6px;
+    bottom: 8px;
     border-radius: 20px;
   }
 
@@ -1733,5 +1758,58 @@ button {
     height: 38px;
     padding: 0 10px;
     font-size: 11px;
+  }
+}
+
+
+/* =========================================================
+   REFINEMENT PATCH - 2026-05-04
+   1. 手機 Sidebar 展開時左右縫隙縮小
+   2. 桌機 Sidebar resize bar 保留功能但淡化視覺
+   3. 桌機 Sidebar 收合時 Info panel 更靠左、可視寬度更大
+   4. 搜尋框高度與字體一致，避免文字顯得擁擠
+========================================================= */
+
+.app-shell.sidebar-collapsed {
+  --info-left: 96px;
+}
+
+.sidebar-search {
+  height: 50px;
+  min-height: 50px;
+  line-height: 50px;
+  font-size: 14px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.sidebar-search::placeholder {
+  line-height: 50px;
+}
+
+.sidebar-search-panel:not(.search-collapsed) {
+  min-height: 126px;
+}
+
+@media (max-width: 768px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    width: calc(100% - 16px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    left: 8px;
+    right: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 6px;
+    right: 6px;
+    top: 6px;
+    width: calc(100% - 12px) !important;
   }
 }
