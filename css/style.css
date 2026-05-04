@@ -2884,3 +2884,210 @@ body {
     max-width: min(178px, calc(100vw - 20px)) !important;
   }
 }
+
+/* =========================================================
+   DESKTOP LAYERING PATCH - 20260504
+   只影響網頁版 / 桌機版：
+   1. 知識網絡 graph 成為最底層全螢幕畫布
+   2. 左側 sidebar、下方 info panel、右上操作按鈕浮在 graph 上一層
+   3. 桌機右上操作按鈕維持三顆按鈕展開，不影響手機版「⋯」選單
+========================================================= */
+
+@media (min-width: 769px) {
+  .app-shell {
+    position: relative !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(215, 238, 233, 0.52), transparent 32%),
+      radial-gradient(circle at 82% 18%, rgba(207, 234, 244, 0.62), transparent 34%),
+      radial-gradient(circle at 50% 86%, rgba(246, 241, 232, 0.54), transparent 42%),
+      linear-gradient(160deg, #f9fffd 0%, #edf7f6 48%, #d8eeee 100%) !important;
+  }
+
+  .main-area {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
+  }
+
+  .workspace {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .graph-section {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    z-index: 1 !important;
+  }
+
+  .graph-card {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    z-index: 1 !important;
+    background:
+      radial-gradient(circle at 22% 20%, rgba(246, 241, 232, 0.38), transparent 26%),
+      radial-gradient(circle at 72% 28%, rgba(215, 238, 233, 0.56), transparent 31%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(221, 240, 240, 0.82)) !important;
+  }
+
+  #graphSvg {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+  }
+
+  .sidebar {
+    position: absolute !important;
+    left: var(--sidebar-left, 20px) !important;
+    top: var(--sidebar-top, 20px) !important;
+    bottom: 20px !important;
+    width: var(--sidebar-width, 280px) !important;
+    height: auto !important;
+    z-index: 50 !important;
+    background: rgba(255, 255, 255, 0.68) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 16px 48px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(22px) saturate(1.06) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.06) !important;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar {
+    width: 64px !important;
+  }
+
+  .app-shell.sidebar-collapsed {
+    --sidebar-width: 64px;
+    --info-left: 104px;
+  }
+
+  #sidebarResizeHandle.sidebar-resize-handle {
+    position: absolute !important;
+    left: calc(var(--sidebar-left, 20px) + var(--sidebar-width, 280px) + 4px) !important;
+    top: 24px !important;
+    bottom: 24px !important;
+    width: 8px !important;
+    height: auto !important;
+    z-index: 51 !important;
+    opacity: 0.55 !important;
+    background: rgba(92, 166, 168, 0.16) !important;
+    border: 1px solid rgba(199, 220, 222, 0.42) !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebarResizeHandle.sidebar-resize-handle {
+    display: none !important;
+  }
+
+  #infoPanel.info-panel {
+    position: absolute !important;
+    left: var(--info-left, 320px) !important;
+    right: var(--info-right, 20px) !important;
+    bottom: 20px !important;
+    width: auto !important;
+    height: var(--info-height, 280px) !important;
+    min-height: 180px !important;
+    max-height: min(58vh, 520px) !important;
+    z-index: 45 !important;
+    background: rgba(255, 255, 255, 0.68) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 16px 48px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(22px) saturate(1.06) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.06) !important;
+  }
+
+  #mainResizeHandle.resize-handle.horizontal {
+    position: absolute !important;
+    left: var(--info-left, 320px) !important;
+    right: var(--info-right, 20px) !important;
+    bottom: calc(var(--info-height, 280px) + 24px) !important;
+    width: auto !important;
+    height: 8px !important;
+    z-index: 46 !important;
+    opacity: 0.55 !important;
+  }
+
+  .workspace.info-compact-workspace #infoPanel.info-compact {
+    left: var(--info-left, 320px) !important;
+    right: var(--info-right, 20px) !important;
+    bottom: 20px !important;
+    width: auto !important;
+    z-index: 45 !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    bottom: 106px !important;
+  }
+
+  .floating-actions-toggle {
+    display: none !important;
+  }
+
+  .floating-actions {
+    position: absolute !important;
+    left: auto !important;
+    right: 24px !important;
+    top: 24px !important;
+    z-index: 60 !important;
+    display: flex !important;
+    gap: 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 360px) !important;
+    padding: 8px !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.56) !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 12px 34px rgba(23, 60, 67, 0.11) !important;
+    backdrop-filter: blur(18px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.05) !important;
+    overflow: visible !important;
+  }
+
+  .floating-actions button {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.82) !important;
+    color: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 8px 18px rgba(23, 60, 67, 0.10) !important;
+    white-space: nowrap !important;
+  }
+
+  .floating-note {
+    position: absolute !important;
+    right: 24px !important;
+    top: 88px !important;
+    z-index: 58 !important;
+    background: rgba(255, 255, 255, 0.56) !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 12px 34px rgba(23, 60, 67, 0.10) !important;
+    backdrop-filter: blur(18px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.05) !important;
+  }
+}
