@@ -1060,15 +1060,15 @@ button {
   }
 }
 
-/* ================================
-   RWD Mobile Sidebar Final Adjustment
+
+/* =========================================================
+   MOBILE RWD FINAL PATCH - Stable Version
    只針對手機版：
-   1. 收合時保留左上角星星 Logo
-   2. 收合時放大鏡移到三條 bar 左側
-   3. 收合時下方拖曳 bar 仍可顯示與拖動
-   4. 展開時 Ruowen Knowledge Graph 標題置中
-   5. 手機搜尋欄高度修正，避免文字上下被截斷
-================================ */
+   1. Header 收合/展開維持 Logo、標題、搜尋與選單位置
+   2. 下方資訊欄圖案可點擊收合/展開
+   3. 收合時資訊欄變矮，知識網絡空間同步放大
+   4. 展開時相關句子/出處依內容自適應，避免大片留白
+========================================================= */
 
 @media (max-width: 768px) {
   .app-shell {
@@ -1093,7 +1093,6 @@ button {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* 展開狀態：Logo 固定左上，兩顆按鈕固定右上 */
   .sidebar .logo {
     position: absolute;
     left: 14px;
@@ -1118,26 +1117,47 @@ button {
     top: 12px;
   }
 
-  /* 展開狀態：標題置中，不被左邊 Logo 和右邊按鈕壓到 */
   .sidebar-title {
+    position: relative;
     width: 100%;
-    min-height: 54px;
-    margin: 0 0 14px;
-    padding: 0 96px;
-    display: grid;
+    min-height: 48px;
+    margin: 0 0 10px;
+    padding: 0 108px 0 74px;
+    display: grid !important;
+    grid-template-rows: auto auto;
     justify-items: center;
     align-content: center;
+    gap: 0;
     text-align: center;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
-  .sidebar-title strong,
+  .sidebar-title strong {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--teal-deep);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.02;
+    text-align: center;
+    white-space: nowrap;
+  }
+
   .sidebar-title span {
     display: block;
     width: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.05;
     text-align: center;
+    white-space: nowrap;
   }
 
-  /* 搜尋區往下避開上方 Logo/標題/按鈕列 */
   .sidebar-search-panel {
     margin-top: 4px;
     max-height: 230px;
@@ -1148,7 +1168,6 @@ button {
     min-height: 118px;
   }
 
-  /* 手機版搜尋欄：避免中文字上下被截斷 */
   .sidebar-search {
     height: 46px;
     min-height: 46px;
@@ -1176,287 +1195,6 @@ button {
     line-height: 42px;
   }
 
-  /* 手機版收合狀態：星星保留在左，放大鏡在右側 bar 左邊 */
-  .app-shell.sidebar-collapsed .sidebar {
-    width: 100% !important;
-    height: 64px;
-    min-height: 64px;
-    padding: 10px 14px;
-    align-items: flex-start;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .app-shell.sidebar-collapsed .logo {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: absolute;
-    left: 14px;
-    top: 10px;
-    margin: 0;
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-    z-index: 18;
-  }
-
-  .app-shell.sidebar-collapsed .search-toggle {
-    left: auto;
-    right: 62px;
-    top: 12px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-toggle {
-    left: auto;
-    right: 14px;
-    top: 12px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title,
-  .app-shell.sidebar-collapsed .sidebar-search-panel,
-  .app-shell.sidebar-collapsed .sidebar-section {
-    display: none !important;
-  }
-
-  /* 收合狀態仍保留下方拖曳 bar，手機可以拉動 sidebar 高度 */
-  .app-shell.sidebar-collapsed .sidebar-resize-handle {
-    display: block !important;
-    width: 100%;
-    height: 9px;
-    min-height: 9px;
-    cursor: row-resize;
-    flex-shrink: 0;
-    touch-action: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .sidebar-title {
-    padding: 0 82px;
-  }
-
-  .sidebar-title strong {
-    font-size: 17px;
-  }
-
-  .sidebar-title span {
-    font-size: 11px;
-  }
-
-  .app-shell.sidebar-collapsed .search-toggle {
-    right: 58px;
-  }
-}
-
-/* ================================
-   RWD Mobile Header Title Final Tune
-   只針對手機版：
-   1. 收合狀態仍顯示 Ruowen Knowledge Graph 並置中
-   2. 標題字級加大
-   3. 兩排文字上下留白縮小
-   4. 星星保留左側，放大鏡在三條 bar 左側
-================================ */
-
-@media (max-width: 768px) {
-  /* 展開與收合共用：標題兩排更緊湊、比例更大 */
-  .sidebar-title {
-    position: relative;
-    width: 100%;
-    min-height: 46px;
-    margin: 0 0 10px;
-    padding: 0 108px;
-    display: grid !important;
-    grid-template-rows: auto auto;
-    justify-items: center;
-    align-content: center;
-    gap: 0;
-    text-align: center;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  .sidebar-title strong {
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    color: var(--teal-deep);
-    font-size: 22px;
-    font-weight: 800;
-    line-height: 1.02;
-    letter-spacing: 0.2px;
-    text-align: center;
-  }
-
-  .sidebar-title span {
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.05;
-    letter-spacing: 0.1px;
-    text-align: center;
-  }
-
-  /* 收合狀態：sidebar 高度稍微保留，讓標題、星星、兩顆按鈕同列 */
-  .app-shell.sidebar-collapsed .sidebar {
-    width: 100% !important;
-    height: 64px;
-    min-height: 64px;
-    padding: 10px 14px;
-    align-items: stretch;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* 收合狀態：星星保留左上角 */
-  .app-shell.sidebar-collapsed .logo {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: absolute;
-    left: 14px;
-    top: 10px;
-    margin: 0;
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-    z-index: 18;
-  }
-
-  /* 收合狀態：標題仍然置中顯示，不再被隱藏 */
-  .app-shell.sidebar-collapsed .sidebar-title {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 9px;
-    height: 46px;
-    min-height: 46px;
-    margin: 0;
-    padding: 0 108px 0 74px;
-    grid-template-rows: auto auto;
-    justify-items: center;
-    align-content: center;
-    gap: 0;
-    text-align: center;
-    pointer-events: none;
-    z-index: 15;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title strong {
-    font-size: 21px;
-    line-height: 1.02;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title span {
-    font-size: 13px;
-    line-height: 1.05;
-  }
-
-  /* 收合狀態：放大鏡在三條 bar 左側 */
-  .app-shell.sidebar-collapsed .search-toggle {
-    left: auto;
-    right: 62px;
-    top: 12px;
-    z-index: 20;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-toggle {
-    left: auto;
-    right: 14px;
-    top: 12px;
-    z-index: 20;
-  }
-
-  /* 收合狀態：只隱藏搜尋面板與分類內容，不隱藏標題 */
-  .app-shell.sidebar-collapsed .sidebar-search-panel,
-  .app-shell.sidebar-collapsed .sidebar-section {
-    display: none !important;
-  }
-
-  /* 收合狀態：下方拖曳 bar 繼續保留 */
-  .app-shell.sidebar-collapsed .sidebar-resize-handle {
-    display: block !important;
-    width: 100%;
-    height: 9px;
-    min-height: 9px;
-    cursor: row-resize;
-    flex-shrink: 0;
-    touch-action: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .sidebar-title {
-    padding: 0 96px 0 70px;
-  }
-
-  .sidebar-title strong {
-    font-size: 21px;
-    line-height: 1.02;
-  }
-
-  .sidebar-title span {
-    font-size: 13px;
-    line-height: 1.05;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title {
-    padding: 0 100px 0 68px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title strong {
-    font-size: 20px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title span {
-    font-size: 12.5px;
-  }
-
-  .app-shell.sidebar-collapsed .search-toggle {
-    right: 58px;
-  }
-}
-
-@media (max-width: 380px) {
-  .sidebar-title strong {
-    font-size: 19px;
-  }
-
-  .sidebar-title span {
-    font-size: 12px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title {
-    padding: 0 96px 0 64px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title strong {
-    font-size: 18px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title span {
-    font-size: 11.5px;
-  }
-}
-
-/* =========================================================
-   FINAL MOBILE HEADER OVERRIDE
-   Purpose:
-   1. 手機版 sidebar 收合時，Ruowen Knowledge Graph 標題仍然置中顯示
-   2. 左側星星保留
-   3. 右側放大鏡在三條 bar 左側
-   4. 收合狀態下方 resize bar 仍可拖曳
-   5. 只作用在手機版，不影響桌機版
-========================================================= */
-
-@media (max-width: 768px) {
   .app-shell.sidebar-collapsed .sidebar {
     width: 100% !important;
     height: 68px !important;
@@ -1506,29 +1244,13 @@ button {
     z-index: 16 !important;
   }
 
-  .app-shell.sidebar-collapsed .sidebar-title strong,
-  .app-shell.sidebar-collapsed .sidebar-title span {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    white-space: nowrap !important;
-    text-align: center !important;
-  }
-
   .app-shell.sidebar-collapsed .sidebar-title strong {
-    color: var(--teal-deep) !important;
     font-size: 22px !important;
-    font-weight: 800 !important;
     line-height: 1 !important;
-    letter-spacing: 0.01em !important;
   }
 
   .app-shell.sidebar-collapsed .sidebar-title span {
-    color: var(--text-secondary) !important;
     font-size: 14px !important;
-    font-weight: 500 !important;
     line-height: 1.03 !important;
   }
 
@@ -1574,7 +1296,8 @@ button {
     overflow: hidden !important;
   }
 
-  .app-shell.sidebar-collapsed .sidebar-resize-handle {
+  .app-shell.sidebar-collapsed .sidebar-resize-handle,
+  .sidebar-resize-handle {
     display: block !important;
     width: 100% !important;
     height: 9px !important;
@@ -1583,9 +1306,221 @@ button {
     flex-shrink: 0 !important;
     touch-action: none !important;
   }
+
+  .main-area {
+    min-height: 0;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .workspace {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    grid-template-rows: minmax(180px, 1fr) 9px minmax(220px, var(--info-height));
+  }
+
+  .graph-section {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .graph-card {
+    height: 100%;
+    border-radius: 22px;
+  }
+
+  .floating-actions {
+    left: 10px;
+    top: 10px;
+    right: 10px;
+    max-width: none;
+    border-radius: 18px;
+    overflow-x: auto;
+  }
+
+  .floating-actions button {
+    flex-shrink: 0;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  .resize-handle.horizontal {
+    height: 9px;
+    cursor: row-resize;
+  }
+
+  #infoPanel.info-panel {
+    width: 100% !important;
+    min-height: 120px;
+    max-height: 76vh;
+    border-radius: 22px;
+    padding: 13px 14px 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #infoPanel .info-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.18s ease, filter 0.18s ease;
+  }
+
+  #infoPanel .info-icon:active {
+    transform: scale(0.96);
+    filter: brightness(0.98);
+  }
+
+  #infoPanel:not(.mobile-info-compact) .info-split-area {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .resize-handle.vertical {
+    width: 100% !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    flex-shrink: 0 !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .info-box {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .sentence-box {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .source-box {
+    max-height: 42vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .quote-list,
+  #infoPanel:not(.mobile-info-compact) .source-list {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .quote-item,
+  #infoPanel:not(.mobile-info-compact) .source-item {
+    word-break: break-word;
+  }
+
+  #workspace.mobile-info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 76px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace .graph-section {
+    min-height: 0 !important;
+  }
+
+  #workspace.mobile-info-compact-workspace .graph-card {
+    height: 100% !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #mainResizeHandle {
+    height: 9px !important;
+    min-height: 9px !important;
+    display: block !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
+    align-self: stretch !important;
+    justify-self: stretch !important;
+    min-height: 72px !important;
+    max-height: 76px !important;
+    height: 76px !important;
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-header {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+    flex-shrink: 0 !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-title-block {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
+    margin: 0 !important;
+    font-size: clamp(16px, 4.5vw, 20px) !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #infoPanel.mobile-info-compact .info-tags,
+  #infoPanel.mobile-info-compact .info-related-row,
+  #infoPanel.mobile-info-compact .info-split-area,
+  #infoPanel.mobile-info-compact #infoRightResizeHandle,
+  #infoPanel.mobile-info-compact .info-right-resize-handle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
 @media (max-width: 480px) {
+  .app-shell {
+    padding: 6px;
+  }
+
+  .sidebar,
+  .graph-card,
+  .info-panel {
+    border-radius: 18px;
+  }
+
   .app-shell.sidebar-collapsed .sidebar-title {
     width: min(42vw, 190px) !important;
   }
@@ -1610,6 +1545,37 @@ button {
 
   .app-shell.sidebar-collapsed .sidebar-toggle {
     right: 16px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 68px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
+    min-height: 66px !important;
+    max-height: 68px !important;
+    height: 68px !important;
+    padding: 7px 12px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 15px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
+    font-size: clamp(15px, 4.7vw, 18px) !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .sentence-box {
+    max-height: 34vh !important;
+  }
+
+  #infoPanel:not(.mobile-info-compact) .source-box {
+    max-height: 38vh !important;
   }
 }
 
@@ -1645,427 +1611,4 @@ button {
   .app-shell.sidebar-collapsed .sidebar-toggle {
     right: 14px !important;
   }
-}
-
-/* =========================================================
-   FINAL MOBILE INFO PANEL PATCH
-   只針對手機版：
-   1. 點擊左側圖案可收合/展開資訊欄內容
-   2. 收合後只保留「圖案 + 節點標題」，且垂直置中
-   3. 相關句子參考 / 相關出處在手機中依內容自適應高度
-   4. 內容過多時才出現滾動，不再保留大片空白
-========================================================= */
-
-@media (max-width: 768px) {
-  #infoPanel.info-panel {
-    width: 100% !important;
-    min-height: 120px;
-    max-height: 76vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  #infoPanel .info-icon {
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: transform 0.18s ease, filter 0.18s ease;
-  }
-
-  #infoPanel .info-icon:active {
-    transform: scale(0.96);
-    filter: brightness(0.98);
-  }
-
-  /* 收合狀態：只留下圖案與標題 */
-  #infoPanel.mobile-info-compact {
-    min-height: 92px !important;
-    height: auto !important;
-    max-height: 118px !important;
-    overflow: hidden !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 14px 16px !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-header {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 14px !important;
-    margin: 0 !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 50px !important;
-    height: 50px !important;
-    font-size: 22px !important;
-    flex-shrink: 0 !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block {
-    flex: 1 !important;
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    margin: 0 !important;
-    font-size: clamp(22px, 6vw, 28px) !important;
-    line-height: 1.18 !important;
-    color: var(--teal-deep) !important;
-    word-break: break-word !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-tags,
-  #infoPanel.mobile-info-compact .info-related-row,
-  #infoPanel.mobile-info-compact .info-split-area,
-  #infoPanel.mobile-info-compact #infoRightResizeHandle {
-    display: none !important;
-  }
-
-  /* 展開狀態：相關句子 / 相關出處依內容自適應，不強迫留白 */
-  #infoPanel:not(.mobile-info-compact) .info-split-area {
-    min-height: 0 !important;
-    height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .resize-handle.vertical {
-    width: 100% !important;
-    height: 9px !important;
-    min-height: 9px !important;
-    cursor: row-resize !important;
-    flex-shrink: 0 !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .info-box {
-    min-height: 0 !important;
-    height: auto !important;
-    padding: 12px !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .sentence-box,
-  #infoPanel:not(.mobile-info-compact) .source-box {
-    height: auto !important;
-    min-height: 0 !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .sentence-box {
-    max-height: 38vh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .source-box {
-    max-height: 42vh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .quote-list,
-  #infoPanel:not(.mobile-info-compact) .source-list {
-    overflow: visible !important;
-    max-height: none !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .quote-item,
-  #infoPanel:not(.mobile-info-compact) .source-item {
-    word-break: break-word;
-  }
-}
-
-@media (max-width: 480px) {
-  #infoPanel.mobile-info-compact {
-    min-height: 86px !important;
-    max-height: 108px !important;
-    padding: 12px 14px !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 46px !important;
-    height: 46px !important;
-    font-size: 20px !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(20px, 6vw, 25px) !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .sentence-box {
-    max-height: 34vh !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .source-box {
-    max-height: 38vh !important;
-  }
-}
-
-
-/* =========================================================
-   FINAL MOBILE GRAPH EXPAND WHEN INFO PANEL IS COMPACT
-   手機版：下方資訊欄收合時，中間知識網絡空間自動放大
-========================================================= */
-
-@media (max-width: 768px) {
-  #workspace.mobile-info-compact-workspace {
-    grid-template-rows: minmax(0, 1fr) 9px 76px !important;
-  }
-
-  #workspace.mobile-info-compact-workspace .graph-section {
-    min-height: 0 !important;
-  }
-
-  #workspace.mobile-info-compact-workspace .graph-card {
-    height: 100% !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #mainResizeHandle {
-    height: 9px !important;
-    min-height: 9px !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
-    align-self: stretch !important;
-    justify-self: stretch !important;
-    min-height: 72px !important;
-    max-height: 76px !important;
-    height: 76px !important;
-    margin: 0 !important;
-    padding: 8px 14px !important;
-    display: flex !important;
-    align-items: center !important;
-    overflow: hidden !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-header {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    margin: 0 !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
-    width: 38px !important;
-    height: 38px !important;
-    font-size: 16px !important;
-    flex-shrink: 0 !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-title-block {
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
-    margin: 0 !important;
-    font-size: clamp(16px, 4.5vw, 20px) !important;
-    line-height: 1.15 !important;
-    font-weight: 800 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-}
-
-@media (max-width: 480px) {
-  #workspace.mobile-info-compact-workspace {
-    grid-template-rows: minmax(0, 1fr) 9px 68px !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
-    min-height: 66px !important;
-    max-height: 68px !important;
-    height: 68px !important;
-    padding: 7px 12px !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 15px !important;
-  }
-
-  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(15px, 4.7vw, 18px) !important;
-  }
-  /* =========================================================
-   FINAL FIX - Mobile Compact Info Panel Expands Graph
-   手機版資訊欄收合時，中間知識網絡區塊同步放大
-========================================================= */
-
-@media (max-width: 768px) {
-  /*
-    關鍵：
-    收合時不能只讓 infoPanel 變矮，
-    workspace 的第三列也要同步變矮，
-    中間 graph 才會真正放大。
-  */
-  #workspace.mobile-info-compact-active {
-    grid-template-rows: minmax(0, 1fr) 9px 74px !important;
-  }
-
-  /*
-    保留中間拖曳 bar，但高度固定，不要吃掉太多空間。
-  */
-  #workspace.mobile-info-compact-active #mainResizeHandle {
-    height: 9px !important;
-    min-height: 9px !important;
-    max-height: 9px !important;
-    display: block !important;
-    flex-shrink: 0 !important;
-  }
-
-  /*
-    收合後的資訊欄貼下方，且高度固定。
-  */
-  #workspace.mobile-info-compact-active #infoPanel.mobile-info-compact {
-    align-self: end !important;
-    width: 100% !important;
-    min-height: 74px !important;
-    height: 74px !important;
-    max-height: 74px !important;
-    margin: 0 !important;
-    padding: 8px 14px !important;
-    display: flex !important;
-    align-items: center !important;
-    overflow: hidden !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-header {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    margin: 0 !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    font-size: 16px !important;
-    cursor: pointer !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block {
-    flex: 1 !important;
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    margin: 0 !important;
-    font-size: clamp(16px, 4.5vw, 20px) !important;
-    line-height: 1.15 !important;
-    font-weight: 800 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  /*
-    收合時把所有下方資訊完全拿掉，
-    避免它們雖然看不到，卻還佔高度。
-  */
-  #infoPanel.mobile-info-compact .info-tags,
-  #infoPanel.mobile-info-compact .info-related-row,
-  #infoPanel.mobile-info-compact .info-split-area,
-  #infoPanel.mobile-info-compact #infoRightResizeHandle,
-  #infoPanel.mobile-info-compact .info-right-resize-handle {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-  }
-
-  /*
-    展開狀態：
-    相關句子 / 相關出處內容自適應，不再強制留下大空白。
-  */
-  #infoPanel:not(.mobile-info-compact) .info-split-area {
-    min-height: 0 !important;
-    height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .resize-handle.vertical {
-    width: 100% !important;
-    height: 9px !important;
-    min-height: 9px !important;
-    cursor: row-resize !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .info-box {
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .sentence-box {
-    max-height: 38vh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  #infoPanel:not(.mobile-info-compact) .source-box {
-    max-height: 42vh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-}
-
-@media (max-width: 480px) {
-  #workspace.mobile-info-compact-active {
-    grid-template-rows: minmax(0, 1fr) 8px 68px !important;
-  }
-
-  #workspace.mobile-info-compact-active #infoPanel.mobile-info-compact {
-    min-height: 68px !important;
-    height: 68px !important;
-    max-height: 68px !important;
-    padding: 7px 12px !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    font-size: 15px !important;
-  }
-
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(15px, 4.4vw, 18px) !important;
-  }
-}
 }
