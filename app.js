@@ -19,6 +19,7 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
+  mobileInfoCompact: false,
 };
 
 const nodeColors = {
@@ -36,6 +37,8 @@ const edgeColors = {
   related_phrase: "rgba(196, 166, 95, 0.56)",
 };
 
+const mobileInfoIcons = ["◎", "◉", "✦", "✧", "◌", "⊙", "◇", "◈", "✺"];
+
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
@@ -47,6 +50,7 @@ async function init() {
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
+    setupMobileInfoPanel();
     renderGraph();
     renderDefaultInfo();
   } catch (error) {
@@ -327,7 +331,68 @@ function clearSelection() {
   renderDefaultInfo();
 }
 
+/* ================================
+   Mobile Info Panel
+   手機版資訊欄：隨機圖案、點擊收合、內容自適應
+================================ */
 
+function setupMobileInfoPanel() {
+  randomizeInfoIcon();
+  setupMobileInfoToggle();
+  applyMobileInfoCompactState();
+
+  window.addEventListener("resize", () => {
+    applyMobileInfoCompactState();
+  });
+}
+
+function randomizeInfoIcon() {
+  const infoIcon = document.querySelector(".info-icon");
+  if (!infoIcon) return;
+
+  const randomIndex = Math.floor(Math.random() * mobileInfoIcons.length);
+  infoIcon.textContent = mobileInfoIcons[randomIndex];
+}
+
+function setupMobileInfoToggle() {
+  const infoIcon = document.querySelector(".info-icon");
+  if (!infoIcon) return;
+
+  infoIcon.setAttribute("role", "button");
+  infoIcon.setAttribute("tabindex", "0");
+  infoIcon.setAttribute("title", "手機版：收合 / 展開資訊欄內容");
+
+  infoIcon.addEventListener("click", () => {
+    if (!isMobileLayout()) return;
+
+    state.mobileInfoCompact = !state.mobileInfoCompact;
+    applyMobileInfoCompactState();
+    resizeGraphAfterPanelChange();
+  });
+
+  infoIcon.addEventListener("keydown", (event) => {
+    if (!isMobileLayout()) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      state.mobileInfoCompact = !state.mobileInfoCompact;
+      applyMobileInfoCompactState();
+      resizeGraphAfterPanelChange();
+    }
+  });
+}
+
+function applyMobileInfoCompactState() {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  if (!isMobileLayout()) {
+    infoPanel.classList.remove("mobile-info-compact");
+    return;
+  }
+
+  infoPanel.classList.toggle("mobile-info-compact", state.mobileInfoCompact);
+}
 
 /* ================================
    Resizable Panels - Pointer Events
@@ -396,7 +461,7 @@ function setupMainVerticalResize() {
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
 
-      const minInfo = 160;
+      const minInfo = isMobileLayout() ? 92 : 160;
       const maxInfo = Math.max(230, rect.height * 0.76);
       const nextHeight = clamp(infoHeight, minInfo, maxInfo);
 
@@ -942,6 +1007,8 @@ function renderDefaultInfo() {
   if (relatedTerms) relatedTerms.innerHTML = '<span class="muted">尚無資料</span>';
   if (relatedPhrases) relatedPhrases.innerHTML = '<span class="muted">尚無資料</span>';
   if (sourceList) sourceList.innerHTML = '<span class="muted">尚無資料</span>';
+
+  applyMobileInfoCompactState();
 }
 
 function renderInfoPanel(node) {
@@ -968,6 +1035,7 @@ function renderInfoPanel(node) {
   renderRelatedTerms(node);
   renderRelatedPhrases(node);
   renderSources(node);
+  applyMobileInfoCompactState();
 }
 
 function renderRelatedTerms(node) {
