@@ -384,8 +384,15 @@ function setupFloatingActionsMenu() {
     }
   });
 
-  document.addEventListener("click", () => {
-    if (isMobileLayout()) {
+  document.addEventListener("click", (event) => {
+    if (!isMobileLayout()) return;
+
+    const clickedInsideSidebar = Boolean(event.target.closest("#sidebar"));
+    const clickedInsideInfo = Boolean(event.target.closest("#infoPanel"));
+    const clickedToggle = Boolean(event.target.closest("#floatingActionsToggleBtn"));
+    const clickedMenu = Boolean(event.target.closest("#floatingActions"));
+
+    if (!clickedInsideSidebar && !clickedInsideInfo && !clickedToggle && !clickedMenu) {
       setOpen(false);
     }
   });
