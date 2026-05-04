@@ -276,8 +276,8 @@ button {
 
 .sidebar-search {
   width: 100%;
-  height: 44px;
-  min-height: 44px;
+  height: 50px;
+  min-height: 50px;
   border: 1px solid rgba(199, 220, 222, 0.9);
   background: rgba(255, 255, 255, 0.88);
   border-radius: 999px;
@@ -1632,7 +1632,7 @@ button {
     left: 6px;
     right: 6px;
     top: 6px;
-    width: calc(100% - 12px) !important;
+    width: auto !important;
     border-radius: 20px;
   }
 
@@ -1732,60 +1732,222 @@ button {
    RWD <= 380px
 ========================================================= */
 
-   @media (max-width: 380px) {
-     .sidebar-title strong {
-       font-size: 18px;
-     }
-   
-     .sidebar-title span {
-       font-size: 12px;
-     }
-   
-     .app-shell.sidebar-collapsed .sidebar-toggle {
-       right: 8px;
-       top: 8px;
-       width: 42px;
-       height: 42px;
-     }
-   
-     .app-shell.sidebar-collapsed .floating-actions {
-       left: 6px;
-       right: 56px;
-       gap: 6px;
-     }
-   
-     .app-shell.sidebar-collapsed .floating-actions button {
-       height: 38px;
-       padding: 0 10px;
-       font-size: 11px;
-     }
-      @media (max-width: 768px) {
-     #infoPanel:not(.info-compact) .info-header-row {
-       display: grid !important;
-       grid-template-columns: auto 1fr !important;
-       grid-template-areas:
-         "icon title"
-         "icon tags"
-         "icon related";
-       align-items: start !important;
-       column-gap: 10px !important;
-       row-gap: 8px !important;
-     }
-   
-     #infoPanel:not(.info-compact) .info-icon {
-       grid-area: icon !important;
-     }
-   
-     #infoPanel:not(.info-compact) .info-title-block {
-       grid-area: title !important;
-     }
-   
-     #infoPanel:not(.info-compact) .info-tags {
-       grid-area: tags !important;
-     }
-   
-     #infoPanel:not(.info-compact) .info-related-row {
-       grid-area: related !important;
-     }
-   }
+@media (max-width: 380px) {
+  .sidebar-title strong {
+    font-size: 18px;
+  }
+
+  .sidebar-title span {
+    font-size: 12px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    right: 8px;
+    top: 8px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    left: 6px;
+    right: 56px;
+    gap: 6px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+}
+
+/* =========================================================
+   FINAL CONSOLIDATION PATCH - 2026-05-04-05
+   1. 手機 Sidebar 打開後置中、左右對稱、小留白
+   2. 桌機 Sidebar 收合時 Info panel 變寬
+   3. 桌機 Info 標題 / 標籤 / 相關詞彙同排；手機維持由上到下
+   4. 移除前版 nested media 的矛盾，所有覆蓋集中於此
+========================================================= */
+
+/* 桌機：Sidebar 收合後，Info panel 與上方 resize bar 跟著往左吃寬 */
+@media (min-width: 769px) {
+  .app-shell.sidebar-collapsed {
+    --sidebar-width: 64px;
+    --info-left: 96px;
+    --info-right: 20px;
+  }
+
+  .app-shell.sidebar-collapsed .info-panel {
+    left: 96px;
+    right: 20px;
+  }
+
+  .app-shell.sidebar-collapsed .resize-handle.horizontal {
+    left: 96px;
+    right: 20px;
+  }
+
+  /* 桌機：Info panel 第一列改為：icon / 標題 / 標籤 / 相關詞彙 */
+  #infoPanel:not(.info-compact) {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  #infoPanel:not(.info-compact) .info-header-row {
+    display: grid;
+    grid-template-columns: auto minmax(130px, max-content) minmax(260px, 0.9fr) minmax(260px, 1.1fr);
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+  }
+
+  #infoPanel:not(.info-compact) .info-title-block {
+    min-width: 0;
+  }
+
+  #infoPanel:not(.info-compact) #infoTitle {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  #infoPanel:not(.info-compact) .info-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 7px;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding-bottom: 2px;
+  }
+
+  #infoPanel:not(.info-compact) .info-related-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  #infoPanel:not(.info-compact) .info-related-row h3 {
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #infoPanel:not(.info-compact) .inline-pill-list {
+    min-width: 0;
+  }
+}
+
+/* 手機：Sidebar 打開後左右對稱。只用 left + right 算寬，不再同時指定 calc width。 */
+@media (max-width: 768px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    width: auto !important;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    transform: translateX(-50%);
+    width: min(46vw, 220px);
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    justify-items: center;
+    pointer-events: none;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar .logo {
+    left: 14px;
+    top: 12px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar .search-toggle {
+    right: 58px;
+    top: 12px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar .sidebar-toggle {
+    right: 14px;
+    top: 12px;
+  }
+
+  /* 手機：展開後三個操作按鈕跟 Sidebar 對齊，不產生右側不對稱空隙 */
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  /* 手機：Info 標題 / 標籤 / 相關詞彙維持由上到下 */
+  #infoPanel:not(.info-compact) .info-header-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "icon title"
+      "icon tags"
+      "icon related";
+    align-items: start;
+    column-gap: 10px;
+    row-gap: 8px;
+  }
+
+  #infoPanel:not(.info-compact) .info-icon {
+    grid-area: icon;
+  }
+
+  #infoPanel:not(.info-compact) .info-title-block {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  #infoPanel:not(.info-compact) .info-tags {
+    grid-area: tags;
+    display: flex;
+    flex-wrap: wrap;
+    max-height: none;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  #infoPanel:not(.info-compact) .info-related-row {
+    grid-area: related;
+    display: block;
+    margin: 0 0 10px;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 6px;
+    right: 6px;
+    top: 6px;
+    width: auto !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    width: min(44vw, 190px);
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    left: 6px;
+    right: 6px;
+    width: auto;
+  }
 }
