@@ -25,17 +25,17 @@ const state = {
 
 const nodeColors = {
   topic: "#CFEAF4",      // 第一層：霧感淡藍
-  concept: "#F3E6B4",    // 第二層：奶油粉黃
-  term: "#EBCAD0",       // 第三層：霧玫瑰粉
-  phrase: "#FFF3DF",     // 第四層：暖米白
-  unknown: "#E4F2F0",
+  concept: "#D7EEE9",    // 第二層：霧青綠，與背景融合
+  term: "#DCD9EA",       // 第三層：低飽和灰紫，不再偏紅
+  phrase: "#F6F1E8",     // 第四層：奶霜米白
+  unknown: "#E8F3F1",
 };
 
 const edgeColors = {
   contains: "rgba(92, 142, 157, 0.62)",
   related_to: "rgba(92, 166, 168, 0.62)",
-  alias_of: "rgba(203, 176, 112, 0.48)",
-  related_phrase: "rgba(218, 190, 140, 0.42)",
+  alias_of: "rgba(126, 156, 168, 0.42)",
+  related_phrase: "rgba(150, 168, 176, 0.34)",
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -901,17 +901,17 @@ function ensureSvgDefs(svg) {
   countGradient
     .append("stop")
     .attr("offset", "0%")
-    .attr("stop-color", "#c98f7a");
+    .attr("stop-color", "#6FAFB1");
 
   countGradient
     .append("stop")
     .attr("offset", "48%")
-    .attr("stop-color", "#d8a36f");
+    .attr("stop-color", "#9BB9C6");
 
   countGradient
     .append("stop")
     .attr("offset", "100%")
-    .attr("stop-color", "#7d7ee8");
+    .attr("stop-color", "#9A98C8");
 }
 
 function renderGraph() {
