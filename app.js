@@ -331,55 +331,58 @@ function clearSelection() {
   renderDefaultInfo();
 }
 
+
+
+
 /* ================================
    Mobile Info Panel
-   手機版資訊欄：隨機圖案、點擊收合、內容自適應
+   手機版專用：點擊圖案收合/展開資訊欄內容
 ================================ */
 
 function setupMobileInfoPanel() {
   randomizeInfoIcon();
-  setupMobileInfoToggle();
-  applyMobileInfoCompactState();
 
-  window.addEventListener("resize", () => {
-    applyMobileInfoCompactState();
-  });
-}
-
-function randomizeInfoIcon() {
   const infoIcon = document.querySelector(".info-icon");
-  if (!infoIcon) return;
+  const infoPanel = document.getElementById("infoPanel");
 
-  const randomIndex = Math.floor(Math.random() * mobileInfoIcons.length);
-  infoIcon.textContent = mobileInfoIcons[randomIndex];
-}
-
-function setupMobileInfoToggle() {
-  const infoIcon = document.querySelector(".info-icon");
-  if (!infoIcon) return;
+  if (!infoIcon || !infoPanel) return;
 
   infoIcon.setAttribute("role", "button");
   infoIcon.setAttribute("tabindex", "0");
   infoIcon.setAttribute("title", "手機版：收合 / 展開資訊欄內容");
 
   infoIcon.addEventListener("click", () => {
-    if (!isMobileLayout()) return;
-
-    state.mobileInfoCompact = !state.mobileInfoCompact;
-    applyMobileInfoCompactState();
-    resizeGraphAfterPanelChange();
+    toggleMobileInfoCompact();
   });
 
   infoIcon.addEventListener("keydown", (event) => {
-    if (!isMobileLayout()) return;
-
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      state.mobileInfoCompact = !state.mobileInfoCompact;
-      applyMobileInfoCompactState();
-      resizeGraphAfterPanelChange();
+      toggleMobileInfoCompact();
     }
   });
+
+  window.addEventListener("resize", () => {
+    applyMobileInfoCompactState();
+  });
+
+  applyMobileInfoCompactState();
+}
+
+function randomizeInfoIcon() {
+  const infoIcon = document.querySelector(".info-icon");
+  if (!infoIcon) return;
+
+  const index = Math.floor(Math.random() * mobileInfoIcons.length);
+  infoIcon.textContent = mobileInfoIcons[index];
+}
+
+function toggleMobileInfoCompact() {
+  if (!isMobileLayout()) return;
+
+  state.mobileInfoCompact = !state.mobileInfoCompact;
+  applyMobileInfoCompactState();
+  resizeGraphAfterPanelChange();
 }
 
 function applyMobileInfoCompactState() {
@@ -461,7 +464,7 @@ function setupMainVerticalResize() {
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
 
-      const minInfo = isMobileLayout() ? 92 : 160;
+      const minInfo = 160;
       const maxInfo = Math.max(230, rect.height * 0.76);
       const nextHeight = clamp(infoHeight, minInfo, maxInfo);
 
