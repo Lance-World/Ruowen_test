@@ -1613,10 +1613,9 @@ button {
   }
 }
 
-
 /* =========================================================
    INTRO OVERLAY - Center Text + Rose Gold Stars
-   進站星空短句開場：6.6 秒自動淡出，點一下可跳過
+   進站星空短句開場：點擊可跳過，文字自動換行
 ========================================================= */
 
 .intro-overlay {
@@ -1630,6 +1629,7 @@ button {
   -webkit-backdrop-filter: blur(7px) saturate(1.04);
   opacity: 1;
   pointer-events: auto;
+  cursor: pointer;
   transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
@@ -1644,14 +1644,14 @@ button {
 
 .intro-glass {
   position: relative;
-  width: min(86vw, 520px);
-  min-height: 180px;
+  width: min(88vw, 620px);
+  min-height: 220px;
   display: grid;
   place-items: center;
-  border-radius: 32px;
+  border-radius: 34px;
   background:
-    radial-gradient(circle at 25% 20%, rgba(255, 220, 205, 0.16), transparent 36%),
-    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.13), transparent 38%),
+    radial-gradient(circle at 24% 18%, rgba(255, 220, 205, 0.18), transparent 36%),
+    radial-gradient(circle at 78% 76%, rgba(255, 245, 220, 0.14), transparent 38%),
     rgba(235, 238, 239, 0.17);
   border: 1px solid rgba(255, 238, 225, 0.34);
   box-shadow:
@@ -1662,24 +1662,31 @@ button {
 
 .intro-message-wrap {
   position: relative;
-  display: inline-grid;
+  width: min(100%, 560px);
+  min-height: 138px;
+  display: grid;
   place-items: center;
-  padding: 28px 58px;
+  padding: 32px 76px;
 }
 
 .intro-message-text {
   position: relative;
   z-index: 2;
+  max-width: min(9em, 100%);
   color: rgba(255, 248, 240, 0.96);
-  font-size: clamp(20px, 4vw, 28px);
+  font-size: clamp(28px, 4.2vw, 44px);
   font-weight: 800;
-  line-height: 1.18;
-  letter-spacing: 0.08em;
+  line-height: 1.16;
+  letter-spacing: 0.06em;
   text-align: center;
   text-shadow:
     0 2px 12px rgba(71, 48, 42, 0.38),
     0 0 22px rgba(255, 214, 195, 0.32);
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .intro-star {
@@ -1695,24 +1702,24 @@ button {
 }
 
 .intro-star-top-a {
-  right: 24px;
-  top: 10px;
-  font-size: clamp(16px, 3.6vw, 23px);
+  right: 34px;
+  top: 18px;
+  font-size: clamp(18px, 3.4vw, 26px);
   animation-delay: 0.12s;
 }
 
 .intro-star-top-b {
-  right: -2px;
-  top: 31px;
-  font-size: clamp(12px, 2.8vw, 18px);
+  right: 16px;
+  top: 50px;
+  font-size: clamp(13px, 2.6vw, 19px);
   color: #ffe8c8;
   animation-delay: 0.48s;
 }
 
 .intro-star-bottom {
-  left: 4px;
-  bottom: 12px;
-  font-size: clamp(13px, 3vw, 19px);
+  left: 20px;
+  bottom: 18px;
+  font-size: clamp(14px, 2.8vw, 20px);
   color: #f8c9bd;
   animation-delay: 0.72s;
 }
@@ -1796,6 +1803,27 @@ button {
 }
 
 /* =========================================================
+   INFO TITLE RANDOM NUMBER
+   資訊欄標題後方隨機數字樣式
+========================================================= */
+
+.info-title-number {
+  display: inline-block;
+  margin-left: 0.42em;
+  font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", sans-serif;
+  font-size: 1em;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.035em;
+  background: linear-gradient(135deg, #c98d83 0%, #f0c8b4 32%, #46507f 72%, #272a63 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 12px rgba(201, 141, 131, 0.22);
+  vertical-align: baseline;
+}
+
+/* =========================================================
    SEARCH INPUT FIX - Desktop + RWD
    修正搜尋欄文字上下截斷
 ========================================================= */
@@ -1825,16 +1853,36 @@ button {
 @media (max-width: 768px) {
   .intro-glass {
     width: min(88vw, 430px);
-    min-height: 160px;
-    border-radius: 26px;
+    min-height: 178px;
+    border-radius: 28px;
   }
 
   .intro-message-wrap {
-    padding: 24px 48px;
+    width: 100%;
+    min-height: 124px;
+    padding: 26px 54px;
   }
 
   .intro-message-text {
-    font-size: clamp(22px, 6vw, 30px);
+    max-width: min(9em, 100%);
+    font-size: clamp(24px, 7vw, 34px);
+    line-height: 1.16;
+    letter-spacing: 0.055em;
+  }
+
+  .intro-star-top-a {
+    right: 22px;
+    top: 12px;
+  }
+
+  .intro-star-top-b {
+    right: 6px;
+    top: 38px;
+  }
+
+  .intro-star-bottom {
+    left: 10px;
+    bottom: 12px;
   }
 
   .sidebar-search {
@@ -1848,114 +1896,34 @@ button {
 @media (max-width: 480px) {
   .intro-glass {
     width: min(90vw, 360px);
-    min-height: 148px;
+    min-height: 158px;
+    border-radius: 24px;
   }
 
   .intro-message-wrap {
-    padding: 22px 42px;
+    width: 100%;
+    min-height: 112px;
+    padding: 24px 46px;
   }
 
   .intro-message-text {
-    font-size: clamp(21px, 6.4vw, 28px);
-    letter-spacing: 0.06em;
+    max-width: min(9em, 100%);
+    font-size: clamp(22px, 7vw, 31px);
+    letter-spacing: 0.045em;
   }
 
   .intro-star-top-a {
-    right: 18px;
-    top: 8px;
+    right: 17px;
+    top: 10px;
   }
 
   .intro-star-top-b {
-    right: -3px;
-    top: 28px;
+    right: 1px;
+    top: 34px;
   }
 
   .intro-star-bottom {
-    left: 2px;
-    bottom: 9px;
-  }
-}
-
-/* =========================================================
-   FINAL OVERLAY + TITLE NUMBER PATCH
-   1. Overlay 字體放大
-   2. 桌機版與手機版超過 9 個字自動換行
-   3. Overlay 文字來源仍由 JS 限制為 14 字以內
-   4. 資訊欄標題後方隨機 0000–9999
-========================================================= */
-
-.intro-message-text {
-  max-width: min(9em, 72vw) !important;
-  white-space: normal !important;
-  word-break: break-all !important;
-  overflow-wrap: anywhere !important;
-  text-align: center !important;
-  font-size: clamp(30px, 6.2vw, 48px) !important;
-  line-height: 1.16 !important;
-  letter-spacing: 0.06em !important;
-}
-
-.intro-message-wrap {
-  max-width: min(92vw, 620px) !important;
-}
-
-.intro-glass {
-  width: min(88vw, 620px) !important;
-  min-height: 210px !important;
-}
-
-.info-title-number {
-  display: inline-block;
-  margin-left: 0.48em;
-  font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", system-ui, sans-serif;
-  font-size: 1em;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.035em;
-  vertical-align: baseline;
-  color: #8c5dff;
-  background: linear-gradient(135deg, #f4b7a7 0%, #c98974 34%, #4a43a6 68%, #1f2c66 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 18px rgba(201, 137, 116, 0.18);
-}
-
-@media (max-width: 768px) {
-  .intro-glass {
-    width: min(90vw, 480px) !important;
-    min-height: 178px !important;
-    border-radius: 28px !important;
-  }
-
-  .intro-message-wrap {
-    padding: 24px 44px !important;
-  }
-
-  .intro-message-text {
-    max-width: min(9em, 76vw) !important;
-    font-size: clamp(28px, 7.2vw, 38px) !important;
-    line-height: 1.16 !important;
-    letter-spacing: 0.045em !important;
-  }
-
-  .info-title-number {
-    margin-left: 0.38em;
-  }
-}
-
-@media (max-width: 480px) {
-  .intro-glass {
-    width: min(92vw, 380px) !important;
-    min-height: 158px !important;
-  }
-
-  .intro-message-wrap {
-    padding: 22px 36px !important;
-  }
-
-  .intro-message-text {
-    max-width: min(9em, 78vw) !important;
-    font-size: clamp(26px, 7.6vw, 34px) !important;
+    left: 6px;
+    bottom: 10px;
   }
 }
