@@ -405,28 +405,44 @@ button {
   display: block;
 }
 
+/* =========================================================
+   FLOATING ACTIONS - Desktop: Right Top
+   三個知識網絡按鈕固定在右上角
+========================================================= */
+
 .floating-actions {
-  position: absolute;
-  left: 18px;
-  top: 18px;
-  z-index: 10;
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(199, 220, 222, 0.8);
-  backdrop-filter: blur(14px);
+  position: absolute !important;
+  top: 20px !important;
+  left: auto !important;
+  right: 20px !important;
+  width: auto !important;
+  max-width: calc(100vw - 40px) !important;
+
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px !important;
+
+  padding: 8px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border: 1px solid rgba(199, 220, 222, 0.72) !important;
+  box-shadow: 0 10px 28px rgba(23, 60, 67, 0.08) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 35 !important;
 }
 
 .floating-actions button {
-  border: 0;
-  background: rgba(92, 166, 168, 0.88);
-  color: white;
-  border-radius: 999px;
-  padding: 8px 13px;
-  cursor: pointer;
-  font-size: 12px;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+  height: 40px !important;
+  padding: 0 15px !important;
+  border-radius: 999px !important;
+  background: rgba(92, 166, 168, 0.88) !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
 }
 
 .floating-actions button:hover {
@@ -2809,4 +2825,73 @@ body {
     width: 46px !important;
     height: 46px !important;
   }
+  /* =========================================================
+   FLOATING ACTIONS - Mobile: Right Side
+   手機版三個按鈕固定在右側直排
+========================================================= */
+
+@media (max-width: 768px) {
+  .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    position: fixed !important;
+    top: 72px !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-width: 120px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+    z-index: 58 !important;
+  }
+
+  .floating-actions button,
+  .app-shell.sidebar-collapsed .floating-actions button,
+  .app-shell:not(.sidebar-collapsed) .floating-actions button {
+    width: auto !important;
+    min-width: max-content !important;
+    height: 38px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.84) !important;
+    color: #ffffff !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 8px 20px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 66px !important;
+    right: 8px !important;
+    max-width: 108px !important;
+    gap: 7px !important;
+  }
+
+  .floating-actions button,
+  .app-shell.sidebar-collapsed .floating-actions button,
+  .app-shell:not(.sidebar-collapsed) .floating-actions button {
+    height: 36px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+  }
+}
 }
