@@ -25,18 +25,18 @@ const state = {
 };
 
 const nodeColors = {
-  topic: "#b9dcec",
-  concept: "#bfe7e2",
-  term: "#f4d982",
-  phrase: "#f7ead0",
-  unknown: "#d8eeee",
+  topic: "#CFEAF4",      // 第一層：霧感淡藍
+  concept: "#D7EEE9",    // 第二層：霧青綠，與背景融合
+  term: "#DCD9EA",       // 第三層：低飽和灰紫
+  phrase: "#F6F1E8",     // 第四層：奶霜米白
+  unknown: "#E8F3F1",
 };
 
 const edgeColors = {
   contains: "rgba(92, 142, 157, 0.62)",
   related_to: "rgba(92, 166, 168, 0.62)",
-  alias_of: "rgba(217, 170, 56, 0.62)",
-  related_phrase: "rgba(196, 166, 95, 0.56)",
+  alias_of: "rgba(126, 156, 168, 0.42)",
+  related_phrase: "rgba(150, 168, 176, 0.34)",
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -47,6 +47,8 @@ async function init() {
     restoreSidebarState();
     restoreSidebarWidth();
     restoreSearchPanelState();
+    restorePanelPreferences();
+    updateFloatingLayoutVars();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
@@ -138,7 +140,10 @@ function toggleSidebar() {
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
 
+  updateFloatingLayoutVars();
+
   setTimeout(() => {
+    updateFloatingLayoutVars();
     resizeGraphAfterPanelChange();
   }, 320);
 }
@@ -165,6 +170,8 @@ function toggleSearchPanel() {
       if (input) input.focus();
     }, 120);
   }
+
+  updateFloatingLayoutVars();
 
   setTimeout(() => {
     resizeGraphAfterPanelChange();
@@ -632,6 +639,34 @@ function setupFloatingNoteAutoHide() {
   window.setTimeout(() => {
     note.classList.add("floating-note-hidden");
   }, 20000);
+}
+
+function updateFloatingLayoutVars() {
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!appShell || !sidebar) return;
+
+  if (isMobileLayout()) {
+    appShell.style.setProperty("--sidebar-left", "8px");
+    appShell.style.setProperty("--sidebar-top", "8px");
+    appShell.style.setProperty("--sidebar-width", "auto");
+    appShell.style.setProperty("--info-left", "8px");
+    appShell.style.setProperty("--info-right", "8px");
+    return;
+  }
+
+  const sidebarRect = sidebar.getBoundingClientRect();
+  const isCollapsed = appShell.classList.contains("sidebar-collapsed");
+  const sidebarLeft = 20;
+  const sidebarWidth = isCollapsed ? 64 : Math.round(sidebarRect.width || 280);
+  const infoLeft = isCollapsed ? 96 : Math.max(320, sidebarLeft + sidebarWidth + 40);
+
+  appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
+  appShell.style.setProperty("--sidebar-top", "20px");
+  appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
+  appShell.style.setProperty("--info-left", `${infoLeft}px`);
+  appShell.style.setProperty("--info-right", "20px");
 }
 
 function isMobileLayout() {
@@ -1603,5 +1638,6 @@ function dragEnded(event, node) {
 ================================ */
 
 window.addEventListener("resize", () => {
+  updateFloatingLayoutVars();
   resizeGraphAfterPanelChange();
 });
