@@ -1680,17 +1680,13 @@ button {
 
   /* 收合狀態：只留下圖案與標題 */
   #infoPanel.mobile-info-compact {
-    align-self: end !important;
-    justify-self: stretch !important;
-    min-height: 76px !important;
+    min-height: 92px !important;
     height: auto !important;
-    max-height: 88px !important;
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
+    max-height: 118px !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
-    padding: 10px 14px !important;
+    padding: 14px 16px !important;
   }
 
   #infoPanel.mobile-info-compact .info-header {
@@ -1703,9 +1699,9 @@ button {
   }
 
   #infoPanel.mobile-info-compact .info-icon {
-    width: 42px !important;
-    height: 42px !important;
-    font-size: 18px !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 22px !important;
     flex-shrink: 0 !important;
   }
 
@@ -1719,9 +1715,8 @@ button {
   #infoPanel.mobile-info-compact .info-title-block h2,
   #infoPanel.mobile-info-compact #infoTitle {
     margin: 0 !important;
-    font-size: clamp(17px, 4.8vw, 22px) !important;
-    font-weight: 800 !important;
-    line-height: 1.15 !important;
+    font-size: clamp(22px, 6vw, 28px) !important;
+    line-height: 1.18 !important;
     color: var(--teal-deep) !important;
     word-break: break-word !important;
   }
@@ -1792,21 +1787,20 @@ button {
 
 @media (max-width: 480px) {
   #infoPanel.mobile-info-compact {
-    align-self: end !important;
-    min-height: 72px !important;
-    max-height: 82px !important;
-    padding: 9px 12px !important;
+    min-height: 86px !important;
+    max-height: 108px !important;
+    padding: 12px 14px !important;
   }
 
   #infoPanel.mobile-info-compact .info-icon {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 17px !important;
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 20px !important;
   }
 
   #infoPanel.mobile-info-compact .info-title-block h2,
   #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(16px, 4.8vw, 20px) !important;
+    font-size: clamp(20px, 6vw, 25px) !important;
   }
 
   #infoPanel:not(.mobile-info-compact) .sentence-box {
@@ -1820,30 +1814,42 @@ button {
 
 
 /* =========================================================
-   FINAL MOBILE COMPACT INFO BAR POSITION
-   手機版資訊欄收合時：固定貼齊下方，字體縮小
+   FINAL MOBILE GRAPH EXPAND WHEN INFO PANEL IS COMPACT
+   手機版：下方資訊欄收合時，中間知識網絡空間自動放大
 ========================================================= */
 
 @media (max-width: 768px) {
-  #workspace {
-    align-items: stretch;
+  #workspace.mobile-info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 76px !important;
   }
 
-  #infoPanel.mobile-info-compact {
-    align-self: end !important;
+  #workspace.mobile-info-compact-workspace .graph-section {
+    min-height: 0 !important;
+  }
+
+  #workspace.mobile-info-compact-workspace .graph-card {
+    height: 100% !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #mainResizeHandle {
+    height: 9px !important;
+    min-height: 9px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
+    align-self: stretch !important;
     justify-self: stretch !important;
-    min-height: 74px !important;
-    max-height: 86px !important;
-    height: auto !important;
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
-    padding: 9px 14px !important;
+    min-height: 72px !important;
+    max-height: 76px !important;
+    height: 76px !important;
+    margin: 0 !important;
+    padding: 8px 14px !important;
     display: flex !important;
     align-items: center !important;
     overflow: hidden !important;
   }
 
-  #infoPanel.mobile-info-compact .info-header {
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-header {
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -1851,35 +1857,49 @@ button {
     margin: 0 !important;
   }
 
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 17px !important;
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+    flex-shrink: 0 !important;
   }
 
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(17px, 4.6vw, 21px) !important;
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-title-block {
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
+    margin: 0 !important;
+    font-size: clamp(16px, 4.5vw, 20px) !important;
     line-height: 1.15 !important;
     font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 }
 
 @media (max-width: 480px) {
-  #infoPanel.mobile-info-compact {
-    min-height: 68px !important;
-    max-height: 78px !important;
-    padding: 8px 12px !important;
+  #workspace.mobile-info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 68px !important;
   }
 
-  #infoPanel.mobile-info-compact .info-icon {
-    width: 38px !important;
-    height: 38px !important;
-    font-size: 16px !important;
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact {
+    min-height: 66px !important;
+    max-height: 68px !important;
+    height: 68px !important;
+    padding: 7px 12px !important;
   }
 
-  #infoPanel.mobile-info-compact .info-title-block h2,
-  #infoPanel.mobile-info-compact #infoTitle {
-    font-size: clamp(16px, 4.8vw, 19px) !important;
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact .info-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 15px !important;
+  }
+
+  #workspace.mobile-info-compact-workspace #infoPanel.mobile-info-compact #infoTitle {
+    font-size: clamp(15px, 4.7vw, 18px) !important;
   }
 }
