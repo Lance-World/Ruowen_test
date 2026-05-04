@@ -1257,7 +1257,7 @@ button {
     right: 8px;
     top: 8px;
     bottom: auto;
-    width: calc(100% - 16px) !important;
+    width: calc(100% - 10px) !important;
     height: auto;
     min-height: 132px;
     max-height: 58vh;
