@@ -1,0 +1,17 @@
+Ruowen Knowledge Graph integrated update
+
+Files:
+- app.js
+- index.html
+- css/style.css
+
+Design choices applied:
+- Mobile Sidebar collapsed: only floating ☰ on top-right.
+- Sidebar resize: desktop only, mobile disabled.
+- Floating actions: desktop top-right horizontal; mobile collapsed top-left horizontal.
+- Floating note: shown every visit, hides after 20 seconds.
+- Intro overlay: keeps original 6.6s timing, adds skip button.
+- Info panel compact: keeps icon + node title + random number.
+- Desktop info panel: floating bottom card avoiding sidebar.
+- Desktop sidebar collapsed: keeps 64px rail.
+- RWD: keeps 1100 / 768 / 480 / 380 breakpoints.
