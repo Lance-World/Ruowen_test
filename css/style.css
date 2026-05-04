@@ -1732,31 +1732,60 @@ button {
    RWD <= 380px
 ========================================================= */
 
-@media (max-width: 380px) {
-  .sidebar-title strong {
-    font-size: 18px;
-  }
-
-  .sidebar-title span {
-    font-size: 12px;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-toggle {
-    right: 8px;
-    top: 8px;
-    width: 42px;
-    height: 42px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions {
-    left: 6px;
-    right: 56px;
-    gap: 6px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 38px;
-    padding: 0 10px;
-    font-size: 11px;
-  }
+   @media (max-width: 380px) {
+     .sidebar-title strong {
+       font-size: 18px;
+     }
+   
+     .sidebar-title span {
+       font-size: 12px;
+     }
+   
+     .app-shell.sidebar-collapsed .sidebar-toggle {
+       right: 8px;
+       top: 8px;
+       width: 42px;
+       height: 42px;
+     }
+   
+     .app-shell.sidebar-collapsed .floating-actions {
+       left: 6px;
+       right: 56px;
+       gap: 6px;
+     }
+   
+     .app-shell.sidebar-collapsed .floating-actions button {
+       height: 38px;
+       padding: 0 10px;
+       font-size: 11px;
+     }
+      @media (max-width: 768px) {
+     #infoPanel:not(.info-compact) .info-header-row {
+       display: grid !important;
+       grid-template-columns: auto 1fr !important;
+       grid-template-areas:
+         "icon title"
+         "icon tags"
+         "icon related";
+       align-items: start !important;
+       column-gap: 10px !important;
+       row-gap: 8px !important;
+     }
+   
+     #infoPanel:not(.info-compact) .info-icon {
+       grid-area: icon !important;
+     }
+   
+     #infoPanel:not(.info-compact) .info-title-block {
+       grid-area: title !important;
+     }
+   
+     #infoPanel:not(.info-compact) .info-tags {
+       grid-area: tags !important;
+     }
+   
+     #infoPanel:not(.info-compact) .info-related-row {
+       grid-area: related !important;
+     }
+   }
 }
