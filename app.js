@@ -480,12 +480,186 @@ function resizeGraphAfterPanelChange() {
   }
 }
 
+
+/* ================================
+   Intro Overlay
+   進站星空短句開場
+================================ */
+
+const INTRO_MAX_CHARS = 18;
+const INTRO_DURATION_MS = 6600;
+const FALLBACK_INTRO_MESSAGES = [
+  "慢慢靠近自己",
+  "讓心安靜下來",
+  "你正在回到自己",
+  "看見內在的光",
+  "今天也溫柔前行",
+  "答案正在浮現",
+  "把心交還給自己",
+  "讓靈魂自由呼吸",
+  "願你與光同行",
+  "此刻就是入口"
+];
+
+async function setupIntroOverlay() {
+  const overlay = document.getElementById("introOverlay");
+  const textEl = document.getElementById("introMessageText");
+
+  if (!overlay || !textEl) return;
+
+  const message = await pickIntroMessage();
+  textEl.textContent = message;
+
+  let closed = false;
+
+  function closeIntroOverlay() {
+    if (closed) return;
+    closed = true;
+    overlay.classList.add("intro-overlay-leaving");
+
+    window.setTimeout(() => {
+      overlay.classList.add("intro-overlay-hidden");
+      overlay.setAttribute("aria-hidden", "true");
+    }, 720);
+  }
+
+  overlay.addEventListener("click", closeIntroOverlay);
+
+  window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
+}
+
+async function pickIntroMessage() {
+  const candidates = [];
+
+  try {
+    const messages = await fetchJson(DATA_PATHS.intro);
+    candidates.push(...normalizeIntroMessageList(messages));
+  } catch (_) {
+    // intro_messages.json is optional. Fallback to graph data below.
+  }
+
+  candidates.push(...collectIntroMessagesFromGraph());
+  candidates.push(...FALLBACK_INTRO_MESSAGES);
+
+  const validMessages = Array.from(new Set(candidates))
+    .map((item) => String(item || "").trim())
+    .filter(isValidIntroMessage);
+
+  if (validMessages.length === 0) return "慢慢靠近自己";
+
+  const index = Math.floor(Math.random() * validMessages.length);
+  return validMessages[index];
+}
+
+function normalizeIntroMessageList(data) {
+  if (!data) return [];
+
+  if (Array.isArray(data)) {
+    return data.map((item) => {
+      if (typeof item === "string") return item;
+      return item.text || item.message || item.phrase || item.label || "";
+    });
+  }
+
+  if (Array.isArray(data.messages)) {
+    return normalizeIntroMessageList(data.messages);
+  }
+
+  if (Array.isArray(data.phrases)) {
+    return normalizeIntroMessageList(data.phrases);
+  }
+
+  return [];
+}
+
+function collectIntroMessagesFromGraph() {
+  const messages = [];
+
+  state.allNodes.forEach((node) => {
+    if (node.type === "phrase" && node.label) messages.push(node.label);
+    if (node.text_preview) {
+      String(node.text_preview)
+        .split(/\|\||[。！？!?；;\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => messages.push(item));
+    }
+  });
+
+  Object.values(state.graphSources || {}).forEach((sourceList) => {
+    if (!Array.isArray(sourceList)) return;
+    sourceList.slice(0, 80).forEach((source) => {
+      const text = source.text || source.title || "";
+      String(text)
+        .split(/[。！？!?；;\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => messages.push(item));
+    });
+  });
+
+  return messages;
+}
+
+function isValidIntroMessage(text) {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+  if (Array.from(normalized).length > INTRO_MAX_CHARS) return false;
+  return hasSearchableMeaning(normalized);
+}
+
+function normalizeSearchKeyword(value) {
+  const keyword = String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+  return hasSearchableMeaning(keyword) ? keyword : "";
+}
+
+function hasSearchableMeaning(text) {
+  return /[\p{Script=Han}A-Za-z0-9]/u.test(String(text || ""));
+}
+
+function buildSearchHaystack(node) {
+  const fields = [
+    node.id,
+    node.label,
+    node.type,
+    typeLabel(node.type),
+    node.level1_category,
+    node.level2_concept,
+    node.matched_terms,
+    node.canonical_term,
+    node.text_preview,
+    node.count,
+  ];
+
+  const sources = getSourcesForNodeWithFallback(node);
+  sources.forEach((source) => {
+    fields.push(
+      source.title,
+      source.file,
+      source.timestamp,
+      source.timestamp_url,
+      source.base_url,
+      source.text
+    );
+  });
+
+  return fields
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => String(item).toLowerCase())
+    .join(" ");
+}
+
 /* ================================
    Filtering
 ================================ */
 
 function getFilteredData() {
-  const keyword = getNormalizedSearchKeyword();
+  const searchInput = document.getElementById("searchInput");
+  const keyword = normalizeSearchKeyword(searchInput ? searchInput.value : "");
 
   let nodes = state.allNodes.filter((node) => {
     if (!state.visibleTypes.has(node.type)) return false;
@@ -498,7 +672,7 @@ function getFilteredData() {
     }
 
     if (keyword) {
-      return getNodeSearchText(node).includes(keyword);
+      return buildSearchHaystack(node).includes(keyword);
     }
 
     return true;
@@ -1023,190 +1197,13 @@ function getNeighborNodes(nodeId) {
   return state.allNodes.filter((node) => neighborIds.has(node.id));
 }
 
-
-/* ================================
-   Intro Overlay
-   進站短句星空開場
-================================ */
-
-async function setupIntroOverlay() {
-  const overlay = document.getElementById("introOverlay");
-  const messageBox = document.getElementById("introMessage");
-
-  if (!overlay || !messageBox) return;
-
-  const message = await pickIntroMessage();
-
-  if (!message) {
-    overlay.remove();
-    return;
-  }
-
-  messageBox.textContent = message;
-  overlay.setAttribute("aria-hidden", "false");
-
-  requestAnimationFrame(() => {
-    overlay.classList.remove("intro-hidden");
-    overlay.classList.add("intro-visible");
-  });
-
-  let closed = false;
-
-  const closeIntro = () => {
-    if (closed) return;
-    closed = true;
-    overlay.classList.remove("intro-visible");
-    overlay.classList.add("intro-leaving");
-    overlay.setAttribute("aria-hidden", "true");
-
-    setTimeout(() => {
-      overlay.remove();
-    }, 680);
-  };
-
-  overlay.addEventListener("click", closeIntro, { once: true });
-  setTimeout(closeIntro, INTRO_DURATION_MS);
-}
-
-async function pickIntroMessage() {
-  const fromFile = await loadIntroMessagesFromFile();
-  const fromGraph = collectIntroMessagesFromGraph();
-  const candidates = [...fromFile, ...fromGraph]
-    .map(cleanIntroMessage)
-    .filter(isValidIntroMessage);
-
-  const uniqueCandidates = Array.from(new Set(candidates));
-
-  if (uniqueCandidates.length === 0) return "讓心慢慢醒來";
-
-  return uniqueCandidates[Math.floor(Math.random() * uniqueCandidates.length)];
-}
-
-async function loadIntroMessagesFromFile() {
-  try {
-    const data = await fetchJson(DATA_PATHS.intro);
-
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.messages)) return data.messages;
-    if (Array.isArray(data.phrases)) return data.phrases;
-
-    return [];
-  } catch (_) {
-    return [];
-  }
-}
-
-function collectIntroMessagesFromGraph() {
-  const candidates = [];
-
-  state.allNodes.forEach((node) => {
-    if (node.type === "phrase" && node.label) {
-      candidates.push(node.label);
-    }
-
-    if (node.text_preview) {
-      String(node.text_preview)
-        .split(/\|\||[。！？!?\n]/)
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .forEach((item) => candidates.push(item));
-    }
-  });
-
-  Object.values(state.graphSources || {}).forEach((sources) => {
-    if (!Array.isArray(sources)) return;
-
-    sources.forEach((source) => {
-      if (source && source.text) {
-        String(source.text)
-          .split(/[。！？!?\n]/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .forEach((item) => candidates.push(item));
-      }
-    });
-  });
-
-  return candidates;
-}
-
-function cleanIntroMessage(value) {
-  return String(value || "")
-    .replace(/\s+/g, "")
-    .replace(/[「」『』“”]/g, "")
-    .trim();
-}
-
-function isValidIntroMessage(value) {
-  const text = cleanIntroMessage(value);
-  return (
-    text.length > 0 &&
-    Array.from(text).length <= INTRO_MAX_LENGTH &&
-    hasSearchableText(text)
-  );
-}
-
-/* ================================
-   Search Helpers
-   搜尋防呆與全內容搜尋
-================================ */
-
-function getNormalizedSearchKeyword() {
-  const searchInput = document.getElementById("searchInput");
-  return normalizeSearchKeyword(searchInput ? searchInput.value : "");
-}
-
-function normalizeSearchKeyword(value) {
-  const keyword = String(value || "")
-    .trim()
-    .toLowerCase();
-
-  if (!keyword) return "";
-
-  return hasSearchableText(keyword) ? keyword : "";
-}
-
-function hasSearchableText(value) {
-  return /[\p{L}\p{N}]/u.test(String(value || ""));
-}
-
-function getNodeSearchText(node) {
-  const directSources = state.graphSources[node.id] || [];
-
-  const nodeFields = [
-    node.id,
-    node.label,
-    node.type,
-    typeLabel(node.type),
-    node.level1_category,
-    node.level2_concept,
-    node.matched_terms,
-    node.canonical_term,
-    node.text_preview,
-    node.count,
-  ];
-
-  const sourceFields = directSources.flatMap((source) => [
-    source.title,
-    source.file,
-    source.timestamp,
-    source.text,
-    source.base_url,
-    source.timestamp_url,
-  ]);
-
-  return [...nodeFields, ...sourceFields]
-    .filter((item) => item !== undefined && item !== null)
-    .join(" ")
-    .toLowerCase();
-}
-
 /* ================================
    Search / Zoom
 ================================ */
 
 function searchNode() {
-  const keyword = getNormalizedSearchKeyword();
+  const input = document.getElementById("searchInput");
+  const keyword = normalizeSearchKeyword(input ? input.value : "");
 
   updateGraph();
 
@@ -1214,7 +1211,7 @@ function searchNode() {
 
   setTimeout(() => {
     const matchedNode = state.allNodes.find((node) => {
-      return getNodeSearchText(node).includes(keyword);
+      return buildSearchHaystack(node).includes(keyword);
     });
 
     if (matchedNode) {
@@ -1228,6 +1225,8 @@ function searchNode() {
 }
 
 function resetZoom() {
+  if (!state.svg || !state.zoomBehavior) return;
+
   state.svg
     .transition()
     .duration(550)
