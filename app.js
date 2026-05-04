@@ -393,11 +393,27 @@ function applyMobileInfoCompactState() {
 
   if (!isMobileLayout()) {
     infoPanel.classList.remove("mobile-info-compact");
-    if (workspace) workspace.classList.remove("mobile-info-compact-workspace");
+
+    if (workspace) {
+      workspace.classList.remove("mobile-info-compact-active");
+    }
+
     return;
   }
 
   infoPanel.classList.toggle("mobile-info-compact", state.mobileInfoCompact);
+
+  if (workspace) {
+    workspace.classList.toggle(
+      "mobile-info-compact-active",
+      state.mobileInfoCompact
+    );
+  }
+
+  requestAnimationFrame(() => {
+    resizeGraphAfterPanelChange();
+  });
+}
 
   if (workspace) {
     workspace.classList.toggle("mobile-info-compact-workspace", state.mobileInfoCompact);
