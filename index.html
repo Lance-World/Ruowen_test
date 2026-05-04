@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=gradient_label_20260504_02" />
+  <link rel="stylesheet" href="./css/style.css?v=glass_float_20260504_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -75,10 +75,12 @@
 
         <section id="infoPanel" class="info-panel">
           <div class="info-header">
-            <div class="info-icon">◎</div>
+            <div class="info-icon" title="點擊收合/展開卡片">✦</div>
 
             <div class="info-title-block">
-              <h2 id="infoTitle">尚未選擇節點</h2>
+              <h2 id="infoTitle">
+                <span class="info-title-text">尚未選擇節點</span>
+              </h2>
               <div id="infoTags" class="info-tags">
                 <span>請點選圖上的節點</span>
               </div>
@@ -130,6 +132,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=gradient_label_20260504_02"></script>
+  <script src="./app.js?v=glass_float_20260504_01"></script>
 </body>
 </html>
