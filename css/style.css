@@ -1874,15 +1874,14 @@ button {
     left: 2px;
     bottom: 9px;
   }
-}
-
-/* =========================================================
+  /* =========================================================
    MOBILE INTRO TEXT WRAP
    手機版 overlay 文字超過 9 個字自動換行
 ========================================================= */
 
 @media (max-width: 768px) {
-  .intro-message-text {
+  .intro-text,
+  .intro-message {
     max-width: 9em !important;
     white-space: normal !important;
     word-break: break-all !important;
@@ -1893,253 +1892,329 @@ button {
     margin-right: auto !important;
   }
 }
-
+}
 
 /* =========================================================
-   FINAL MOBILE HEADER + SEARCH PANEL FIX
-   只針對手機版：
-   1. 標題置中在星星 Logo 與搜尋鍵之間
-   2. 避免標題卡到搜尋欄位
-   3. 搜尋欄位上下限加大，文字不被截斷
+   FINAL FIX - Resizable + Info Compact All Platforms
+   1. 桌機 / 平板 / 手機：分隔 bar 都可拖曳
+   2. 點擊資訊欄圖案：收合 / 展開資訊欄
+   3. 收合時只留下：圖案 > 標題節點 > 隨機數字
+   4. 收合時知識網絡區塊同步放大
 ========================================================= */
 
+#sidebarResizeHandle,
+#mainResizeHandle,
+#innerResizeHandle,
+#infoRightResizeHandle,
+.sidebar-resize-handle,
+.resize-handle {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+#infoRightResizeHandle,
+.resize-handle.info-right {
+  position: absolute;
+  top: 16px;
+  right: 4px;
+  bottom: 16px;
+  width: 8px;
+  cursor: col-resize;
+  border-radius: 999px;
+  background: rgba(92, 166, 168, 0.16);
+  border: 1px solid rgba(199, 220, 222, 0.45);
+  z-index: 25;
+}
+
+#infoRightResizeHandle:hover,
+.resize-handle.info-right:hover {
+  background: rgba(217, 170, 56, 0.34);
+}
+
+.info-icon {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.info-icon:active {
+  transform: scale(0.96);
+  filter: brightness(0.98);
+}
+
+#infoTitle {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.36em;
+}
+
+.info-title-text {
+  display: inline-block;
+}
+
+.info-title-random-number {
+  display: inline-block;
+  font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", sans-serif;
+  font-size: 1em;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #b36b76 0%, #e7b49a 35%, #563e88 72%, #253b73 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.workspace.info-compact-workspace {
+  grid-template-rows: minmax(0, 1fr) 8px 78px !important;
+}
+
+.workspace.info-compact-workspace .graph-section,
+.workspace.info-compact-workspace .graph-card {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.workspace.info-compact-workspace #mainResizeHandle {
+  height: 8px !important;
+  min-height: 8px !important;
+  max-height: 8px !important;
+  display: block !important;
+}
+
+#infoPanel.info-compact {
+  min-height: 78px !important;
+  height: 78px !important;
+  max-height: 78px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 10px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+#infoPanel.info-compact .info-header {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+#infoPanel.info-compact .info-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+#infoPanel.info-compact .info-title-block {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+#infoPanel.info-compact #infoTitle {
+  margin: 0 !important;
+  font-size: clamp(18px, 2.1vw, 24px) !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 0.36em !important;
+}
+
+#infoPanel.info-compact .info-title-text,
+#infoPanel.info-compact .info-title-random-number {
+  flex-shrink: 0;
+}
+
+#infoPanel.info-compact .info-title-text {
+  min-width: 0;
+  max-width: calc(100% - 5.1em);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#infoPanel.info-compact .info-tags,
+#infoPanel.info-compact .info-related-row,
+#infoPanel.info-compact .info-split-area,
+#infoPanel.info-compact #infoRightResizeHandle,
+#infoPanel.info-compact .info-right-resize-handle,
+#infoPanel.info-compact .resize-handle.info-right {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+#infoPanel:not(.info-compact) .info-split-area {
+  min-height: 0 !important;
+}
+
+/* Overlay 文字：網頁版與手機版都允許換行，不吃字 */
+.intro-message-text {
+  max-width: min(9em, 100%) !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  text-align: center !important;
+  font-size: clamp(24px, 3.6vw, 38px) !important;
+  line-height: 1.16 !important;
+}
+
 @media (max-width: 768px) {
-  .sidebar {
-    position: relative !important;
+  #sidebarResizeHandle.sidebar-resize-handle {
     width: 100% !important;
-    height: 132px !important;
-    min-height: 96px !important;
-    max-height: 64vh !important;
-    padding: 14px !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    display: block !important;
+    flex-shrink: 0 !important;
+  }
+
+  #mainResizeHandle.resize-handle.horizontal {
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    display: block !important;
+  }
+
+  #innerResizeHandle.resize-handle.vertical {
+    width: 100% !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    cursor: row-resize !important;
+    display: block !important;
+  }
+
+  #infoRightResizeHandle,
+  .resize-handle.info-right {
+    display: none !important;
+  }
+
+  .workspace.info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 9px 68px !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle {
+    height: 9px !important;
+    min-height: 9px !important;
+    max-height: 9px !important;
+  }
+
+  #infoPanel.info-compact {
+    min-height: 68px !important;
+    height: 68px !important;
+    max-height: 68px !important;
+    padding: 8px 12px !important;
+    border-radius: 20px !important;
+  }
+
+  #infoPanel.info-compact .info-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 15px !important;
+  }
+
+  #infoPanel.info-compact #infoTitle {
+    font-size: clamp(15px, 4.6vw, 18px) !important;
+    line-height: 1.15 !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-split-area {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-box {
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  #infoPanel:not(.info-compact) .sentence-box {
+    max-height: 34vh !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
   }
 
-  /* 搜尋面板展開時，sidebar 高度要跟著變大，避免標題壓到搜尋欄 */
-  .sidebar:has(#sidebarSearchPanel:not(.search-collapsed)) {
-    height: 330px !important;
-    min-height: 300px !important;
-    max-height: 68vh !important;
-  }
-
-  /* 搜尋面板收合時，維持乾淨的 header 高度 */
-  .sidebar:has(#sidebarSearchPanel.search-collapsed) {
-    height: 132px !important;
-    min-height: 96px !important;
-  }
-
-  .sidebar .logo {
-    position: absolute !important;
-    left: 18px !important;
-    top: 14px !important;
-    width: 48px !important;
-    height: 48px !important;
-    margin: 0 !important;
-    display: grid !important;
-    z-index: 18 !important;
-  }
-
-  .sidebar .search-toggle {
-    position: absolute !important;
-    right: 66px !important;
-    left: auto !important;
-    top: 16px !important;
-    width: 42px !important;
-    height: 42px !important;
-    z-index: 22 !important;
-  }
-
-  .sidebar .sidebar-toggle {
-    position: absolute !important;
-    right: 18px !important;
-    left: auto !important;
-    top: 16px !important;
-    width: 42px !important;
-    height: 42px !important;
-    z-index: 22 !important;
-  }
-
-  /* 核心：標題只佔「星星右側」到「搜尋鍵左側」之間的空間 */
-  .sidebar-title {
-    position: absolute !important;
-    left: 78px !important;
-    right: 116px !important;
-    top: 13px !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: grid !important;
-    grid-template-rows: auto auto !important;
-    justify-items: center !important;
-    align-content: center !important;
-    gap: 1px !important;
-    text-align: center !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-    z-index: 16 !important;
-  }
-
-  .sidebar-title strong {
-    display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: clamp(19px, 5vw, 25px) !important;
-    line-height: 1.02 !important;
-    font-weight: 800 !important;
-    color: var(--teal-deep) !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .sidebar-title span {
-    display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: clamp(12px, 3.3vw, 15px) !important;
-    line-height: 1.05 !important;
-    color: var(--text-secondary) !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  /* 搜尋面板固定從 header 下方開始，不與標題互卡 */
-  #sidebarSearchPanel {
-    margin-top: 72px !important;
-    margin-bottom: 16px !important;
-    padding: 14px !important;
-    max-height: 240px !important;
-    border-radius: 20px !important;
-  }
-
-  #sidebarSearchPanel:not(.search-collapsed) {
-    min-height: 136px !important;
-  }
-
-  #sidebarSearchPanel.search-collapsed {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    max-height: 0 !important;
-    min-height: 0 !important;
-  }
-
-  .sidebar-search {
-    height: 54px !important;
-    min-height: 54px !important;
-    padding: 0 16px !important;
-    font-size: 15px !important;
-    line-height: 54px !important;
-    display: block !important;
-  }
-
-  .sidebar-search::placeholder {
-    line-height: normal !important;
-  }
-
-  .search-action-row {
-    min-height: 48px !important;
-    gap: 10px !important;
-    align-items: stretch !important;
-  }
-
-  .sidebar-main-btn,
-  .sidebar-sub-btn {
-    height: 48px !important;
-    min-height: 48px !important;
-    padding: 0 16px !important;
-    font-size: 14px !important;
-    line-height: 48px !important;
-  }
-
-  /* 手機收合 sidebar 時：Logo、標題、搜尋鍵、三條 bar 都留在同一列 */
-  .app-shell.sidebar-collapsed .sidebar {
-    width: 100% !important;
-    height: 68px !important;
-    min-height: 68px !important;
-    max-height: 68px !important;
-    padding: 0 14px !important;
-    overflow: hidden !important;
-  }
-
-  .app-shell.sidebar-collapsed .logo {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: absolute !important;
-    left: 18px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 48px !important;
-    height: 48px !important;
-    margin: 0 !important;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-title {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: absolute !important;
-    left: 78px !important;
-    right: 116px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .app-shell.sidebar-collapsed .search-toggle {
-    right: 66px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-toggle {
-    right: 18px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-  }
-
-  .app-shell.sidebar-collapsed .sidebar-search-panel,
-  .app-shell.sidebar-collapsed .sidebar-section {
-    display: none !important;
+  #infoPanel:not(.info-compact) .source-box {
+    max-height: 38vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 
 @media (max-width: 480px) {
-  .sidebar-title,
-  .app-shell.sidebar-collapsed .sidebar-title {
-    left: 72px !important;
-    right: 108px !important;
+  .workspace.info-compact-workspace {
+    grid-template-rows: minmax(0, 1fr) 8px 64px !important;
   }
 
-  .sidebar-title strong {
-    font-size: clamp(18px, 5.2vw, 22px) !important;
+  #infoPanel.info-compact {
+    min-height: 64px !important;
+    height: 64px !important;
+    max-height: 64px !important;
+    padding: 7px 12px !important;
   }
 
-  .sidebar-title span {
-    font-size: clamp(11px, 3.4vw, 13px) !important;
+  #infoPanel.info-compact .info-icon {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 14px !important;
   }
 
-  #sidebarSearchPanel:not(.search-collapsed) {
-    min-height: 142px !important;
+  #infoPanel.info-compact #infoTitle {
+    font-size: clamp(14px, 4.5vw, 17px) !important;
   }
+}
 
-  .sidebar-search {
-    height: 52px !important;
-    min-height: 52px !important;
-    line-height: 52px !important;
-  }
+
+/* =========================================================
+   NODE COUNT GRADIENT LABEL
+   節點標籤後方數字：粗體、玫瑰金到藍紫漸層
+========================================================= */
+
+.node-label .label-name {
+  fill: #173c43;
+  font-weight: 700;
+}
+
+.node-label .label-count {
+  fill: url(#countGradient);
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  font-size: 1.08em;
+}
+
+.node.selected .label-count {
+  font-weight: 950;
 }
