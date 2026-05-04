@@ -24,18 +24,18 @@ const state = {
 };
 
 const nodeColors = {
-  topic: "#B9DCEC",      // 第一層：淡藍（天空）
-  concept: "#E8C76F",    // 第二層：陽光黃（核心覺察）
-  term: "#D6A0A8",       // 第三層：玫瑰粉（情感與心智）
-  phrase: "#F7EAD0",     // 第四層：米白（碎句）
-  unknown: "#D8EEEE",
+  topic: "#CFEAF4",      // 第一層：霧感淡藍
+  concept: "#F3E6B4",    // 第二層：奶油粉黃
+  term: "#EBCAD0",       // 第三層：霧玫瑰粉
+  phrase: "#FFF3DF",     // 第四層：暖米白
+  unknown: "#E4F2F0",
 };
 
 const edgeColors = {
   contains: "rgba(92, 142, 157, 0.62)",
   related_to: "rgba(92, 166, 168, 0.62)",
-  alias_of: "rgba(217, 170, 56, 0.62)",
-  related_phrase: "rgba(196, 166, 95, 0.56)",
+  alias_of: "rgba(203, 176, 112, 0.48)",
+  related_phrase: "rgba(218, 190, 140, 0.42)",
 };
 
 document.addEventListener("DOMContentLoaded", init);
