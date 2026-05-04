@@ -116,6 +116,7 @@ function restoreSidebarWidth() {
 
   if (Number.isFinite(width) && width >= 220 && width <= 420) {
     sidebar.style.width = `${width}px`;
+    requestAnimationFrame(syncDesktopOverlayLayout);
   }
 }
 
@@ -500,6 +501,7 @@ function setupSidebarResize() {
 
         sidebar.style.width = `${nextWidth}px`;
         localStorage.setItem("sidebarWidth", String(nextWidth));
+        syncDesktopOverlayLayout();
       }
 
       updateFloatingLayoutVars();
@@ -685,7 +687,25 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function syncDesktopOverlayLayout() {
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!appShell || !sidebar || isMobileLayout()) return;
+
+  const sidebarRect = sidebar.getBoundingClientRect();
+  const sidebarWidth = Math.round(sidebarRect.width || 280);
+  const sidebarLeft = 20;
+  const panelGap = 20;
+  const infoLeft = sidebarLeft + sidebarWidth + panelGap;
+
+  appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
+  appShell.style.setProperty("--info-left", `${infoLeft}px`);
+}
+
 function resizeGraphAfterPanelChange() {
+  syncDesktopOverlayLayout();
+
   if (!state.svg) return;
 
   const graphCard = document.querySelector(".graph-card");
@@ -710,7 +730,7 @@ function resizeGraphAfterPanelChange() {
 ================================ */
 
 const INTRO_MAX_CHARS = 18;
-const INTRO_DURATION_MS = 10000;
+const INTRO_DURATION_MS = 6600;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
   "讓心安靜下來",
