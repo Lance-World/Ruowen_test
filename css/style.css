@@ -1061,43 +1061,85 @@ button {
 }
 
 /* ================================
-   RWD - Small Mobile
-================================ */
-
-@media (max-width: 480px) {
-  .app-shell {
-    padding: 6px;
-  }
-
-  .sidebar {
-    border-radius: 18px;
-  }
-
-  .graph-card {
-    border-radius: 18px;
-  }
-
-  .info-panel {
-    border-radius: 18px;
-    padding: 12px;
-  }
-
-  .info-split-area {
-    min-height: 390px;
-  }
-
-  .info-box {
-    min-height: 180px;
-  }
-}
-
-/* ================================
-   RWD Fine Tune - Mobile Search Input
-   手機版搜尋欄文字截斷修正
+   RWD Mobile Sidebar Final Adjustment
+   只針對手機版：
+   1. 收合時保留左上角星星 Logo
+   2. 收合時放大鏡移到三條 bar 左側
+   3. 收合時下方拖曳 bar 仍可顯示與拖動
+   4. 展開時 Ruowen Knowledge Graph 標題置中
+   5. 手機搜尋欄高度修正，避免文字上下被截斷
 ================================ */
 
 @media (max-width: 768px) {
+  .app-shell {
+    width: 100vw;
+    height: 100dvh;
+    padding: 8px;
+    gap: 8px;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    position: relative;
+    width: 100% !important;
+    height: 128px;
+    min-height: 88px;
+    max-height: 58vh;
+    border-radius: 22px;
+    padding: 14px;
+    flex-shrink: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 展開狀態：Logo 固定左上，兩顆按鈕固定右上 */
+  .sidebar .logo {
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    margin: 0;
+    width: 46px;
+    height: 46px;
+    font-size: 22px;
+    display: grid;
+    z-index: 18;
+  }
+
+  .sidebar .search-toggle {
+    right: 58px;
+    left: auto;
+    top: 12px;
+  }
+
+  .sidebar .sidebar-toggle {
+    right: 14px;
+    left: auto;
+    top: 12px;
+  }
+
+  /* 展開狀態：標題置中，不被左邊 Logo 和右邊按鈕壓到 */
+  .sidebar-title {
+    width: 100%;
+    min-height: 54px;
+    margin: 0 0 14px;
+    padding: 0 96px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    text-align: center;
+  }
+
+  .sidebar-title strong,
+  .sidebar-title span {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* 搜尋區往下避開上方 Logo/標題/按鈕列 */
   .sidebar-search-panel {
+    margin-top: 4px;
     max-height: 230px;
     padding: 12px;
   }
@@ -1106,6 +1148,7 @@ button {
     min-height: 118px;
   }
 
+  /* 手機版搜尋欄：避免中文字上下被截斷 */
   .sidebar-search {
     height: 46px;
     min-height: 46px;
@@ -1132,30 +1175,76 @@ button {
     font-size: 13px;
     line-height: 42px;
   }
-}
 
-/* ================================
-   RWD Fine Tune - Mobile Collapsed Button Layout
-   手機版收合後：放大鏡左，三條 bar 右
-================================ */
-
-@media (max-width: 768px) {
+  /* 手機版收合狀態：星星保留在左，放大鏡在右側 bar 左邊 */
   .app-shell.sidebar-collapsed .sidebar {
-    height: 60px;
-    min-height: 60px;
+    width: 100% !important;
+    height: 64px;
+    min-height: 64px;
     padding: 10px 14px;
+    align-items: flex-start;
+    overflow: hidden;
     position: relative;
   }
 
-  .app-shell.sidebar-collapsed .search-toggle {
+  .app-shell.sidebar-collapsed .logo {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute;
     left: 14px;
-    right: auto;
+    top: 10px;
+    margin: 0;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    z-index: 18;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle {
+    left: auto;
+    right: 62px;
     top: 12px;
   }
 
   .app-shell.sidebar-collapsed .sidebar-toggle {
-    right: 14px;
     left: auto;
+    right: 14px;
     top: 12px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-title,
+  .app-shell.sidebar-collapsed .sidebar-search-panel,
+  .app-shell.sidebar-collapsed .sidebar-section {
+    display: none !important;
+  }
+
+  /* 收合狀態仍保留下方拖曳 bar，手機可以拉動 sidebar 高度 */
+  .app-shell.sidebar-collapsed .sidebar-resize-handle {
+    display: block !important;
+    width: 100%;
+    height: 9px;
+    min-height: 9px;
+    cursor: row-resize;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-title {
+    padding: 0 82px;
+  }
+
+  .sidebar-title strong {
+    font-size: 17px;
+  }
+
+  .sidebar-title span {
+    font-size: 11px;
+  }
+
+  .app-shell.sidebar-collapsed .search-toggle {
+    right: 58px;
   }
 }
