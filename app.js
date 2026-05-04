@@ -24,11 +24,11 @@ const state = {
 };
 
 const nodeColors = {
-  topic: "#b9dcec",
-  concept: "#bfe7e2",
-  term: "#f4d982",
-  phrase: "#f7ead0",
-  unknown: "#d8eeee",
+  topic: "#B9DCEC",      // 第一層：淡藍（天空）
+  concept: "#E8C76F",    // 第二層：陽光黃（核心覺察）
+  term: "#D6A0A8",       // 第三層：玫瑰粉（情感與心智）
+  phrase: "#F7EAD0",     // 第四層：米白（碎句）
+  unknown: "#D8EEEE",
 };
 
 const edgeColors = {
@@ -46,6 +46,7 @@ async function init() {
     restoreSidebarState();
     restoreSidebarWidth();
     restoreSearchPanelState();
+    updateFloatingLayoutVars();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
@@ -137,6 +138,8 @@ function toggleSidebar() {
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
 
+  updateFloatingLayoutVars();
+
   setTimeout(() => {
     resizeGraphAfterPanelChange();
   }, 320);
@@ -164,6 +167,8 @@ function toggleSearchPanel() {
       if (input) input.focus();
     }, 120);
   }
+
+  updateFloatingLayoutVars();
 
   setTimeout(() => {
     resizeGraphAfterPanelChange();
@@ -452,6 +457,7 @@ function setupSidebarResize() {
         localStorage.setItem("sidebarWidth", String(nextWidth));
       }
 
+      updateFloatingLayoutVars();
       resizeGraphAfterPanelChange();
     },
   });
@@ -594,6 +600,36 @@ function enablePointerResize(handle, options) {
     document.body.style.userSelect = "";
     document.body.style.touchAction = "";
   });
+}
+
+
+function updateFloatingLayoutVars() {
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!appShell || !sidebar) return;
+
+  if (isMobileLayout()) {
+    appShell.style.setProperty("--sidebar-left", "20px");
+    appShell.style.setProperty("--sidebar-top", "20px");
+    appShell.style.setProperty("--sidebar-width", "calc(100% - 40px)");
+    appShell.style.setProperty("--info-left", "20px");
+    appShell.style.setProperty("--info-right", "20px");
+    return;
+  }
+
+  const shellRect = appShell.getBoundingClientRect();
+  const sidebarRect = sidebar.getBoundingClientRect();
+  const isCollapsed = appShell.classList.contains("sidebar-collapsed");
+  const sidebarWidth = Math.round(sidebarRect.width || (isCollapsed ? 64 : 280));
+  const sidebarLeft = 20;
+  const infoLeft = isCollapsed ? 104 : Math.max(320, sidebarLeft + sidebarWidth + 40);
+
+  appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
+  appShell.style.setProperty("--sidebar-top", "20px");
+  appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
+  appShell.style.setProperty("--info-left", `${infoLeft}px`);
+  appShell.style.setProperty("--info-right", "20px");
 }
 
 function isMobileLayout() {
@@ -898,7 +934,7 @@ state.zoomLayer = svg.append("g").attr("class", "zoom-layer");
 
   state.zoomBehavior = d3
     .zoom()
-    .scaleExtent([0.22, 4])
+    .scaleExtent([0.15, 5])
     .on("zoom", (event) => {
       state.zoomLayer.attr("transform", event.transform);
     });
@@ -1507,5 +1543,6 @@ function dragEnded(event, node) {
 ================================ */
 
 window.addEventListener("resize", () => {
+  updateFloatingLayoutVars();
   resizeGraphAfterPanelChange();
 });
