@@ -1874,4 +1874,22 @@ button {
     left: 2px;
     bottom: 9px;
   }
+  /* =========================================================
+   MOBILE INTRO TEXT WRAP
+   手機版 overlay 文字超過 9 個字自動換行
+========================================================= */
+
+@media (max-width: 768px) {
+  .intro-text,
+  .intro-message {
+    max-width: 9em !important;
+    white-space: normal !important;
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    text-align: center !important;
+    line-height: 1.18 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
 }
