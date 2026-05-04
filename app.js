@@ -20,7 +20,6 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
-  introMessages: [],
 };
 
 const nodeColors = {
@@ -88,190 +87,6 @@ async function fetchJson(path) {
   }
 
   return response.json();
-}
-
-
-async function fetchOptionalJson(path, fallbackValue = null) {
-  try {
-    const response = await fetch(path);
-
-    if (!response.ok) return fallbackValue;
-
-    return response.json();
-  } catch (_) {
-    return fallbackValue;
-  }
-}
-
-/* ================================
-   Intro Overlay
-   進站短句、透明灰背景、流星與星光
-================================ */
-
-async function setupIntroOverlay() {
-  const overlay = document.getElementById("introOverlay");
-  const messageBox = document.getElementById("introMessage");
-  const skipBtn = document.getElementById("introSkipBtn");
-
-  if (!overlay || !messageBox || !skipBtn) return;
-
-  const messagesFromFile = await fetchOptionalJson(DATA_PATHS.intro, []);
-  state.introMessages = normalizeIntroMessages(messagesFromFile);
-
-  if (state.introMessages.length === 0) {
-    state.introMessages = buildIntroMessagesFromGraphData();
-  }
-
-  const message = pickIntroMessage(state.introMessages);
-
-  if (!message) {
-    overlay.remove();
-    return;
-  }
-
-  messageBox.textContent = message;
-
-  let closed = false;
-  let closeTimer = null;
-
-  const closeOverlay = () => {
-    if (closed) return;
-
-    closed = true;
-    overlay.classList.add("intro-overlay-leaving");
-
-    window.setTimeout(() => {
-      overlay.classList.add("intro-overlay-hidden");
-      overlay.remove();
-    }, 650);
-  };
-
-  skipBtn.addEventListener("click", closeOverlay);
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) closeOverlay();
-  });
-
-  window.setTimeout(() => {
-    overlay.classList.remove("intro-overlay-hidden");
-    overlay.classList.add("intro-overlay-visible");
-  }, 80);
-
-  closeTimer = window.setTimeout(closeOverlay, 4200);
-
-  skipBtn.addEventListener("click", () => {
-    if (closeTimer) window.clearTimeout(closeTimer);
-  });
-}
-
-function normalizeIntroMessages(rawMessages) {
-  const values = [];
-
-  if (Array.isArray(rawMessages)) {
-    rawMessages.forEach((item) => {
-      if (typeof item === "string") {
-        values.push(item);
-        return;
-      }
-
-      if (item && typeof item === "object") {
-        values.push(item.text || item.message || item.phrase || item.label || "");
-      }
-    });
-  } else if (rawMessages && typeof rawMessages === "object") {
-    const possibleArrays = [
-      rawMessages.messages,
-      rawMessages.phrases,
-      rawMessages.items,
-      rawMessages.data,
-    ];
-
-    possibleArrays.forEach((arr) => {
-      if (Array.isArray(arr)) {
-        arr.forEach((item) => {
-          if (typeof item === "string") {
-            values.push(item);
-            return;
-          }
-
-          if (item && typeof item === "object") {
-            values.push(item.text || item.message || item.phrase || item.label || "");
-          }
-        });
-      }
-    });
-  }
-
-  return uniqueIntroMessages(values);
-}
-
-function buildIntroMessagesFromGraphData() {
-  const candidates = [];
-
-  state.allNodes.forEach((node) => {
-    if (node.type === "phrase" && node.label) candidates.push(node.label);
-    if (node.text_preview) candidates.push(...splitIntroText(node.text_preview));
-    if (node.label) candidates.push(node.label);
-  });
-
-  Object.values(state.graphSources || {}).forEach((sourceGroup) => {
-    if (!Array.isArray(sourceGroup)) return;
-
-    sourceGroup.forEach((source) => {
-      if (source.text) candidates.push(...splitIntroText(source.text));
-      if (source.title) candidates.push(...splitIntroText(source.title));
-    });
-  });
-
-  return uniqueIntroMessages(candidates);
-}
-
-function splitIntroText(text) {
-  return String(text || "")
-    .split(/[。！？!?；;，,、：:\n\r\t|]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function uniqueIntroMessages(values) {
-  const seen = new Set();
-  const result = [];
-
-  values.forEach((value) => {
-    const text = cleanIntroMessage(value);
-
-    if (!isValidIntroMessage(text)) return;
-    if (seen.has(text)) return;
-
-    seen.add(text);
-    result.push(text);
-  });
-
-  return result;
-}
-
-function cleanIntroMessage(value) {
-  return String(value || "")
-    .replace(/\s+/g, "")
-    .replace(/["“”'‘’「」『』（）()\[\]【】<>《》]/g, "")
-    .trim();
-}
-
-function isValidIntroMessage(text) {
-  if (!text) return false;
-  if (text.length > 18) return false;
-  if (!hasMeaningfulSearchText(text)) return false;
-
-  const punctuationOnly = /^[\s\p{P}\p{S}]+$/u.test(text);
-  if (punctuationOnly) return false;
-
-  return true;
-}
-
-function pickIntroMessage(messages) {
-  if (!Array.isArray(messages) || messages.length === 0) return "";
-
-  const index = Math.floor(Math.random() * messages.length);
-  return messages[index];
 }
 
 /* ================================
@@ -670,13 +485,9 @@ function resizeGraphAfterPanelChange() {
 ================================ */
 
 function getFilteredData() {
-  const searchInput = document.getElementById("searchInput");
-  const rawKeyword = searchInput ? searchInput.value.trim() : "";
-  const invalidKeyword = rawKeyword && !hasMeaningfulSearchText(rawKeyword);
-  const keyword = invalidKeyword ? "" : rawKeyword.toLowerCase();
+  const keyword = getNormalizedSearchKeyword();
 
   let nodes = state.allNodes.filter((node) => {
-    if (invalidKeyword) return false;
     if (!state.visibleTypes.has(node.type)) return false;
 
     if (
@@ -1213,12 +1024,156 @@ function getNeighborNodes(nodeId) {
 }
 
 
-function hasMeaningfulSearchText(text) {
-  return /[A-Za-z0-9\u3400-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(String(text || ""));
+/* ================================
+   Intro Overlay
+   進站短句星空開場
+================================ */
+
+async function setupIntroOverlay() {
+  const overlay = document.getElementById("introOverlay");
+  const messageBox = document.getElementById("introMessage");
+
+  if (!overlay || !messageBox) return;
+
+  const message = await pickIntroMessage();
+
+  if (!message) {
+    overlay.remove();
+    return;
+  }
+
+  messageBox.textContent = message;
+  overlay.setAttribute("aria-hidden", "false");
+
+  requestAnimationFrame(() => {
+    overlay.classList.remove("intro-hidden");
+    overlay.classList.add("intro-visible");
+  });
+
+  let closed = false;
+
+  const closeIntro = () => {
+    if (closed) return;
+    closed = true;
+    overlay.classList.remove("intro-visible");
+    overlay.classList.add("intro-leaving");
+    overlay.setAttribute("aria-hidden", "true");
+
+    setTimeout(() => {
+      overlay.remove();
+    }, 680);
+  };
+
+  overlay.addEventListener("click", closeIntro, { once: true });
+  setTimeout(closeIntro, INTRO_DURATION_MS);
+}
+
+async function pickIntroMessage() {
+  const fromFile = await loadIntroMessagesFromFile();
+  const fromGraph = collectIntroMessagesFromGraph();
+  const candidates = [...fromFile, ...fromGraph]
+    .map(cleanIntroMessage)
+    .filter(isValidIntroMessage);
+
+  const uniqueCandidates = Array.from(new Set(candidates));
+
+  if (uniqueCandidates.length === 0) return "讓心慢慢醒來";
+
+  return uniqueCandidates[Math.floor(Math.random() * uniqueCandidates.length)];
+}
+
+async function loadIntroMessagesFromFile() {
+  try {
+    const data = await fetchJson(DATA_PATHS.intro);
+
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.messages)) return data.messages;
+    if (Array.isArray(data.phrases)) return data.phrases;
+
+    return [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function collectIntroMessagesFromGraph() {
+  const candidates = [];
+
+  state.allNodes.forEach((node) => {
+    if (node.type === "phrase" && node.label) {
+      candidates.push(node.label);
+    }
+
+    if (node.text_preview) {
+      String(node.text_preview)
+        .split(/\|\||[。！？!?\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => candidates.push(item));
+    }
+  });
+
+  Object.values(state.graphSources || {}).forEach((sources) => {
+    if (!Array.isArray(sources)) return;
+
+    sources.forEach((source) => {
+      if (source && source.text) {
+        String(source.text)
+          .split(/[。！？!?\n]/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .forEach((item) => candidates.push(item));
+      }
+    });
+  });
+
+  return candidates;
+}
+
+function cleanIntroMessage(value) {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/[「」『』“”]/g, "")
+    .trim();
+}
+
+function isValidIntroMessage(value) {
+  const text = cleanIntroMessage(value);
+  return (
+    text.length > 0 &&
+    Array.from(text).length <= INTRO_MAX_LENGTH &&
+    hasSearchableText(text)
+  );
+}
+
+/* ================================
+   Search Helpers
+   搜尋防呆與全內容搜尋
+================================ */
+
+function getNormalizedSearchKeyword() {
+  const searchInput = document.getElementById("searchInput");
+  return normalizeSearchKeyword(searchInput ? searchInput.value : "");
+}
+
+function normalizeSearchKeyword(value) {
+  const keyword = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (!keyword) return "";
+
+  return hasSearchableText(keyword) ? keyword : "";
+}
+
+function hasSearchableText(value) {
+  return /[\p{L}\p{N}]/u.test(String(value || ""));
 }
 
 function getNodeSearchText(node) {
-  const baseText = [
+  const directSources = state.graphSources[node.id] || [];
+
+  const nodeFields = [
     node.id,
     node.label,
     node.type,
@@ -1226,27 +1181,24 @@ function getNodeSearchText(node) {
     node.level1_category,
     node.level2_concept,
     node.matched_terms,
-    node.text_preview,
     node.canonical_term,
+    node.text_preview,
+    node.count,
   ];
 
-  const sources = state.graphSources[node.id] || [];
+  const sourceFields = directSources.flatMap((source) => [
+    source.title,
+    source.file,
+    source.timestamp,
+    source.text,
+    source.base_url,
+    source.timestamp_url,
+  ]);
 
-  sources.forEach((source) => {
-    baseText.push(
-      source.title,
-      source.file,
-      source.timestamp,
-      source.timestamp_url,
-      source.base_url,
-      source.text
-    );
-  });
-
-  return baseText
-    .filter(Boolean)
-    .map((item) => String(item).toLowerCase())
-    .join(" ");
+  return [...nodeFields, ...sourceFields]
+    .filter((item) => item !== undefined && item !== null)
+    .join(" ")
+    .toLowerCase();
 }
 
 /* ================================
@@ -1254,18 +1206,15 @@ function getNodeSearchText(node) {
 ================================ */
 
 function searchNode() {
-  const input = document.getElementById("searchInput");
-  const keyword = input ? input.value.trim() : "";
+  const keyword = getNormalizedSearchKeyword();
 
   updateGraph();
 
-  if (!keyword || !hasMeaningfulSearchText(keyword)) return;
+  if (!keyword) return;
 
   setTimeout(() => {
-    const lowerKeyword = keyword.toLowerCase();
-
     const matchedNode = state.allNodes.find((node) => {
-      return getNodeSearchText(node).includes(lowerKeyword);
+      return getNodeSearchText(node).includes(keyword);
     });
 
     if (matchedNode) {
