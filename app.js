@@ -387,14 +387,21 @@ function toggleMobileInfoCompact() {
 
 function applyMobileInfoCompactState() {
   const infoPanel = document.getElementById("infoPanel");
+  const workspace = document.getElementById("workspace");
+
   if (!infoPanel) return;
 
   if (!isMobileLayout()) {
     infoPanel.classList.remove("mobile-info-compact");
+    if (workspace) workspace.classList.remove("mobile-info-compact-workspace");
     return;
   }
 
   infoPanel.classList.toggle("mobile-info-compact", state.mobileInfoCompact);
+
+  if (workspace) {
+    workspace.classList.toggle("mobile-info-compact-workspace", state.mobileInfoCompact);
+  }
 }
 
 /* ================================
