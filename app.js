@@ -37,6 +37,10 @@ const edgeColors = {
   related_phrase: "rgba(196, 166, 95, 0.56)",
 };
 
+const TITLE_NUMBER_MIN = 0;
+const TITLE_NUMBER_MAX = 9999;
+
+
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
@@ -486,7 +490,7 @@ function resizeGraphAfterPanelChange() {
    進站星空短句開場
 ================================ */
 
-const INTRO_MAX_CHARS = 18;
+const INTRO_MAX_CHARS = 14;
 const INTRO_DURATION_MS = 6600;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
@@ -1006,19 +1010,27 @@ function highlightSelection() {
     });
 }
 
+/* ================================
+   Info Title Random Number
+   資訊欄標題後方隨機數字 0000–9999
+================================ */
 
-function randomFourDigitNumber() {
-  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+function setInfoTitleWithNumber(titleText) {
+  const titleEl = document.getElementById("infoTitle");
+  if (!titleEl) return;
+
+  const safeTitle = escapeHtml(titleText || "尚未選擇節點");
+  const randomNumber = generateInfoTitleNumber();
+
+  titleEl.innerHTML = `${safeTitle}<span class="info-title-number">${randomNumber}</span>`;
 }
 
-function setInfoTitleText(titleText) {
-  const title = document.getElementById("infoTitle");
-  if (!title) return;
+function generateInfoTitleNumber() {
+  const value = Math.floor(
+    Math.random() * (TITLE_NUMBER_MAX - TITLE_NUMBER_MIN + 1) + TITLE_NUMBER_MIN
+  );
 
-  const safeTitle = String(titleText || "尚未選擇節點").trim() || "尚未選擇節點";
-  state.infoTitleNumber = randomFourDigitNumber();
-
-  title.innerHTML = `${escapeHtml(safeTitle)} <span class="info-title-number" aria-hidden="true">${state.infoTitleNumber}</span>`;
+  return String(value).padStart(4, "0");
 }
 
 /* ================================
@@ -1026,7 +1038,7 @@ function setInfoTitleText(titleText) {
 ================================ */
 
 function renderDefaultInfo() {
-  setInfoTitleText("尚未選擇節點");
+  setInfoTitleWithNumber("尚未選擇節點");
   document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
   document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("relatedPhrases").innerHTML = '<span class="muted">尚無資料</span>';
@@ -1034,7 +1046,7 @@ function renderDefaultInfo() {
 }
 
 function renderInfoPanel(node) {
-  setInfoTitleText(node.label || node.id);
+  setInfoTitleWithNumber(node.label || node.id);
 
   const tags = [
     typeLabel(node.type),
