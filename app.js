@@ -20,6 +20,7 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
+  infoPanelCompact: false,
 };
 
 const nodeColors = {
@@ -37,10 +38,6 @@ const edgeColors = {
   related_phrase: "rgba(196, 166, 95, 0.56)",
 };
 
-const TITLE_NUMBER_MIN = 0;
-const TITLE_NUMBER_MAX = 9999;
-
-
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
@@ -54,6 +51,7 @@ async function init() {
     setupResizablePanels();
     renderGraph();
     renderDefaultInfo();
+    setupInfoPanelCompact();
     setupIntroOverlay();
   } catch (error) {
     console.error(error);
@@ -1010,27 +1008,75 @@ function highlightSelection() {
     });
 }
 
+
 /* ================================
-   Info Title Random Number
-   資訊欄標題後方隨機數字 0000–9999
+   Info Panel Compact / Title Number
+   各平台資訊欄：點擊圖案收合/展開，標題後方顯示隨機 0000-9999
 ================================ */
 
-function setInfoTitleWithNumber(titleText) {
-  const titleEl = document.getElementById("infoTitle");
-  if (!titleEl) return;
+function setupInfoPanelCompact() {
+  const infoPanel = document.getElementById("infoPanel");
+  const infoIcon = document.querySelector(".info-icon");
 
-  const safeTitle = escapeHtml(titleText || "尚未選擇節點");
-  const randomNumber = generateInfoTitleNumber();
+  if (!infoPanel || !infoIcon) return;
 
-  titleEl.innerHTML = `${safeTitle}<span class="info-title-number">${randomNumber}</span>`;
+  infoIcon.setAttribute("role", "button");
+  infoIcon.setAttribute("tabindex", "0");
+  infoIcon.setAttribute("title", "收合 / 展開資訊欄");
+
+  infoIcon.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleInfoPanelCompact();
+  });
+
+  infoIcon.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    toggleInfoPanelCompact();
+  });
+
+  applyInfoPanelCompactState();
+}
+
+function toggleInfoPanelCompact() {
+  state.infoPanelCompact = !state.infoPanelCompact;
+  applyInfoPanelCompactState();
+
+  requestAnimationFrame(() => {
+    resizeGraphAfterPanelChange();
+  });
+}
+
+function applyInfoPanelCompactState() {
+  const infoPanel = document.getElementById("infoPanel");
+  const workspace = document.getElementById("workspace");
+
+  if (!infoPanel) return;
+
+  infoPanel.classList.toggle("info-panel-compact", state.infoPanelCompact);
+
+  if (workspace) {
+    workspace.classList.toggle("info-panel-compact-workspace", state.infoPanelCompact);
+  }
+}
+
+function setInfoTitle(titleText) {
+  const title = document.getElementById("infoTitle");
+  if (!title) return;
+
+  const text = String(titleText || "尚未選擇節點").trim() || "尚未選擇節點";
+  const code = generateInfoTitleNumber();
+
+  title.innerHTML = `
+    <span class="info-title-text">${escapeHtml(text)}</span>
+    <span class="info-title-number">${code}</span>
+  `;
 }
 
 function generateInfoTitleNumber() {
-  const value = Math.floor(
-    Math.random() * (TITLE_NUMBER_MAX - TITLE_NUMBER_MIN + 1) + TITLE_NUMBER_MIN
-  );
-
-  return String(value).padStart(4, "0");
+  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
 
 /* ================================
@@ -1038,15 +1084,16 @@ function generateInfoTitleNumber() {
 ================================ */
 
 function renderDefaultInfo() {
-  setInfoTitleWithNumber("尚未選擇節點");
+  setInfoTitle("尚未選擇節點");
   document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
   document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("relatedPhrases").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("sourceList").innerHTML = '<span class="muted">尚無資料</span>';
+  applyInfoPanelCompactState();
 }
 
 function renderInfoPanel(node) {
-  setInfoTitleWithNumber(node.label || node.id);
+  setInfoTitle(node.label || node.id);
 
   const tags = [
     typeLabel(node.type),
