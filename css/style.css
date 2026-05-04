@@ -3091,3 +3091,501 @@ body {
     -webkit-backdrop-filter: blur(18px) saturate(1.05) !important;
   }
 }
+
+/* =========================================================
+   MOBILE COMPLETE REBUILD PATCH - 20260504
+   目的：重整手機版上方欄位 / 三字選單 / 操作選單 / 上下 bar
+   1. 手機展開三字 sidebar 時：整張卡片可以上下滑動
+   2. 收合時：不留白底，只保留右上懸浮按鈕
+   3. 操作按鈕：手機版使用右上 ⋯ 收合選單
+   4. 上下拖曳 bar：收合狀態透明，不遮擋視覺
+========================================================= */
+
+@media (max-width: 768px) {
+  html,
+  body {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
+  .app-shell {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
+  .main-area,
+  .workspace,
+  .graph-section,
+  .graph-card {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+  }
+
+  .main-area {
+    z-index: 1 !important;
+  }
+
+  .graph-section,
+  .graph-card {
+    z-index: 1 !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #graphSvg {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    touch-action: none !important;
+  }
+
+  /* ---------- 上方 sidebar：展開狀態可滑動 ---------- */
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar {
+    position: fixed !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    bottom: auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 86px !important;
+    max-height: min(74dvh, calc(100dvh - 24px)) !important;
+    padding: 14px 14px 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+    pointer-events: auto !important;
+    z-index: 120 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.68) !important;
+    border: 1px solid rgba(255, 255, 255, 0.46) !important;
+    box-shadow: 0 16px 46px rgba(23, 60, 67, 0.15) !important;
+    backdrop-filter: blur(22px) saturate(1.08) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.08) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .logo {
+    position: absolute !important;
+    left: 14px !important;
+    top: 12px !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    width: 46px !important;
+    height: 46px !important;
+    z-index: 3 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-title {
+    position: relative !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    min-height: 50px !important;
+    height: auto !important;
+    margin: 0 0 12px !important;
+    padding: 0 108px 0 72px !important;
+    text-align: center !important;
+    align-content: center !important;
+    justify-items: center !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-search-panel,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-search-panel.search-collapsed {
+    display: block !important;
+    opacity: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-color: transparent !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-category-section {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-category-list {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+    touch-action: pan-y !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .side-item,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .category-chip,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-search,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar button {
+    touch-action: manipulation !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .search-toggle,
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-toggle {
+    position: absolute !important;
+    top: 12px !important;
+    transform: none !important;
+    width: 42px !important;
+    height: 42px !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .search-toggle {
+    right: 62px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar .sidebar-toggle {
+    right: 14px !important;
+  }
+
+  /* 手機版取消 sidebar resize handle，避免它蓋住展開後的可滑動區 */
+  #sidebarResizeHandle.sidebar-resize-handle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* ---------- 上方 sidebar：收合狀態完全透明，只留右上兩顆按鈕 ---------- */
+  .app-shell.sidebar-collapsed #sidebar.sidebar {
+    position: fixed !important;
+    left: auto !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    z-index: 130 !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .logo,
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-title,
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-search-panel,
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-section {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .search-toggle,
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-toggle {
+    position: fixed !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    z-index: 150 !important;
+    border-radius: 999px !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .search-toggle {
+    right: calc(max(10px, env(safe-area-inset-right)) + 50px) !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-toggle {
+    right: max(10px, env(safe-area-inset-right)) !important;
+  }
+
+  /* ---------- 手機操作選單：⋯ 右上收合，不佔用一整條橫幅 ---------- */
+  .floating-actions-toggle {
+    position: fixed !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    right: calc(max(10px, env(safe-area-inset-right)) + 100px) !important;
+    left: auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    display: grid !important;
+    place-items: center !important;
+    z-index: 140 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.86) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 20px rgba(23, 60, 67, 0.14) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    pointer-events: auto !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions-toggle {
+    top: calc(max(10px, env(safe-area-inset-top)) + min(74dvh, calc(100dvh - 24px)) + 10px) !important;
+  }
+
+  .floating-actions {
+    position: fixed !important;
+    top: calc(max(10px, env(safe-area-inset-top)) + 50px) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    left: auto !important;
+    width: min(186px, calc(100vw - 20px)) !important;
+    max-width: min(186px, calc(100vw - 20px)) !important;
+    display: none !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    z-index: 139 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.56) !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 14px 36px rgba(23, 60, 67, 0.15) !important;
+    backdrop-filter: blur(18px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.05) !important;
+    overflow: visible !important;
+  }
+
+  .graph-card.floating-actions-open .floating-actions {
+    display: grid !important;
+  }
+
+  .floating-actions button {
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    background: rgba(92, 166, 168, 0.84) !important;
+    color: rgba(255, 255, 255, 0.98) !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: calc(max(10px, env(safe-area-inset-top)) + min(74dvh, calc(100dvh - 24px)) + 58px) !important;
+  }
+
+  /* ---------- 下方資訊欄：Bottom Sheet，展開可滑動 ---------- */
+  #infoPanel.info-panel {
+    position: fixed !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    height: min(var(--info-height), 72dvh) !important;
+    min-height: 118px !important;
+    max-height: 72dvh !important;
+    padding: 13px 14px 16px !important;
+    z-index: 110 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+    border-radius: 22px !important;
+  }
+
+  #infoPanel.info-compact {
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    padding: 7px 12px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #infoPanel.info-compact .info-header {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #infoPanel.info-compact .info-tags,
+  #infoPanel.info-compact .info-related-row,
+  #infoPanel.info-compact .info-split-area,
+  #infoPanel.info-compact #infoRightResizeHandle {
+    display: none !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-split-area {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.info-compact) .resize-handle.vertical {
+    width: 100% !important;
+    height: 8px !important;
+    min-height: 8px !important;
+    cursor: row-resize !important;
+    flex-shrink: 0 !important;
+  }
+
+  #infoPanel:not(.info-compact) .sentence-box,
+  #infoPanel:not(.info-compact) .source-box {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 34vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+  }
+
+  /* ---------- 中間 map 上下 bar：保留觸控，但視覺透明 ---------- */
+  #mainResizeHandle.resize-handle.horizontal {
+    position: fixed !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + min(var(--info-height), 72dvh) + 8px) !important;
+    width: auto !important;
+    height: 9px !important;
+    min-height: 9px !important;
+    z-index: 111 !important;
+    cursor: row-resize !important;
+    opacity: 0.32 !important;
+    background: rgba(92, 166, 168, 0.16) !important;
+    border-color: rgba(199, 220, 222, 0.22) !important;
+    touch-action: none !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal,
+  #infoPanel.info-compact + #mainResizeHandle.resize-handle.horizontal {
+    opacity: 0 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 74px) !important;
+  }
+
+  #infoRightResizeHandle,
+  .resize-handle.info-right {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) #sidebar.sidebar {
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    top: max(8px, env(safe-area-inset-top)) !important;
+    max-height: min(76dvh, calc(100dvh - 18px)) !important;
+    border-radius: 20px !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .search-toggle,
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-toggle,
+  .floating-actions-toggle {
+    top: max(8px, env(safe-area-inset-top)) !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .search-toggle {
+    right: calc(max(8px, env(safe-area-inset-right)) + 48px) !important;
+  }
+
+  .app-shell.sidebar-collapsed #sidebar.sidebar .sidebar-toggle {
+    right: max(8px, env(safe-area-inset-right)) !important;
+  }
+
+  .floating-actions-toggle {
+    right: calc(max(8px, env(safe-area-inset-right)) + 96px) !important;
+  }
+
+  .floating-actions {
+    top: calc(max(8px, env(safe-area-inset-top)) + 48px) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+  }
+
+  #infoPanel.info-panel {
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    border-radius: 20px !important;
+  }
+
+  #infoPanel.info-compact {
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
+  }
+
+  #mainResizeHandle.resize-handle.horizontal {
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + min(var(--info-height), 72dvh) + 8px) !important;
+  }
+
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 70px) !important;
+  }
+}
