@@ -4,10 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=intro_overlay_20260504_06" />
+  <link rel="stylesheet" href="./css/style.css?v=intro_sparkle_20260504_06" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
+
+  <div id="introOverlay" class="intro-overlay intro-hidden" aria-hidden="true">
+    <div class="intro-meteor intro-meteor-1"></div>
+    <div class="intro-meteor intro-meteor-2"></div>
+    <div class="intro-meteor intro-meteor-3"></div>
+    <div class="intro-message-wrap" aria-live="polite">
+      <span class="intro-sparkle intro-sparkle-tr intro-sparkle-a">✦</span>
+      <span class="intro-sparkle intro-sparkle-tr intro-sparkle-b">✧</span>
+      <span class="intro-sparkle intro-sparkle-bl">✦</span>
+      <div id="introMessage" class="intro-message"></div>
+    </div>
+  </div>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
       <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">🔍</button>
@@ -115,22 +127,6 @@
     </main>
   </div>
 
-
-  <div id="introOverlay" class="intro-overlay intro-overlay-hidden" aria-live="polite">
-    <div class="intro-meteor intro-meteor-1"></div>
-    <div class="intro-meteor intro-meteor-2"></div>
-    <div class="intro-meteor intro-meteor-3"></div>
-    <div class="intro-sparkle intro-sparkle-1">✦</div>
-    <div class="intro-sparkle intro-sparkle-2">✧</div>
-    <div class="intro-sparkle intro-sparkle-3">✦</div>
-    <div class="intro-sparkle intro-sparkle-4">✧</div>
-
-    <div class="intro-card" role="dialog" aria-label="進站訊息">
-      <div id="introMessage" class="intro-message">光正在靠近</div>
-      <button id="introSkipBtn" class="intro-skip" type="button">skip</button>
-    </div>
-  </div>
-
-  <script src="./app.js?v=intro_overlay_20260504_06"></script>
+  <script src="./app.js?v=intro_sparkle_20260504_06"></script>
 </body>
 </html>
