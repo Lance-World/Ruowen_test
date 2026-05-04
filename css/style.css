@@ -1147,4 +1147,66 @@ button {
   .info-box {
     min-height: 180px;
   }
+
+  /* ================================
+   Mobile Search Panel Refinement
+   手機版搜尋欄與縮排按鈕位置修正
+================================ */
+
+@media (max-width: 768px) {
+  .sidebar-search-panel {
+    max-height: 220px;
+    padding: 12px;
+  }
+
+  .sidebar-search-panel:not(.search-collapsed) {
+    min-height: 116px;
+  }
+
+  .sidebar-search {
+    min-height: 42px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .search-action-row {
+    min-height: 42px;
+    align-items: stretch;
+  }
+
+  .sidebar-main-btn,
+  .sidebar-sub-btn {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /*
+    手機版 sidebar 收合時：
+    原本放大鏡在三條 bar 下方。
+    改成：放大鏡在左，三條 bar 在右。
+  */
+  .app-shell.sidebar-collapsed .search-toggle {
+    left: 14px;
+    right: auto;
+    top: 12px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-toggle {
+    right: 14px;
+    left: auto;
+    top: 12px;
+  }
+
+  /*
+    收合狀態的 sidebar 高度稍微加高，
+    避免兩個按鈕太擠。
+  */
+  .app-shell.sidebar-collapsed .sidebar {
+    height: 60px;
+    min-height: 60px;
+  }
+}
+
 }
