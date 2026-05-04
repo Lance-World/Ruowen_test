@@ -1006,12 +1006,27 @@ function highlightSelection() {
     });
 }
 
+
+function randomFourDigitNumber() {
+  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+}
+
+function setInfoTitleText(titleText) {
+  const title = document.getElementById("infoTitle");
+  if (!title) return;
+
+  const safeTitle = String(titleText || "尚未選擇節點").trim() || "尚未選擇節點";
+  state.infoTitleNumber = randomFourDigitNumber();
+
+  title.innerHTML = `${escapeHtml(safeTitle)} <span class="info-title-number" aria-hidden="true">${state.infoTitleNumber}</span>`;
+}
+
 /* ================================
    Info Panel
 ================================ */
 
 function renderDefaultInfo() {
-  document.getElementById("infoTitle").textContent = "尚未選擇節點";
+  setInfoTitleText("尚未選擇節點");
   document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
   document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
   document.getElementById("relatedPhrases").innerHTML = '<span class="muted">尚無資料</span>';
@@ -1019,7 +1034,7 @@ function renderDefaultInfo() {
 }
 
 function renderInfoPanel(node) {
-  document.getElementById("infoTitle").textContent = node.label || node.id;
+  setInfoTitleText(node.label || node.id);
 
   const tags = [
     typeLabel(node.type),
