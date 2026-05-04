@@ -1254,10 +1254,10 @@ button {
   /* 手機版 Sidebar 展開：上方玻璃卡 */
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 8px;
-    right: 2px;
+    right: 8px;
     top: 8px;
     bottom: auto;
-    width: calc(100% - 16px) !important;
+    width: auto !important;
     height: auto;
     min-height: 132px;
     max-height: 58vh;
