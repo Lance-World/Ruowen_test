@@ -2527,3 +2527,260 @@ button {
     padding: 10px 11px !important;
   }
 }
+
+/* =========================================================
+   FINAL TARGET PATCH - 2026-05-05-09
+   只調整：
+   1. <=768px：Sidebar 展開後標題、搜尋、顯示類型、主題分類互不重疊
+   2. all screens：搜尋按鍵移到文字框內左側，X 清除保留右側
+   3. all screens：Sidebar 標題與副標題略放大
+   4. intro overlay：字數限制由 JS 控制為 <=16 字
+   5. Info panel 收合：標題與數字一定可見，✦ 更像可點擊按鈕
+========================================================= */
+
+/* all screens：Sidebar 標題、副標題略放大 */
+.sidebar-title strong {
+  font-size: 20px !important;
+  line-height: 1.05 !important;
+  font-weight: 850 !important;
+}
+
+.sidebar-title span {
+  font-size: 13px !important;
+  line-height: 1.08 !important;
+}
+
+/* all screens：搜尋按鍵放入搜尋框左側，X 清除仍在右側 */
+.sidebar-search-wrap {
+  position: relative !important;
+  width: 100% !important;
+  margin-bottom: 8px !important;
+}
+
+.sidebar-search-submit-btn {
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  transform: translateY(-50%) !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(92, 166, 168, 0.16) !important;
+  color: var(--teal-deep) !important;
+  cursor: pointer !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  z-index: 2 !important;
+  transition: background 0.16s ease, transform 0.16s ease, filter 0.16s ease !important;
+}
+
+.sidebar-search-submit-btn:hover {
+  background: rgba(92, 166, 168, 0.24) !important;
+  filter: brightness(0.98) !important;
+}
+
+.sidebar-search-submit-btn:active {
+  transform: translateY(-50%) scale(0.96) !important;
+}
+
+.sidebar-search {
+  height: 46px !important;
+  min-height: 46px !important;
+  line-height: 46px !important;
+  padding: 0 44px 0 48px !important;
+  font-size: 14px !important;
+  margin-bottom: 0 !important;
+}
+
+.sidebar-search::placeholder {
+  line-height: normal !important;
+}
+
+.sidebar-clear-btn {
+  width: 30px !important;
+  height: 30px !important;
+  right: 8px !important;
+  font-size: 17px !important;
+}
+
+/* searchBtn 已移入搜尋框；不再需要獨立搜尋按鈕列 */
+.search-action-row {
+  display: none !important;
+}
+
+/* Info panel：收合時 ✦ 做成明確可點按鈕，標題與數字保留 */
+.info-icon {
+  border: 1px solid rgba(92, 166, 168, 0.22) !important;
+  box-shadow:
+    0 10px 24px rgba(92, 166, 168, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+.info-icon:hover {
+  filter: brightness(0.98) !important;
+  box-shadow:
+    0 12px 28px rgba(92, 166, 168, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+}
+
+#infoPanel.info-compact .info-header,
+#infoPanel.info-compact .info-header-row {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#infoPanel.info-compact .info-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  border-radius: 999px !important;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,0.92), rgba(215,238,233,0.82) 42%, rgba(190,226,224,0.80) 100%) !important;
+  border: 1px solid rgba(92, 166, 168, 0.32) !important;
+  box-shadow:
+    0 10px 26px rgba(23, 60, 67, 0.14),
+    0 0 0 4px rgba(215, 238, 233, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+}
+
+#infoPanel.info-compact .info-title-block {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#infoPanel.info-compact #infoTitle {
+  display: flex !important;
+  align-items: baseline !important;
+  flex-wrap: nowrap !important;
+  gap: 0.36em !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+#infoPanel.info-compact .info-title-text {
+  display: inline-block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#infoPanel.info-compact .info-title-random-number {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+}
+
+@media (max-width: 768px) {
+  /* Sidebar 展開時：Header 絕對定位，內容從 Header 下方開始，避免搜尋/主題區卡到標題 */
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    padding: 74px 14px 14px !important;
+    min-height: 168px !important;
+    max-height: 58vh !important;
+    overflow: auto !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    top: 14px !important;
+    width: min(48vw, 230px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title strong {
+    font-size: 23px !important;
+    line-height: 1.02 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title span {
+    font-size: 15px !important;
+    line-height: 1.05 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-search-panel {
+    margin-top: 0 !important;
+    padding: 10px !important;
+    max-height: 220px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .filter-section,
+  .app-shell:not(.sidebar-collapsed) .sidebar-section:first-of-type {
+    margin-top: 10px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .category-toggle-btn {
+    margin-top: 12px !important;
+  }
+
+  .sidebar-search {
+    height: 46px !important;
+    min-height: 46px !important;
+    line-height: 46px !important;
+  }
+
+  .sidebar-search-submit-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 14px !important;
+  }
+
+  /* Sidebar 變高後，外部三顆操作按鈕順勢下移，避免壓到 Sidebar */
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 188px !important;
+  }
+
+  /* <=768：Info 收合時標題與數字都要看得到 */
+  #infoPanel.info-compact {
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    padding: 8px 12px !important;
+  }
+
+  #infoPanel.info-compact .info-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  #infoPanel.info-compact #infoTitle {
+    font-size: clamp(15px, 4.4vw, 18px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    padding: 70px 12px 12px !important;
+    min-height: 162px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    width: min(46vw, 196px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title strong {
+    font-size: 21px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title span {
+    font-size: 14px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 182px !important;
+  }
+}
+
