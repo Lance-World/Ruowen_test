@@ -736,7 +736,7 @@ function resizeGraphAfterPanelChange() {
    進站星空短句開場
 ================================ */
 
-const INTRO_MAX_CHARS = 18;
+const INTRO_MAX_CHARS = 16;
 const INTRO_DURATION_MS = 6600;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
