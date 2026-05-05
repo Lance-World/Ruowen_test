@@ -3,44 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=gradient_label_20260504_02" />
+  <title>Ruowen Knowledge Map</title>
+  <link rel="stylesheet" href="./css/style.css?v=sidebar_clean_20260505_11" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
-      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋">🔍</button>
-      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄">☰</button>
+      <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋" aria-label="搜尋 / 收合搜尋">🔍</button>
+      <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄" aria-label="收合 / 展開側邊欄">☰</button>
 
       <div class="logo">✦</div>
 
       <div class="sidebar-title">
         <strong>Ruowen</strong>
-        <span>Knowledge Graph</span>
+        <span>Knowledge Map</span>
       </div>
 
       <div id="sidebarSearchPanel" class="sidebar-search-panel search-collapsed">
-        <input
-          id="searchInput"
-          class="sidebar-search"
-          type="text"
-          placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
-        />
-        <div class="search-action-row">
-          <button id="searchBtn" class="sidebar-main-btn">搜尋</button>
-          <button id="clearSearchBtn" class="sidebar-sub-btn">清除</button>
+        <div class="sidebar-search-wrap">
+          <button
+            type="button"
+            id="searchBtn"
+            class="sidebar-search-submit-btn"
+            title="搜尋"
+            aria-label="搜尋"
+          >🔍</button>
+          <input
+            id="searchInput"
+            class="sidebar-search"
+            type="text"
+            placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            id="clearSearchBtn"
+            class="sidebar-clear-btn hidden"
+            title="清除搜尋"
+            aria-label="清除搜尋"
+          >×</button>
         </div>
       </div>
 
-      <div class="sidebar-section">
+      <div class="sidebar-section filter-section">
         <label class="sidebar-label">顯示類型</label>
-        <button class="side-item active filter-chip" data-type="all">全部</button>
-        <button class="side-item active filter-chip" data-type="topic">第一層主題</button>
-        <button class="side-item active filter-chip" data-type="concept">第二層概念</button>
+        <div class="filter-chip-row">
+          <button class="side-item active filter-chip" data-type="all">全部</button>
+          <button class="side-item active filter-chip" data-type="topic">主題</button>
+          <button class="side-item active filter-chip" data-type="concept">概念</button>
+        </div>
       </div>
 
-      <div class="sidebar-section sidebar-category-section">
+      <button
+        type="button"
+        id="categoryToggleBtn"
+        class="category-toggle-btn"
+        aria-expanded="false"
+      >主題分類</button>
+
+      <div class="sidebar-section sidebar-category-section" id="sidebarCategorySection">
         <label class="sidebar-label">主題分類</label>
         <div id="categoryChips" class="sidebar-category-list"></div>
       </div>
@@ -53,9 +75,9 @@
         <section class="graph-section">
           <div class="graph-card">
             <div class="floating-actions">
-              <button id="resetViewBtn">重置視角</button>
-              <button id="expandAllBtn">顯示全部</button>
-              <button id="clearSelectionBtn">清除選取</button>
+              <button type="button" id="resetViewBtn">重置視角</button>
+              <button type="button" id="expandAllBtn">顯示全部</button>
+              <button type="button" id="clearSelectionBtn">清除選取</button>
             </div>
 
             <svg id="graphSvg"></svg>
@@ -74,21 +96,24 @@
         <div id="mainResizeHandle" class="resize-handle horizontal"></div>
 
         <section id="infoPanel" class="info-panel">
-          <div class="info-header">
-            <div class="info-icon">◎</div>
-
+         <div class="info-header info-header-row">
+            <div class="info-icon" title="點擊收合/展開卡片">✦</div>
+          
             <div class="info-title-block">
-              <h2 id="infoTitle">尚未選擇節點</h2>
-              <div id="infoTags" class="info-tags">
-                <span>請點選圖上的節點</span>
-              </div>
+              <h2 id="infoTitle">
+                <span class="info-title-text">尚未選擇節點</span>
+              </h2>
             </div>
-          </div>
-
-          <div class="info-related-row">
-            <h3>相關詞彙</h3>
-            <div id="relatedTerms" class="inline-pill-list">
-              <span class="muted">尚無資料</span>
+          
+            <div id="infoTags" class="info-tags">
+              <span>請點選圖上的節點</span>
+            </div>
+          
+            <div class="info-related-row">
+              <h3>相關詞彙</h3>
+              <div id="relatedTerms" class="inline-pill-list">
+                <span class="muted">尚無資料</span>
+              </div>
             </div>
           </div>
 
@@ -124,12 +149,13 @@
         <span class="intro-star intro-star-bottom">✦</span>
         <div id="introMessageText" class="intro-message-text">慢慢靠近自己</div>
       </div>
+      <button type="button" id="introSkipBtn" class="intro-skip-btn">跳過</button>
       <div class="meteor meteor-one"></div>
       <div class="meteor meteor-two"></div>
       <div class="meteor meteor-three"></div>
     </div>
   </div>
 
-  <script src="./app.js?v=gradient_label_20260504_02"></script>
+  <script src="./app.js?v=sidebar_clean_20260505_11"></script>
 </body>
 </html>
