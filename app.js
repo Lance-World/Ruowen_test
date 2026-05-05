@@ -53,6 +53,7 @@ async function init() {
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
+    setupBottomSheetGesture();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -116,9 +117,7 @@ function restoreSidebarState() {
 }
 
 function restoreSidebarWidth() {
-  // J2 / K1：Sidebar 固定寬度；清掉舊版可能留下的寬度設定。
-  const sidebar = document.getElementById("sidebar");
-  if (sidebar) sidebar.style.width = "";
+  // JS-2B：桌機 Sidebar 可拖曳，但重新整理後回到預設寬度。
   localStorage.removeItem("sidebarWidth");
 }
 
@@ -141,13 +140,6 @@ function toggleSidebar() {
 
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
-
-  if (isCollapsed) {
-    const sidebar = document.getElementById("sidebar");
-    const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-    if (sidebar) sidebar.classList.remove("categories-open");
-    if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-  }
 
   updateFloatingLayoutVars();
 
@@ -266,67 +258,36 @@ function setupControls() {
   const searchBtn = document.getElementById("searchBtn");
   const clearSearchBtn = document.getElementById("clearSearchBtn");
   const searchInput = document.getElementById("searchInput");
-  const searchWrap = document.querySelector(".sidebar-search-wrap");
   const resetViewBtn = document.getElementById("resetViewBtn");
   const expandAllBtn = document.getElementById("expandAllBtn");
   const clearSelectionBtn = document.getElementById("clearSelectionBtn");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-  const sidebar = document.getElementById("sidebar");
 
   if (searchBtn) {
     searchBtn.addEventListener("click", searchNode);
   }
 
-  function updateSearchClearState() {
-    if (!searchInput || !searchWrap || !clearSearchBtn) return;
-    const hasText = normalizeSearchKeyword(searchInput.value).length > 0;
-    searchWrap.classList.toggle("has-text", hasText);
-    clearSearchBtn.classList.toggle("hidden", !hasText);
-  }
-
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener("click", () => {
       if (searchInput) searchInput.value = "";
-      updateSearchClearState();
       showAll();
-      if (searchInput) searchInput.focus();
     });
   }
 
   if (searchInput) {
-    searchInput.addEventListener("input", updateSearchClearState);
-
     searchInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         searchNode();
       }
 
       if (event.key === "Escape") {
-        if (searchInput.value) {
-          searchInput.value = "";
-          updateSearchClearState();
-          showAll();
-          return;
-        }
-
         const panel = document.getElementById("sidebarSearchPanel");
         if (panel) {
           panel.classList.add("search-collapsed");
           localStorage.setItem("searchPanelOpen", "0");
         }
       }
-    });
-
-    updateSearchClearState();
-  }
-
-  if (categoryToggleBtn && sidebar) {
-    categoryToggleBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("categories-open");
-      const isOpen = sidebar.classList.contains("categories-open");
-      categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
   }
 
@@ -467,7 +428,11 @@ function setInfoTitle(titleText) {
 ================================ */
 
 function setupResizablePanels() {
-  // J2 / K1：Sidebar 固定寬度，不啟用 Sidebar resize；保留其他資訊欄拖曳。
+  // JS-2B / JS-3A：Sidebar resize 只在桌機啟用；手機完全停用。
+  if (!isMobileLayout()) {
+    setupSidebarResize();
+  }
+
   setupMainVerticalResize();
   setupInnerHorizontalResize();
   setupInfoRightResize();
@@ -692,10 +657,11 @@ function updateFloatingLayoutVars() {
     return;
   }
 
+  const sidebarRect = sidebar.getBoundingClientRect();
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   const sidebarLeft = 20;
-  const sidebarWidth = isCollapsed ? 64 : 280;
-  const infoLeft = isCollapsed ? 96 : 340;
+  const sidebarWidth = isCollapsed ? 64 : Math.round(sidebarRect.width || 280);
+  const infoLeft = isCollapsed ? 96 : Math.max(320, sidebarLeft + sidebarWidth + 40);
 
   appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
   appShell.style.setProperty("--sidebar-top", "20px");
@@ -732,11 +698,86 @@ function resizeGraphAfterPanelChange() {
 
 
 /* ================================
+   Mobile Bottom Sheet Gesture
+   <=768px：下拉 Info Panel 收合成 compact
+================================ */
+function setupBottomSheetGesture() {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  let startY = 0;
+  let lastY = 0;
+  let startScrollTop = 0;
+  let isDraggingSheet = false;
+  let startTime = 0;
+
+  function shouldHandleGesture(event) {
+    if (!isMobileLayout()) return false;
+    if (state.infoCompact) return false;
+    if (!event.touches || event.touches.length !== 1) return false;
+    return true;
+  }
+
+  infoPanel.addEventListener("touchstart", (event) => {
+    if (!shouldHandleGesture(event)) return;
+
+    startY = event.touches[0].clientY;
+    lastY = startY;
+    startScrollTop = infoPanel.scrollTop || 0;
+    startTime = Date.now();
+    isDraggingSheet = false;
+  }, { passive: true });
+
+  infoPanel.addEventListener("touchmove", (event) => {
+    if (!shouldHandleGesture(event)) return;
+
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - startY;
+    lastY = currentY;
+
+    // 只有在內容已經捲到最上方，且手勢往下時，才把它視為關閉 Bottom Sheet。
+    if (deltaY <= 0 || startScrollTop > 0 || infoPanel.scrollTop > 0) return;
+
+    isDraggingSheet = true;
+    const translateY = Math.min(deltaY, 160);
+    infoPanel.classList.add("bottom-sheet-dragging");
+    infoPanel.style.transform = `translateY(${translateY}px)`;
+
+    event.preventDefault();
+  }, { passive: false });
+
+  infoPanel.addEventListener("touchend", () => {
+    if (!isDraggingSheet) return;
+
+    const deltaY = Math.max(0, lastY - startY);
+    const elapsed = Math.max(1, Date.now() - startTime);
+    const velocity = deltaY / elapsed;
+    const shouldClose = deltaY > 86 || velocity > 0.55;
+
+    infoPanel.classList.remove("bottom-sheet-dragging");
+    infoPanel.style.transform = "";
+    isDraggingSheet = false;
+
+    if (shouldClose) {
+      state.infoCompact = true;
+      applyInfoCompactState();
+    }
+  }, { passive: true });
+
+  infoPanel.addEventListener("touchcancel", () => {
+    infoPanel.classList.remove("bottom-sheet-dragging");
+    infoPanel.style.transform = "";
+    isDraggingSheet = false;
+  }, { passive: true });
+}
+
+
+/* ================================
    Intro Overlay
    進站星空短句開場
 ================================ */
 
-const INTRO_MAX_CHARS = 16;
+const INTRO_MAX_CHARS = 18;
 const INTRO_DURATION_MS = 6600;
 const FALLBACK_INTRO_MESSAGES = [
   "慢慢靠近自己",
