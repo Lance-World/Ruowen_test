@@ -1276,20 +1276,19 @@ button { user-select: none; }
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 50% !important;
-    right: auto !important;
-    top: 8px !important;
-
-    width: calc(100% - 16px) !important;
-    max-width: none !important;
-
-    transform: translateX(-50%) !important;
-
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
+     left: 8px;
+     right: 8px;
+     top: 8px;
+     bottom: auto;
+     width: auto !important;
+     height: auto;
+     min-height: 142px;
+     max-height: 58vh;
+     padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
+     border-radius: 22px;
+     overflow: auto;
+     -webkit-overflow-scrolling: touch;
+   }
   .sidebar .logo {
     left: 14px;
     top: 10px;
