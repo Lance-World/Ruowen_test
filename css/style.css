@@ -2234,3 +2234,53 @@ button {
   }
 }
 
+/* =========================================================
+   FINAL SMALL PATCH - 2026-05-05-07
+   只調整兩件事：
+   1. <=768px 手機 Sidebar 展開時，Header 標題不再被搜尋欄位擋住
+   2. 所有螢幕尺寸：搜尋文字框上下高度微調小一點
+   其他設定維持不變
+========================================================= */
+
+/* 所有尺寸：搜尋框從 54px 微調為 50px，仍保留右側 X 清除按鈕空間 */
+.sidebar-search {
+  height: 50px !important;
+  min-height: 50px !important;
+  line-height: 50px !important;
+  padding: 0 46px 0 18px !important;
+}
+
+.sidebar-clear-btn {
+  width: 32px !important;
+  height: 32px !important;
+  right: 8px !important;
+  font-size: 18px !important;
+}
+
+/* 手機版：Sidebar 展開時預留上方 Header 空間，避免搜尋欄蓋住標題 */
+@media (max-width: 768px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    padding: 70px 14px 14px !important;
+    min-height: 164px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-search-panel {
+    margin-top: 0 !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 188px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    padding: 68px 12px 12px !important;
+    min-height: 158px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 182px !important;
+  }
+}
+
