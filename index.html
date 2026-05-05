@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=sidebar_decision_20260505_06" />
+  <link rel="stylesheet" href="./css/style.css?v=filter_row_20260505_08" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -42,11 +42,13 @@
         </div>
       </div>
 
-      <div class="sidebar-section">
+      <div class="sidebar-section filter-section">
         <label class="sidebar-label">顯示類型</label>
-        <button class="side-item active filter-chip" data-type="all">全部</button>
-        <button class="side-item active filter-chip" data-type="topic">第一層主題</button>
-        <button class="side-item active filter-chip" data-type="concept">第二層概念</button>
+        <div class="filter-chip-row">
+          <button class="side-item active filter-chip" data-type="all">全部</button>
+          <button class="side-item active filter-chip" data-type="topic">主題</button>
+          <button class="side-item active filter-chip" data-type="concept">概念</button>
+        </div>
       </div>
 
       <button
@@ -150,6 +152,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=sidebar_decision_20260505_06"></script>
+  <script src="./app.js?v=filter_row_20260505_08"></script>
 </body>
 </html>
