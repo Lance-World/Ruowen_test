@@ -1285,8 +1285,8 @@ button { user-select: none; }
      max-height: calc(100dvh - 16px) !important;
      padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
      border-radius: 22px;
-     overflow-x: visible !important;
-     overflow-y: visible !important;
+     overflow-x: hidden !important;
+     overflow-y: auto !important;
      -webkit-overflow-scrolling: touch;
    }
    
