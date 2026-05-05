@@ -53,7 +53,7 @@ async function init() {
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
-    setupBottomSheetGesture();
+    setupMobileBottomSheetGesture();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -423,6 +423,91 @@ function setInfoTitle(titleText) {
 }
 
 /* ================================
+   Mobile Bottom Sheet Gesture
+   行動裝置：下拉 Info Panel 關閉 Bottom Sheet
+================================ */
+
+function setupMobileBottomSheetGesture() {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  let startY = 0;
+  let startX = 0;
+  let startScrollTop = 0;
+  let dragging = false;
+  let tracking = false;
+
+  function resetSheetVisual() {
+    infoPanel.style.transition = "";
+    infoPanel.style.transform = "";
+    infoPanel.style.opacity = "";
+  }
+
+  infoPanel.addEventListener("pointerdown", (event) => {
+    if (!isMobileLayout()) return;
+    if (state.infoCompact) return;
+
+    const interactive = event.target.closest("button, a, input, textarea, select, .info-icon");
+    if (interactive) return;
+
+    tracking = true;
+    dragging = false;
+    startY = event.clientY;
+    startX = event.clientX;
+    startScrollTop = infoPanel.scrollTop || 0;
+
+    try {
+      infoPanel.setPointerCapture(event.pointerId);
+    } catch (_) {}
+  });
+
+  infoPanel.addEventListener("pointermove", (event) => {
+    if (!tracking || !isMobileLayout()) return;
+
+    const deltaY = event.clientY - startY;
+    const deltaX = Math.abs(event.clientX - startX);
+
+    // Only start closing gesture when user drags down and the sheet is already scrolled to top.
+    if (!dragging) {
+      if (deltaY <= 10 || deltaX > 40 || startScrollTop > 2) return;
+      dragging = true;
+      infoPanel.style.transition = "none";
+    }
+
+    const translateY = Math.max(0, Math.min(deltaY, 180));
+    infoPanel.style.transform = `translateY(${translateY}px)`;
+    infoPanel.style.opacity = String(Math.max(0.72, 1 - translateY / 360));
+    event.preventDefault();
+  });
+
+  function finishGesture(event) {
+    if (!tracking) return;
+
+    const deltaY = event.clientY - startY;
+    const shouldClose = dragging && deltaY > 72;
+
+    tracking = false;
+    dragging = false;
+
+    try {
+      infoPanel.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+
+    infoPanel.style.transition = "transform 0.22s ease, opacity 0.22s ease";
+
+    if (shouldClose) {
+      state.infoCompact = true;
+      applyInfoCompactState();
+    }
+
+    window.setTimeout(resetSheetVisual, 240);
+  }
+
+  infoPanel.addEventListener("pointerup", finishGesture);
+  infoPanel.addEventListener("pointercancel", finishGesture);
+}
+
+/* ================================
    Resizable Panels - Pointer Events
    桌機 / 平板 / 手機共用拖曳邏輯
 ================================ */
@@ -464,6 +549,9 @@ function setupSidebarResize() {
 }
 
 function setupMainVerticalResize() {
+  // Mobile Info Panel is now a bottom sheet. Keep the desktop/web resize bar only.
+  if (isMobileLayout()) return;
+
   const handle = document.getElementById("mainResizeHandle");
   const workspace = document.getElementById("workspace");
 
@@ -695,81 +783,6 @@ function resizeGraphAfterPanelChange() {
   }
 }
 
-
-
-/* ================================
-   Mobile Bottom Sheet Gesture
-   <=768px：下拉 Info Panel 收合成 compact
-================================ */
-function setupBottomSheetGesture() {
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  let startY = 0;
-  let lastY = 0;
-  let startScrollTop = 0;
-  let isDraggingSheet = false;
-  let startTime = 0;
-
-  function shouldHandleGesture(event) {
-    if (!isMobileLayout()) return false;
-    if (state.infoCompact) return false;
-    if (!event.touches || event.touches.length !== 1) return false;
-    return true;
-  }
-
-  infoPanel.addEventListener("touchstart", (event) => {
-    if (!shouldHandleGesture(event)) return;
-
-    startY = event.touches[0].clientY;
-    lastY = startY;
-    startScrollTop = infoPanel.scrollTop || 0;
-    startTime = Date.now();
-    isDraggingSheet = false;
-  }, { passive: true });
-
-  infoPanel.addEventListener("touchmove", (event) => {
-    if (!shouldHandleGesture(event)) return;
-
-    const currentY = event.touches[0].clientY;
-    const deltaY = currentY - startY;
-    lastY = currentY;
-
-    // 只有在內容已經捲到最上方，且手勢往下時，才把它視為關閉 Bottom Sheet。
-    if (deltaY <= 0 || startScrollTop > 0 || infoPanel.scrollTop > 0) return;
-
-    isDraggingSheet = true;
-    const translateY = Math.min(deltaY, 160);
-    infoPanel.classList.add("bottom-sheet-dragging");
-    infoPanel.style.transform = `translateY(${translateY}px)`;
-
-    event.preventDefault();
-  }, { passive: false });
-
-  infoPanel.addEventListener("touchend", () => {
-    if (!isDraggingSheet) return;
-
-    const deltaY = Math.max(0, lastY - startY);
-    const elapsed = Math.max(1, Date.now() - startTime);
-    const velocity = deltaY / elapsed;
-    const shouldClose = deltaY > 86 || velocity > 0.55;
-
-    infoPanel.classList.remove("bottom-sheet-dragging");
-    infoPanel.style.transform = "";
-    isDraggingSheet = false;
-
-    if (shouldClose) {
-      state.infoCompact = true;
-      applyInfoCompactState();
-    }
-  }, { passive: true });
-
-  infoPanel.addEventListener("touchcancel", () => {
-    infoPanel.classList.remove("bottom-sheet-dragging");
-    infoPanel.style.transform = "";
-    isDraggingSheet = false;
-  }, { passive: true });
-}
 
 
 /* ================================
