@@ -1831,3 +1831,160 @@ button { user-select: none; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =========================================================
+   MOBILE ONLY <= 768px - Info Panel as Bottom Sheet
+   Desktop/Web layout above remains unchanged.
+========================================================= */
+@media (max-width: 768px) {
+  :root {
+    --mobile-sheet-side-gap: 8px;
+    --mobile-sheet-bottom-gap: 8px;
+  }
+
+  .info-panel,
+  #infoPanel:not(.info-compact) {
+    position: fixed;
+    left: var(--mobile-sheet-side-gap) !important;
+    right: var(--mobile-sheet-side-gap) !important;
+    bottom: var(--mobile-sheet-bottom-gap) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: clamp(216px, 34dvh, 300px) !important;
+    max-height: min(72dvh, 680px) !important;
+    padding: 14px 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border-radius: 24px 24px 20px 20px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.58) !important;
+    box-shadow:
+      0 -8px 30px rgba(23, 60, 67, 0.10),
+      0 16px 44px rgba(23, 60, 67, 0.14) !important;
+    backdrop-filter: blur(22px) saturate(1.08) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.08) !important;
+    overscroll-behavior: contain;
+    transition:
+      transform 0.24s cubic-bezier(0.2, 0, 0, 1),
+      min-height 0.26s ease,
+      max-height 0.26s ease,
+      opacity 0.2s ease !important;
+  }
+
+  #infoPanel.bottom-sheet-dragging {
+    transition: none !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-header,
+  #infoPanel:not(.info-compact) .info-header-row {
+    flex: 0 0 auto;
+    touch-action: pan-y;
+    cursor: grab;
+  }
+
+  #infoPanel:not(.info-compact) .info-header-row {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon title"
+      "icon tags"
+      "icon related" !important;
+    align-items: start !important;
+    column-gap: 10px !important;
+    row-gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-split-area {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-box {
+    flex: 0 1 auto;
+    min-height: 108px !important;
+    max-height: 30dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #infoPanel:not(.info-compact) .sentence-box {
+    max-height: 28dvh !important;
+  }
+
+  #infoPanel:not(.info-compact) .source-box {
+    max-height: 32dvh !important;
+  }
+
+  #infoPanel:not(.info-compact) .quote-list,
+  #infoPanel:not(.info-compact) .source-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .resize-handle.horizontal,
+  .resize-handle.vertical,
+  .resize-handle.info-right,
+  #mainResizeHandle,
+  #innerResizeHandle,
+  #infoRightResizeHandle {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #infoPanel.info-compact {
+    position: fixed;
+    left: var(--mobile-sheet-side-gap) !important;
+    right: var(--mobile-sheet-side-gap) !important;
+    bottom: var(--mobile-sheet-bottom-gap) !important;
+    width: auto !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    max-height: 64px !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    border-radius: 22px !important;
+  }
+
+  .workspace.info-compact-workspace .resize-handle.horizontal {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --mobile-sheet-side-gap: 6px;
+    --mobile-sheet-bottom-gap: 8px;
+  }
+
+  #infoPanel:not(.info-compact) {
+    min-height: clamp(208px, 34dvh, 288px) !important;
+    max-height: 74dvh !important;
+    border-radius: 22px 22px 20px 20px !important;
+  }
+
+  #infoPanel.info-compact {
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
+  }
+}
