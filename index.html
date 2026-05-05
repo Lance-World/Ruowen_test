@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=filter_row_20260505_08" />
+  <link rel="stylesheet" href="./css/style.css?v=sidebar_info_search_final_20260505_09" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -22,6 +22,13 @@
 
       <div id="sidebarSearchPanel" class="sidebar-search-panel search-collapsed">
         <div class="sidebar-search-wrap">
+          <button
+            type="button"
+            id="searchBtn"
+            class="sidebar-search-submit-btn"
+            title="搜尋"
+            aria-label="搜尋"
+          >🔍</button>
           <input
             id="searchInput"
             class="sidebar-search"
@@ -36,9 +43,6 @@
             title="清除搜尋"
             aria-label="清除搜尋"
           >×</button>
-        </div>
-        <div class="search-action-row">
-          <button type="button" id="searchBtn" class="sidebar-main-btn">搜尋</button>
         </div>
       </div>
 
@@ -152,6 +156,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=filter_row_20260505_08"></script>
+  <script src="./app.js?v=sidebar_info_search_final_20260505_09"></script>
 </body>
 </html>
