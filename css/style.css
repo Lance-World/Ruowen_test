@@ -196,7 +196,7 @@ button { user-select: none; }
   width: 100%;
   color: var(--text-secondary);
   font-size: 13px;
-  line-height: 1.08;
+  line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1276,15 +1276,19 @@ button { user-select: none; }
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px !important;
-    right: 8px !important;
-    width: auto !important;
-    max-width: none !important;
-    transform: none !important;
-
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-  }
+     left: 8px;
+     right: 8px;
+     top: 8px;
+     bottom: auto;
+     width: auto !important;
+     height: auto;
+     min-height: 142px;
+     max-height: 58vh;
+     padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
+     border-radius: 22px;
+     overflow: auto;
+     -webkit-overflow-scrolling: touch;
+   }
    
   .sidebar .logo {
     left: 14px;
