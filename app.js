@@ -422,12 +422,22 @@ function setupInfoCompactToggle() {
 
   infoIcon.addEventListener("click", (event) => {
     event.stopPropagation();
+
+    // Mobile Bottom Sheet：禁止用圖案點擊收合 / 關閉。
+    // 只允許下拉手勢、明確 close button 或 overlay 關閉。
+    // Desktop 仍維持原本圖案點擊收合邏輯。
+    if (isMobileLayout()) return;
+
     toggleInfoCompact();
   });
 
   infoIcon.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+
+      // Mobile Bottom Sheet：鍵盤觸發圖案也不收合，避免與 desktop 行為混在一起。
+      if (isMobileLayout()) return;
+
       toggleInfoCompact();
     }
   });
@@ -442,11 +452,8 @@ function setupInfoCompactToggle() {
 
 function toggleInfoCompact() {
   if (isMobileLayout()) {
-    if (state.mobileSheetOpen) {
-      closeMobileBottomSheet();
-    } else {
-      openMobileBottomSheet(60);
-    }
+    // Mobile Bottom Sheet 不允許透過 info icon / panel click 收合或開關。
+    // 開啟由點擊節點觸發；關閉由下拉手勢、明確 close button 或 overlay 處理。
     return;
   }
 
