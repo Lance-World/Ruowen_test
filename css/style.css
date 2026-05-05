@@ -1285,8 +1285,8 @@ button { user-select: none; }
      max-height: calc(100dvh - 16px) !important;
      padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
      border-radius: 22px;
-     overflow-x: hidden !important;
-     overflow-y: auto !important;
+     overflow-x: visible !important;
+     overflow-y: visible !important;
      -webkit-overflow-scrolling: touch;
    }
    
@@ -1829,5 +1829,103 @@ button { user-select: none; }
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE INFO PANEL BOTTOM SHEET PATCH - <=768 ONLY
+   1. Web/Desktop 不受影響
+   2. 手機版 Info Panel 展開時改成 Bottom Sheet
+   3. 內容少時保留基本高度；內容多時 max-height + overflow-y
+   4. 搭配 app.js 下拉手勢收合
+========================================================= */
+
+@media (max-width: 768px) {
+  #infoPanel.info-panel:not(.info-compact) {
+    position: absolute !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    width: auto !important;
+
+    height: auto !important;
+    min-height: 220px !important;
+    max-height: min(72vh, 620px) !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+
+    padding: 22px 14px 16px !important;
+    border-radius: 26px 26px 20px 20px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+
+    touch-action: pan-y !important;
+    transition:
+      transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+      height 0.24s ease,
+      max-height 0.24s ease,
+      padding 0.24s ease !important;
+  }
+
+  /* Bottom Sheet 上方拖曳提示條 */
+  #infoPanel.info-panel:not(.info-compact)::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    align-self: center;
+    width: 44px;
+    height: 5px;
+    min-height: 5px;
+    margin: -10px 0 4px;
+    border-radius: 999px;
+    background: rgba(83, 113, 118, 0.28);
+    z-index: 2;
+  }
+
+  #infoPanel.info-panel:not(.info-compact) .info-header-row {
+    flex: 0 0 auto !important;
+  }
+
+  #infoPanel.info-panel:not(.info-compact) .info-split-area {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel.info-panel:not(.info-compact) .info-box {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #infoPanel.info-panel:not(.info-compact) .sentence-box {
+    max-height: 28vh !important;
+  }
+
+  #infoPanel.info-panel:not(.info-compact) .source-box {
+    max-height: 32vh !important;
+  }
+
+  /* 下拉手勢進行中，由 JS 暫時加上 */
+  #infoPanel.info-panel.bottom-sheet-dragging {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #infoPanel.info-panel:not(.info-compact) {
+    left: 6px !important;
+    right: 6px !important;
+    bottom: 8px !important;
+    min-height: 210px !important;
+    max-height: min(74vh, 600px) !important;
+    padding: 22px 12px 14px !important;
+    border-radius: 22px 22px 20px 20px !important;
   }
 }
