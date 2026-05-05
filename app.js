@@ -53,6 +53,7 @@ async function init() {
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
+    setupMobileBottomSheetGesture();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -444,6 +445,78 @@ function applyInfoCompactState() {
   });
 }
 
+function setupMobileBottomSheetGesture() {
+  const infoPanel = document.getElementById("infoPanel");
+  const header = document.querySelector("#infoPanel .info-header");
+
+  if (!infoPanel || !header) return;
+
+  let startY = 0;
+  let startX = 0;
+  let currentY = 0;
+  let startTime = 0;
+  let isDragging = false;
+  let pointerId = null;
+
+  header.addEventListener("pointerdown", (event) => {
+    if (!isMobileLayout()) return;
+    if (event.target.closest("button, a, input, textarea, select")) return;
+
+    startY = event.clientY;
+    startX = event.clientX;
+    currentY = startY;
+    startTime = performance.now();
+    isDragging = false;
+    pointerId = event.pointerId;
+
+    try {
+      header.setPointerCapture(pointerId);
+    } catch (_) {}
+  });
+
+  header.addEventListener("pointermove", (event) => {
+    if (!isMobileLayout() || pointerId !== event.pointerId) return;
+
+    const deltaY = event.clientY - startY;
+    const deltaX = Math.abs(event.clientX - startX);
+
+    if (deltaY <= 0 || deltaX > Math.abs(deltaY) * 1.2) return;
+
+    isDragging = true;
+    currentY = event.clientY;
+    infoPanel.classList.add("bottom-sheet-dragging");
+    infoPanel.style.transform = `translateY(${Math.min(deltaY, 180)}px)`;
+    event.preventDefault();
+  });
+
+  function finishDrag(event) {
+    if (pointerId !== event.pointerId) return;
+
+    const deltaY = Math.max(0, currentY - startY);
+    const elapsed = Math.max(1, performance.now() - startTime);
+    const velocity = deltaY / elapsed;
+
+    infoPanel.classList.remove("bottom-sheet-dragging");
+    infoPanel.style.transform = "";
+
+    try {
+      header.releasePointerCapture(pointerId);
+    } catch (_) {}
+
+    pointerId = null;
+
+    if (isMobileLayout() && isDragging && (deltaY > 88 || velocity > 0.72)) {
+      state.infoCompact = true;
+      applyInfoCompactState();
+    }
+
+    isDragging = false;
+  }
+
+  header.addEventListener("pointerup", finishDrag);
+  header.addEventListener("pointercancel", finishDrag);
+}
+
 function getRandomTitleNumber() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
@@ -507,6 +580,9 @@ function setupMainVerticalResize() {
   enablePointerResize(handle, {
     cursor: "row-resize",
     onMove: (event) => {
+      // Mobile Info Panel is a Bottom Sheet; desktop/tablet resize behavior remains unchanged.
+      if (isMobileLayout()) return;
+
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
 
@@ -536,21 +612,16 @@ function setupInnerHorizontalResize() {
   if (!handle || !splitArea) return;
 
   enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    cursor: () => (isMobileLayout() ? "default" : "col-resize"),
     onMove: (event) => {
-      const rect = splitArea.getBoundingClientRect();
+      // Mobile Bottom Sheet uses native scrolling; the inner resize divider is hidden on mobile.
+      if (isMobileLayout()) return;
 
-      if (isMobileLayout()) {
-        const ratio = ((event.clientY - rect.top) / rect.height) * 100;
-        const nextRatio = clamp(ratio, 24, 76);
-        splitArea.style.setProperty("--sentence-height", `${nextRatio}%`);
-        localStorage.removeItem("sentenceHeight");
-      } else {
-        const ratio = ((event.clientX - rect.left) / rect.width) * 100;
-        const nextRatio = clamp(ratio, 28, 72);
-        splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
-        localStorage.setItem("sentenceWidth", String(nextRatio));
-      }
+      const rect = splitArea.getBoundingClientRect();
+      const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+      const nextRatio = clamp(ratio, 28, 72);
+      splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+      localStorage.setItem("sentenceWidth", String(nextRatio));
     },
   });
 }
@@ -563,27 +634,21 @@ function setupInfoRightResize() {
   if (!handle || !infoPanel || !workspace) return;
 
   enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    cursor: () => (isMobileLayout() ? "default" : "col-resize"),
     onMove: (event) => {
+      // Mobile Info Panel is controlled by Bottom Sheet gestures, not resize handles.
+      if (isMobileLayout()) return;
+
       const rect = workspace.getBoundingClientRect();
 
       state.infoCompact = false;
       applyInfoCompactState();
 
-      if (isMobileLayout()) {
-        const infoHeight = rect.bottom - event.clientY;
-        const minInfo = 76;
-        const maxInfo = Math.max(240, rect.height * 0.76);
-        const nextHeight = clamp(infoHeight, minInfo, maxInfo);
-        workspace.style.setProperty("--info-height", `${nextHeight}px`);
-        localStorage.removeItem("infoHeight");
-      } else {
-        const minWidth = Math.min(280, rect.width);
-        const maxWidth = rect.width;
-        const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
-        infoPanel.style.width = `${nextWidth}px`;
-        localStorage.setItem("infoPanelWidth", String(nextWidth));
-      }
+      const minWidth = Math.min(280, rect.width);
+      const maxWidth = rect.width;
+      const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
+      infoPanel.style.width = `${nextWidth}px`;
+      localStorage.setItem("infoPanelWidth", String(nextWidth));
 
       resizeGraphAfterPanelChange();
     },
@@ -1673,6 +1738,12 @@ function dragEnded(event, node) {
 ================================ */
 
 window.addEventListener("resize", () => {
+  const infoPanel = document.getElementById("infoPanel");
+  if (infoPanel && !isMobileLayout()) {
+    infoPanel.classList.remove("bottom-sheet-dragging");
+    infoPanel.style.transform = "";
+  }
+
   updateFloatingLayoutVars();
   resizeGraphAfterPanelChange();
 });
