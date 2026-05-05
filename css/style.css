@@ -196,7 +196,7 @@ button { user-select: none; }
   width: 100%;
   color: var(--text-secondary);
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.08;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1276,20 +1276,20 @@ button { user-select: none; }
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar {
-     left: 8px;
-     right: 8px;
-     top: 8px;
-     bottom: auto;
-     width: auto !important;
-     height: auto;
-     max-height: calc(100dvh - 16px) !important;
-     padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
-     border-radius: 22px;
-     overflow-x: visible !important;
-     overflow-y: visible !important;
-     -webkit-overflow-scrolling: touch;
-   }
-   
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    bottom: auto;
+    width: auto !important;
+    height: auto;
+    min-height: 142px;
+    max-height: 58vh;
+    padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
+    border-radius: 22px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .sidebar .logo {
     left: 14px;
     top: 10px;
@@ -1832,100 +1832,91 @@ button { user-select: none; }
   }
 }
 
-
 /* =========================================================
-   MOBILE INFO PANEL BOTTOM SHEET PATCH - <=768 ONLY
-   1. Web/Desktop 不受影響
-   2. 手機版 Info Panel 展開時改成 Bottom Sheet
-   3. 內容少時保留基本高度；內容多時 max-height + overflow-y
-   4. 搭配 app.js 下拉手勢收合
+   MOBILE INFO PANEL BOTTOM SHEET PATCH - 2026-05-05-12
+   Scope: <=768px only. Desktop/Web layout and desktop resize bars are untouched.
+   1. Info panel becomes a bottom sheet on mobile.
+   2. External info resize bar is hidden on mobile only.
+   3. Bottom sheet content scrolls internally when content is long.
 ========================================================= */
 
 @media (max-width: 768px) {
-  #infoPanel.info-panel:not(.info-compact) {
+  /* Mobile: remove the external Info Panel drag bar because the panel itself is a bottom sheet. */
+  #mainResizeHandle.resize-handle.horizontal {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Mobile Bottom Sheet: anchored to the bottom, compact if little content, scrollable if content is long. */
+  #infoPanel.info-panel:not(.info-compact),
+  #infoPanel:not(.info-compact) {
     position: absolute !important;
     left: 8px !important;
     right: 8px !important;
+    top: auto !important;
     bottom: 8px !important;
     width: auto !important;
 
     height: auto !important;
-    min-height: 220px !important;
-    max-height: min(72vh, 620px) !important;
+    min-height: min(260px, 42dvh) !important;
+    max-height: min(72dvh, calc(100dvh - 88px)) !important;
 
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-
-    padding: 22px 14px 16px !important;
-    border-radius: 26px 26px 20px 20px !important;
+    display: block !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
-
     touch-action: pan-y !important;
-    transition:
-      transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-      height 0.24s ease,
-      max-height 0.24s ease,
-      padding 0.24s ease !important;
+
+    padding: 13px 14px max(16px, env(safe-area-inset-bottom)) !important;
+    border-radius: 24px 24px 20px 20px !important;
+    background: var(--bg-glass) !important;
+    border: 1px solid rgba(255, 255, 255, 0.48) !important;
+    box-shadow: 0 -12px 38px rgba(23, 60, 67, 0.12) !important;
+    backdrop-filter: blur(20px) saturate(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.08) !important;
+    will-change: transform !important;
   }
 
-  /* Bottom Sheet 上方拖曳提示條 */
-  #infoPanel.info-panel:not(.info-compact)::before {
-    content: "";
-    position: sticky;
-    top: 0;
-    align-self: center;
-    width: 44px;
-    height: 5px;
-    min-height: 5px;
-    margin: -10px 0 4px;
-    border-radius: 999px;
-    background: rgba(83, 113, 118, 0.28);
-    z-index: 2;
+  /* Mobile compact state remains a small bottom sheet summary. */
+  #infoPanel.info-compact {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    overflow: hidden !important;
+    border-radius: 22px !important;
+    padding: 8px 12px !important;
   }
 
-  #infoPanel.info-panel:not(.info-compact) .info-header-row {
-    flex: 0 0 auto !important;
-  }
-
-  #infoPanel.info-panel:not(.info-compact) .info-split-area {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel.info-panel:not(.info-compact) .info-box {
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  #infoPanel.info-panel:not(.info-compact) .sentence-box {
-    max-height: 28vh !important;
-  }
-
-  #infoPanel.info-panel:not(.info-compact) .source-box {
-    max-height: 32vh !important;
-  }
-
-  /* 下拉手勢進行中，由 JS 暫時加上 */
-  #infoPanel.info-panel.bottom-sheet-dragging {
-    transition: none !important;
+  .workspace.info-compact-workspace #mainResizeHandle.resize-handle.horizontal {
+    display: none !important;
   }
 }
 
 @media (max-width: 480px) {
-  #infoPanel.info-panel:not(.info-compact) {
+  #infoPanel.info-panel:not(.info-compact),
+  #infoPanel:not(.info-compact) {
     left: 6px !important;
     right: 6px !important;
     bottom: 8px !important;
-    min-height: 210px !important;
-    max-height: min(74vh, 600px) !important;
-    padding: 22px 12px 14px !important;
+    max-height: min(72dvh, calc(100dvh - 80px)) !important;
     border-radius: 22px 22px 20px 20px !important;
+  }
+
+  #infoPanel.info-compact {
+    left: 6px !important;
+    right: 6px !important;
+    bottom: 8px !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
   }
 }
