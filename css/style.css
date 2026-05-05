@@ -2235,52 +2235,141 @@ button {
 }
 
 /* =========================================================
-   FINAL SMALL PATCH - 2026-05-05-07
-   只調整兩件事：
-   1. <=768px 手機 Sidebar 展開時，Header 標題不再被搜尋欄位擋住
-   2. 所有螢幕尺寸：搜尋文字框上下高度微調小一點
-   其他設定維持不變
+   TARGETED PATCH - 2026-05-05-07
+   只調整三件事：
+   1. <=768px：手機主題分類下拉名單上下框加大
+   2. all screens：顯示類型三顆按鈕並排，文字為 全部 / 主題 / 概念
+   3. all screens：搜尋框上下高度微調小一點
 ========================================================= */
 
-/* 所有尺寸：搜尋框從 54px 微調為 50px，仍保留右側 X 清除按鈕空間 */
+/* 2) 顯示類型三顆按鈕：所有螢幕都並排，剛好填滿 Sidebar 寬度 */
+.sidebar-section:first-of-type {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  margin-bottom: 14px !important;
+}
+
+.sidebar-section:first-of-type .sidebar-label {
+  grid-column: 1 / -1 !important;
+  margin-bottom: 0 !important;
+}
+
+.sidebar-section:first-of-type .side-item {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 9px 0 !important;
+  text-align: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="all"] {
+  font-size: 0 !important;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="all"]::after {
+  content: "全部";
+  font-size: 13px;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="topic"] {
+  font-size: 0 !important;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="topic"]::after {
+  content: "主題";
+  font-size: 13px;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="concept"] {
+  font-size: 0 !important;
+}
+
+.sidebar-section:first-of-type .side-item[data-type="concept"]::after {
+  content: "概念";
+  font-size: 13px;
+}
+
+/* 3) 搜尋框上下高度微調小一點：所有螢幕套用 */
 .sidebar-search {
-  height: 50px !important;
-  min-height: 50px !important;
-  line-height: 50px !important;
-  padding: 0 46px 0 18px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  line-height: 46px !important;
+  padding: 0 44px 0 16px !important;
+  font-size: 14px !important;
+}
+
+.sidebar-search-wrap {
+  margin-bottom: 8px !important;
 }
 
 .sidebar-clear-btn {
-  width: 32px !important;
-  height: 32px !important;
+  width: 30px !important;
+  height: 30px !important;
   right: 8px !important;
-  font-size: 18px !important;
+  font-size: 17px !important;
 }
 
-/* 手機版：Sidebar 展開時預留上方 Header 空間，避免搜尋欄蓋住標題 */
+.sidebar-main-btn,
+.sidebar-sub-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+  line-height: 40px !important;
+}
+
+/* 1) 手機主題分類下拉名單：上下框加大，點擊區更舒服 */
 @media (max-width: 768px) {
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    padding: 70px 14px 14px !important;
-    min-height: 164px !important;
+  .category-toggle-btn {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 16px !important;
+    margin: 12px 0 0 !important;
+    font-size: 14px !important;
+    line-height: 48px !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar-search-panel {
-    margin-top: 0 !important;
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
+    margin-top: 12px !important;
+    padding: 10px !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.42) !important;
+    border: 1px solid rgba(199, 220, 222, 0.52) !important;
+    max-height: min(300px, 40vh) !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 188px !important;
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
+    gap: 9px !important;
+    max-height: min(250px, 34vh) !important;
+    padding: 2px 4px 2px 0 !important;
+  }
+
+  .category-chip {
+    min-height: 42px !important;
+    padding: 11px 12px !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
+
+  .sidebar-search {
+    height: 46px !important;
+    min-height: 46px !important;
+    line-height: 46px !important;
   }
 }
 
 @media (max-width: 480px) {
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    padding: 68px 12px 12px !important;
-    min-height: 158px !important;
+  .category-toggle-btn {
+    height: 46px !important;
+    min-height: 46px !important;
+    line-height: 46px !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 182px !important;
+  .category-chip {
+    min-height: 40px !important;
+    padding: 10px 11px !important;
   }
 }
-
