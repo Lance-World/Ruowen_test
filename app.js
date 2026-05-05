@@ -24,6 +24,7 @@ const state = {
   lastMobileTapNodeId: null,
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
+  introOverlayText: null,
 };
 
 const nodeColors = {
@@ -549,6 +550,7 @@ function setupMobileBottomSheetGestures() {
   let startY = 0;
   let startTime = 0;
   let startHeight = 0;
+  let startExpanded = false;
   let dragging = false;
   let tracking = false;
 
@@ -561,6 +563,11 @@ function setupMobileBottomSheetGestures() {
     startY = event.clientY;
     startTime = performance.now();
     startHeight = infoPanel.getBoundingClientRect().height;
+    startExpanded = Boolean(state.mobileSheetExpanded);
+
+    try {
+      infoPanel.setPointerCapture(event.pointerId);
+    } catch (_) {}
   });
 
   infoPanel.addEventListener("pointermove", (event) => {
@@ -621,19 +628,32 @@ function setupMobileBottomSheetGestures() {
       return;
     }
 
-    state.mobileSheetExpanded = false;
+    // 未達關閉或展開條件時，回彈到拖曳前的開啟高度。
+    state.mobileSheetExpanded = startExpanded;
     applyInfoCompactState();
-    setMobileBottomSheetHeight(60);
+    setMobileBottomSheetHeight(startExpanded ? 90 : 60);
   }
 
-  infoPanel.addEventListener("pointerup", finishDrag);
-  infoPanel.addEventListener("pointercancel", () => {
+  infoPanel.addEventListener("pointerup", (event) => {
+    try {
+      infoPanel.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+    finishDrag(event);
+  });
+  infoPanel.addEventListener("pointercancel", (event) => {
     if (!tracking) return;
+
+    try {
+      infoPanel.releasePointerCapture(event.pointerId);
+    } catch (_) {}
+
     tracking = false;
     dragging = false;
+    state.mobileSheetExpanded = startExpanded;
     infoPanel.classList.remove("bottom-sheet-dragging");
     infoPanel.style.transform = "";
-    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+    applyInfoCompactState();
+    setMobileBottomSheetHeight(startExpanded ? 90 : 60);
   });
 }
 
@@ -971,7 +991,7 @@ async function setupIntroOverlay() {
 
   if (!overlay || !textEl) return;
 
-  const message = await pickIntroMessage();
+  const message = await getIntroOverlayTextOnce();
   textEl.textContent = message;
 
   let closed = false;
@@ -998,6 +1018,15 @@ async function setupIntroOverlay() {
   }
 
   window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
+}
+
+async function getIntroOverlayTextOnce() {
+  if (state.introOverlayText) {
+    return state.introOverlayText;
+  }
+
+  state.introOverlayText = await pickIntroMessage();
+  return state.introOverlayText;
 }
 
 async function pickIntroMessage() {
