@@ -1269,8 +1269,8 @@ button { user-select: none; }
   html,
   body,
   .app-shell {
-    width: 100%;
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     height: 100dvh;
     overflow: hidden;
   }
