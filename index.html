@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Graph</title>
-  <link rel="stylesheet" href="./css/style.css?v=centered_sidebar_20260504_05" />
+  <link rel="stylesheet" href="./css/style.css?v=sidebar_decision_20260505_06" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -21,15 +21,24 @@
       </div>
 
       <div id="sidebarSearchPanel" class="sidebar-search-panel search-collapsed">
-        <input
-          id="searchInput"
-          class="sidebar-search"
-          type="text"
-          placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
-        />
+        <div class="sidebar-search-wrap">
+          <input
+            id="searchInput"
+            class="sidebar-search"
+            type="text"
+            placeholder="搜尋概念、詞彙、句子，並追溯 MD 來源與 YouTube 時間戳"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            id="clearSearchBtn"
+            class="sidebar-clear-btn hidden"
+            title="清除搜尋"
+            aria-label="清除搜尋"
+          >×</button>
+        </div>
         <div class="search-action-row">
           <button type="button" id="searchBtn" class="sidebar-main-btn">搜尋</button>
-          <button type="button" id="clearSearchBtn" class="sidebar-sub-btn">清除</button>
         </div>
       </div>
 
@@ -40,7 +49,14 @@
         <button class="side-item active filter-chip" data-type="concept">第二層概念</button>
       </div>
 
-      <div class="sidebar-section sidebar-category-section">
+      <button
+        type="button"
+        id="categoryToggleBtn"
+        class="category-toggle-btn"
+        aria-expanded="false"
+      >主題分類</button>
+
+      <div class="sidebar-section sidebar-category-section" id="sidebarCategorySection">
         <label class="sidebar-label">主題分類</label>
         <div id="categoryChips" class="sidebar-category-list"></div>
       </div>
@@ -134,6 +150,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=centered_sidebar_20260504_05"></script>
+  <script src="./app.js?v=sidebar_decision_20260505_06"></script>
 </body>
 </html>
