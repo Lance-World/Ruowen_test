@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=sidebar_clean_20260505_11" />
+  <title>Ruowen Knowledge Graph</title>
+  <link rel="stylesheet" href="./css/style.css?v=sidebar_decision_20260505_06" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -17,18 +17,11 @@
 
       <div class="sidebar-title">
         <strong>Ruowen</strong>
-        <span>Knowledge Map</span>
+        <span>Knowledge Graph</span>
       </div>
 
       <div id="sidebarSearchPanel" class="sidebar-search-panel search-collapsed">
         <div class="sidebar-search-wrap">
-          <button
-            type="button"
-            id="searchBtn"
-            class="sidebar-search-submit-btn"
-            title="搜尋"
-            aria-label="搜尋"
-          >🔍</button>
           <input
             id="searchInput"
             class="sidebar-search"
@@ -44,15 +37,16 @@
             aria-label="清除搜尋"
           >×</button>
         </div>
+        <div class="search-action-row">
+          <button type="button" id="searchBtn" class="sidebar-main-btn">搜尋</button>
+        </div>
       </div>
 
-      <div class="sidebar-section filter-section">
+      <div class="sidebar-section">
         <label class="sidebar-label">顯示類型</label>
-        <div class="filter-chip-row">
-          <button class="side-item active filter-chip" data-type="all">全部</button>
-          <button class="side-item active filter-chip" data-type="topic">主題</button>
-          <button class="side-item active filter-chip" data-type="concept">概念</button>
-        </div>
+        <button class="side-item active filter-chip" data-type="all">全部</button>
+        <button class="side-item active filter-chip" data-type="topic">第一層主題</button>
+        <button class="side-item active filter-chip" data-type="concept">第二層概念</button>
       </div>
 
       <button
@@ -156,6 +150,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=sidebar_clean_20260505_11"></script>
+  <script src="./app.js?v=sidebar_decision_20260505_06"></script>
 </body>
 </html>
