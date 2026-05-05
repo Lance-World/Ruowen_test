@@ -22,6 +22,8 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
+  mobileSheetOpen: false,
+  mobileSheetExpanded: false,
 };
 
 const nodeColors = {
@@ -49,11 +51,12 @@ async function init() {
     restoreSearchPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
+    syncMobileOnlyResizeHandles();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
-    setupMobileBottomSheetGesture();
+    setupMobileBottomSheetGestures();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -387,12 +390,20 @@ function showAll() {
 
   updateGraph();
   renderDefaultInfo();
+
+  if (isMobileLayout()) {
+    closeMobileBottomSheet();
+  }
 }
 
 function clearSelection() {
   state.selectedNodeId = null;
   highlightSelection();
   renderDefaultInfo();
+
+  if (isMobileLayout()) {
+    closeMobileBottomSheet();
+  }
 }
 
 /* ================================
@@ -420,10 +431,24 @@ function setupInfoCompactToggle() {
     }
   });
 
+  if (isMobileLayout()) {
+    closeMobileBottomSheet(false);
+    return;
+  }
+
   applyInfoCompactState();
 }
 
 function toggleInfoCompact() {
+  if (isMobileLayout()) {
+    if (state.mobileSheetOpen) {
+      closeMobileBottomSheet();
+    } else {
+      openMobileBottomSheet(60);
+    }
+    return;
+  }
+
   state.infoCompact = !state.infoCompact;
   applyInfoCompactState();
 }
@@ -434,6 +459,25 @@ function applyInfoCompactState() {
 
   if (!infoPanel) return;
 
+  if (isMobileLayout()) {
+    infoPanel.classList.toggle("bottom-sheet-open", Boolean(state.mobileSheetOpen));
+    infoPanel.classList.toggle("bottom-sheet-hidden", !state.mobileSheetOpen);
+    infoPanel.classList.toggle("bottom-sheet-expanded", Boolean(state.mobileSheetExpanded));
+    infoPanel.classList.toggle("info-compact", !state.mobileSheetOpen);
+
+    if (workspace) {
+      workspace.classList.toggle("info-compact-workspace", !state.mobileSheetOpen);
+    }
+
+    requestAnimationFrame(() => {
+      resizeGraphAfterPanelChange();
+    });
+    return;
+  }
+
+  infoPanel.classList.remove("bottom-sheet-open", "bottom-sheet-hidden", "bottom-sheet-expanded", "bottom-sheet-dragging");
+  infoPanel.style.transform = "";
+  infoPanel.style.height = "";
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
 
   if (workspace) {
@@ -445,76 +489,152 @@ function applyInfoCompactState() {
   });
 }
 
-function setupMobileBottomSheetGesture() {
+function openMobileBottomSheet(targetVh = 60) {
+  if (!isMobileLayout()) return;
+
   const infoPanel = document.getElementById("infoPanel");
-  const header = document.querySelector("#infoPanel .info-header");
+  if (!infoPanel) return;
 
-  if (!infoPanel || !header) return;
+  state.mobileSheetOpen = true;
+  state.mobileSheetExpanded = targetVh >= 88;
+  state.infoCompact = false;
 
-  let startY = 0;
-  let startX = 0;
-  let currentY = 0;
-  let startTime = 0;
-  let isDragging = false;
-  let pointerId = null;
+  infoPanel.classList.remove("bottom-sheet-dragging");
+  infoPanel.style.transform = "";
+  applyInfoCompactState();
 
-  header.addEventListener("pointerdown", (event) => {
-    if (!isMobileLayout()) return;
-    if (event.target.closest("button, a, input, textarea, select")) return;
-
-    startY = event.clientY;
-    startX = event.clientX;
-    currentY = startY;
-    startTime = performance.now();
-    isDragging = false;
-    pointerId = event.pointerId;
-
-    try {
-      header.setPointerCapture(pointerId);
-    } catch (_) {}
+  requestAnimationFrame(() => {
+    setMobileBottomSheetHeight(targetVh);
+    infoPanel.scrollTop = 0;
   });
+}
 
-  header.addEventListener("pointermove", (event) => {
-    if (!isMobileLayout() || pointerId !== event.pointerId) return;
+function closeMobileBottomSheet(animate = true) {
+  if (!isMobileLayout()) return;
 
-    const deltaY = event.clientY - startY;
-    const deltaX = Math.abs(event.clientX - startX);
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
 
-    if (deltaY <= 0 || deltaX > Math.abs(deltaY) * 1.2) return;
+  state.mobileSheetOpen = false;
+  state.mobileSheetExpanded = false;
+  state.infoCompact = true;
 
-    isDragging = true;
-    currentY = event.clientY;
-    infoPanel.classList.add("bottom-sheet-dragging");
-    infoPanel.style.transform = `translateY(${Math.min(deltaY, 180)}px)`;
-    event.preventDefault();
-  });
-
-  function finishDrag(event) {
-    if (pointerId !== event.pointerId) return;
-
-    const deltaY = Math.max(0, currentY - startY);
-    const elapsed = Math.max(1, performance.now() - startTime);
-    const velocity = deltaY / elapsed;
-
-    infoPanel.classList.remove("bottom-sheet-dragging");
-    infoPanel.style.transform = "";
-
-    try {
-      header.releasePointerCapture(pointerId);
-    } catch (_) {}
-
-    pointerId = null;
-
-    if (isMobileLayout() && isDragging && (deltaY > 88 || velocity > 0.72)) {
-      state.infoCompact = true;
-      applyInfoCompactState();
-    }
-
-    isDragging = false;
+  if (!animate) {
+    infoPanel.classList.add("bottom-sheet-hidden");
   }
 
-  header.addEventListener("pointerup", finishDrag);
-  header.addEventListener("pointercancel", finishDrag);
+  infoPanel.classList.remove("bottom-sheet-dragging", "bottom-sheet-expanded");
+  infoPanel.style.transform = "";
+  infoPanel.style.height = "";
+  applyInfoCompactState();
+}
+
+function setMobileBottomSheetHeight(targetVh = 60) {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel || !isMobileLayout()) return;
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+  const minHeight = 200;
+  const maxHeight = viewportHeight * (targetVh / 100);
+  const naturalHeight = Math.ceil(infoPanel.scrollHeight || minHeight);
+  const nextHeight = clamp(naturalHeight, minHeight, maxHeight);
+
+  infoPanel.style.height = `${nextHeight}px`;
+}
+
+function setupMobileBottomSheetGestures() {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  let startY = 0;
+  let startTime = 0;
+  let startHeight = 0;
+  let dragging = false;
+  let tracking = false;
+
+  infoPanel.addEventListener("pointerdown", (event) => {
+    if (!isMobileLayout() || !state.mobileSheetOpen) return;
+    if (infoPanel.scrollTop > 0) return;
+
+    tracking = true;
+    dragging = false;
+    startY = event.clientY;
+    startTime = performance.now();
+    startHeight = infoPanel.getBoundingClientRect().height;
+  });
+
+  infoPanel.addEventListener("pointermove", (event) => {
+    if (!tracking || !isMobileLayout() || !state.mobileSheetOpen) return;
+    if (infoPanel.scrollTop > 0) {
+      tracking = false;
+      dragging = false;
+      return;
+    }
+
+    const deltaY = event.clientY - startY;
+    if (!dragging && Math.abs(deltaY) < 6) return;
+
+    dragging = true;
+    infoPanel.classList.add("bottom-sheet-dragging");
+
+    if (deltaY > 0) {
+      infoPanel.style.transform = `translateY(${deltaY}px)`;
+    } else {
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+      const nextHeight = clamp(startHeight - deltaY, 200, viewportHeight * 0.9);
+      infoPanel.style.transform = "translateY(0)";
+      infoPanel.style.height = `${nextHeight}px`;
+      state.mobileSheetExpanded = nextHeight >= viewportHeight * 0.82;
+      infoPanel.classList.toggle("bottom-sheet-expanded", state.mobileSheetExpanded);
+    }
+
+    event.preventDefault();
+  }, { passive: false });
+
+  function finishDrag(event) {
+    if (!tracking) return;
+
+    const deltaY = event.clientY - startY;
+    const elapsed = Math.max(1, performance.now() - startTime);
+    const velocity = deltaY / elapsed;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+    const currentHeight = infoPanel.getBoundingClientRect().height;
+
+    tracking = false;
+    infoPanel.classList.remove("bottom-sheet-dragging");
+
+    if (!dragging) return;
+
+    dragging = false;
+
+    if (deltaY > 80 || velocity > 0.62) {
+      closeMobileBottomSheet();
+      return;
+    }
+
+    infoPanel.style.transform = "";
+
+    if (deltaY < -48 || currentHeight >= viewportHeight * 0.76) {
+      state.mobileSheetExpanded = true;
+      applyInfoCompactState();
+      setMobileBottomSheetHeight(90);
+      return;
+    }
+
+    state.mobileSheetExpanded = false;
+    applyInfoCompactState();
+    setMobileBottomSheetHeight(60);
+  }
+
+  infoPanel.addEventListener("pointerup", finishDrag);
+  infoPanel.addEventListener("pointercancel", () => {
+    if (!tracking) return;
+    tracking = false;
+    dragging = false;
+    infoPanel.classList.remove("bottom-sheet-dragging");
+    infoPanel.style.transform = "";
+    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+  });
 }
 
 function getRandomTitleNumber() {
@@ -579,10 +699,8 @@ function setupMainVerticalResize() {
 
   enablePointerResize(handle, {
     cursor: "row-resize",
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
-      // Mobile Info Panel is a Bottom Sheet; desktop/tablet resize behavior remains unchanged.
-      if (isMobileLayout()) return;
-
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
 
@@ -612,16 +730,22 @@ function setupInnerHorizontalResize() {
   if (!handle || !splitArea) return;
 
   enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "default" : "col-resize"),
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
-      // Mobile Bottom Sheet uses native scrolling; the inner resize divider is hidden on mobile.
-      if (isMobileLayout()) return;
-
       const rect = splitArea.getBoundingClientRect();
-      const ratio = ((event.clientX - rect.left) / rect.width) * 100;
-      const nextRatio = clamp(ratio, 28, 72);
-      splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
-      localStorage.setItem("sentenceWidth", String(nextRatio));
+
+      if (isMobileLayout()) {
+        const ratio = ((event.clientY - rect.top) / rect.height) * 100;
+        const nextRatio = clamp(ratio, 24, 76);
+        splitArea.style.setProperty("--sentence-height", `${nextRatio}%`);
+        localStorage.removeItem("sentenceHeight");
+      } else {
+        const ratio = ((event.clientX - rect.left) / rect.width) * 100;
+        const nextRatio = clamp(ratio, 28, 72);
+        splitArea.style.setProperty("--sentence-width", `${nextRatio}%`);
+        localStorage.setItem("sentenceWidth", String(nextRatio));
+      }
     },
   });
 }
@@ -634,21 +758,28 @@ function setupInfoRightResize() {
   if (!handle || !infoPanel || !workspace) return;
 
   enablePointerResize(handle, {
-    cursor: () => (isMobileLayout() ? "default" : "col-resize"),
+    cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
-      // Mobile Info Panel is controlled by Bottom Sheet gestures, not resize handles.
-      if (isMobileLayout()) return;
-
       const rect = workspace.getBoundingClientRect();
 
       state.infoCompact = false;
       applyInfoCompactState();
 
-      const minWidth = Math.min(280, rect.width);
-      const maxWidth = rect.width;
-      const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
-      infoPanel.style.width = `${nextWidth}px`;
-      localStorage.setItem("infoPanelWidth", String(nextWidth));
+      if (isMobileLayout()) {
+        const infoHeight = rect.bottom - event.clientY;
+        const minInfo = 76;
+        const maxInfo = Math.max(240, rect.height * 0.76);
+        const nextHeight = clamp(infoHeight, minInfo, maxInfo);
+        workspace.style.setProperty("--info-height", `${nextHeight}px`);
+        localStorage.removeItem("infoHeight");
+      } else {
+        const minWidth = Math.min(280, rect.width);
+        const maxWidth = rect.width;
+        const nextWidth = clamp(event.clientX - rect.left, minWidth, maxWidth);
+        infoPanel.style.width = `${nextWidth}px`;
+        localStorage.setItem("infoPanelWidth", String(nextWidth));
+      }
 
       resizeGraphAfterPanelChange();
     },
@@ -659,6 +790,8 @@ function enablePointerResize(handle, options) {
   let isDragging = false;
 
   handle.addEventListener("pointerdown", (event) => {
+    if (typeof options.canStart === "function" && !options.canStart(event)) return;
+
     isDragging = true;
 
     try {
@@ -767,6 +900,22 @@ function updateFloatingLayoutVars() {
   appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
   appShell.style.setProperty("--info-left", `${infoLeft}px`);
   appShell.style.setProperty("--info-right", "20px");
+}
+
+function syncMobileOnlyResizeHandles() {
+  const shouldHide = isMobileLayout();
+  ["mainResizeHandle", "innerResizeHandle", "infoRightResizeHandle"].forEach((id) => {
+    const handle = document.getElementById(id);
+    if (!handle) return;
+
+    if (shouldHide) {
+      handle.setAttribute("hidden", "");
+      handle.setAttribute("aria-hidden", "true");
+    } else {
+      handle.removeAttribute("hidden");
+      handle.removeAttribute("aria-hidden");
+    }
+  });
 }
 
 function isMobileLayout() {
@@ -1335,8 +1484,7 @@ function selectNode(nodeId) {
 
     // JS-7C：手機點節點後自動展開資訊欄，桌機維持目前狀態。
     if (isMobileLayout()) {
-      state.infoCompact = false;
-      applyInfoCompactState();
+      openMobileBottomSheet(60);
     }
   }
 }
@@ -1738,12 +1886,22 @@ function dragEnded(event, node) {
 ================================ */
 
 window.addEventListener("resize", () => {
-  const infoPanel = document.getElementById("infoPanel");
-  if (infoPanel && !isMobileLayout()) {
-    infoPanel.classList.remove("bottom-sheet-dragging");
-    infoPanel.style.transform = "";
+  updateFloatingLayoutVars();
+  syncMobileOnlyResizeHandles();
+
+  if (isMobileLayout()) {
+    if (state.mobileSheetOpen) {
+      setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+    } else {
+      closeMobileBottomSheet(false);
+    }
+  } else {
+    const infoPanel = document.getElementById("infoPanel");
+    if (infoPanel) {
+      infoPanel.style.transform = "";
+      infoPanel.style.height = "";
+    }
   }
 
-  updateFloatingLayoutVars();
   resizeGraphAfterPanelChange();
 });
