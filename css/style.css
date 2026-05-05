@@ -1282,8 +1282,8 @@ button { user-select: none; }
      bottom: auto;
      width: auto !important;
      height: auto;
-     min-height: 142px;
-     max-height: 58vh;
+     min-height: 0 !important;
+     max-height: calc(100dvh - 16px) !important;
      padding: calc(var(--sidebar-header-height) + 4px) 14px 12px;
      border-radius: 22px;
      overflow: auto;
