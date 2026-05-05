@@ -1833,7 +1833,7 @@ button { user-select: none; }
 }
 
 /* =========================================================
-   Mobile-only Bottom Sheet override
+   Mobile-only Bottom Sheet drag fix
    Scope: <=768px only. Desktop / Web layout remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
@@ -1858,7 +1858,6 @@ button { user-select: none; }
     pointer-events: none !important;
   }
 
-  .info-panel,
   #infoPanel,
   #infoPanel:not(.info-compact),
   #infoPanel.info-compact {
@@ -1876,17 +1875,17 @@ button { user-select: none; }
     display: block !important;
     padding: 24px 14px calc(16px + env(safe-area-inset-bottom)) !important;
     border-radius: 16px 16px 0 0 !important;
-    background: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(255, 255, 255, 0.94) !important;
     border: 1px solid rgba(199, 220, 222, 0.72) !important;
     border-bottom: 0 !important;
     box-shadow: 0 -14px 40px rgba(23, 60, 67, 0.16) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    overscroll-behavior: contain;
-    touch-action: auto !important;
+    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     will-change: transform;
-    transform: translateY(calc(100% + 16px));
+    transform: translate3d(0, calc(100% + 16px), 0);
     opacity: 0;
     pointer-events: none;
     transition:
@@ -1897,26 +1896,26 @@ button { user-select: none; }
 
   #infoPanel::before {
     content: "";
-    position: absolute;
-    top: 8px;
+    position: sticky;
+    top: -16px;
     left: 50%;
+    display: block;
     width: 42px;
     height: 4px;
+    margin: -12px auto 12px;
     border-radius: 999px;
     background: rgba(83, 113, 118, 0.34);
-    transform: translateX(-50%);
     pointer-events: none;
   }
 
   #infoPanel.bottom-sheet-open {
-    transform: translateY(0) !important;
+    transform: translate3d(0, 0, 0) !important;
     opacity: 1 !important;
     pointer-events: auto !important;
   }
 
-  #infoPanel.bottom-sheet-hidden,
-  #infoPanel.info-compact.bottom-sheet-hidden {
-    transform: translateY(calc(100% + 16px)) !important;
+  #infoPanel.bottom-sheet-hidden {
+    transform: translate3d(0, calc(100% + 16px), 0) !important;
     opacity: 0 !important;
     pointer-events: none !important;
   }
@@ -1929,11 +1928,10 @@ button { user-select: none; }
     transition: none !important;
     user-select: none !important;
     -webkit-user-select: none !important;
+    cursor: grabbing;
   }
 
-  #infoPanel:not(.info-compact) .info-header-row,
-  #infoPanel.info-compact .info-header-row,
-  #infoPanel.info-compact .info-header {
+  #infoPanel .info-header-row {
     display: grid !important;
     grid-template-columns: auto 1fr !important;
     grid-template-areas:
@@ -1956,37 +1954,9 @@ button { user-select: none; }
     font-size: 16px !important;
   }
 
-  #infoPanel .info-title-block {
-    grid-area: title;
-    min-width: 0;
-  }
-
-  #infoPanel #infoTitle {
-    font-size: clamp(16px, 4.4vw, 20px) !important;
-    line-height: 1.2 !important;
-  }
-
-  #infoPanel .info-tags {
-    grid-area: tags;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    max-height: none !important;
-    overflow: visible !important;
-    white-space: normal !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel .info-related-row {
-    grid-area: related;
-    display: block !important;
-    margin: 0 0 10px !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
+  #infoPanel .info-title-block { grid-area: title; min-width: 0; }
+  #infoPanel .info-tags { grid-area: tags; }
+  #infoPanel .info-related-row { grid-area: related; }
 
   #infoPanel .info-split-area {
     display: flex !important;
@@ -1995,9 +1965,6 @@ button { user-select: none; }
     min-height: 0 !important;
     height: auto !important;
     overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
   }
 
   #infoPanel .info-box,
@@ -2005,12 +1972,6 @@ button { user-select: none; }
   #infoPanel .source-box {
     min-height: 0 !important;
     height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel .quote-list,
-  #infoPanel .source-list {
     max-height: none !important;
     overflow: visible !important;
   }
