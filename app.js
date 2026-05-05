@@ -116,7 +116,9 @@ function restoreSidebarState() {
 }
 
 function restoreSidebarWidth() {
-  // JS-2B：桌機 Sidebar 可拖曳，但重新整理後回到預設寬度。
+  // J2 / K1：Sidebar 固定寬度；清掉舊版可能留下的寬度設定。
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) sidebar.style.width = "";
   localStorage.removeItem("sidebarWidth");
 }
 
@@ -139,6 +141,13 @@ function toggleSidebar() {
 
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   localStorage.setItem("sidebarCollapsed", isCollapsed ? "1" : "0");
+
+  if (isCollapsed) {
+    const sidebar = document.getElementById("sidebar");
+    const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+    if (sidebar) sidebar.classList.remove("categories-open");
+    if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+  }
 
   updateFloatingLayoutVars();
 
@@ -257,36 +266,67 @@ function setupControls() {
   const searchBtn = document.getElementById("searchBtn");
   const clearSearchBtn = document.getElementById("clearSearchBtn");
   const searchInput = document.getElementById("searchInput");
+  const searchWrap = document.querySelector(".sidebar-search-wrap");
   const resetViewBtn = document.getElementById("resetViewBtn");
   const expandAllBtn = document.getElementById("expandAllBtn");
   const clearSelectionBtn = document.getElementById("clearSelectionBtn");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+  const sidebar = document.getElementById("sidebar");
 
   if (searchBtn) {
     searchBtn.addEventListener("click", searchNode);
   }
 
+  function updateSearchClearState() {
+    if (!searchInput || !searchWrap || !clearSearchBtn) return;
+    const hasText = normalizeSearchKeyword(searchInput.value).length > 0;
+    searchWrap.classList.toggle("has-text", hasText);
+    clearSearchBtn.classList.toggle("hidden", !hasText);
+  }
+
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener("click", () => {
       if (searchInput) searchInput.value = "";
+      updateSearchClearState();
       showAll();
+      if (searchInput) searchInput.focus();
     });
   }
 
   if (searchInput) {
+    searchInput.addEventListener("input", updateSearchClearState);
+
     searchInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         searchNode();
       }
 
       if (event.key === "Escape") {
+        if (searchInput.value) {
+          searchInput.value = "";
+          updateSearchClearState();
+          showAll();
+          return;
+        }
+
         const panel = document.getElementById("sidebarSearchPanel");
         if (panel) {
           panel.classList.add("search-collapsed");
           localStorage.setItem("searchPanelOpen", "0");
         }
       }
+    });
+
+    updateSearchClearState();
+  }
+
+  if (categoryToggleBtn && sidebar) {
+    categoryToggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("categories-open");
+      const isOpen = sidebar.classList.contains("categories-open");
+      categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
   }
 
@@ -427,11 +467,7 @@ function setInfoTitle(titleText) {
 ================================ */
 
 function setupResizablePanels() {
-  // JS-2B / JS-3A：Sidebar resize 只在桌機啟用；手機完全停用。
-  if (!isMobileLayout()) {
-    setupSidebarResize();
-  }
-
+  // J2 / K1：Sidebar 固定寬度，不啟用 Sidebar resize；保留其他資訊欄拖曳。
   setupMainVerticalResize();
   setupInnerHorizontalResize();
   setupInfoRightResize();
@@ -656,11 +692,10 @@ function updateFloatingLayoutVars() {
     return;
   }
 
-  const sidebarRect = sidebar.getBoundingClientRect();
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   const sidebarLeft = 20;
-  const sidebarWidth = isCollapsed ? 64 : Math.round(sidebarRect.width || 280);
-  const infoLeft = isCollapsed ? 96 : Math.max(320, sidebarLeft + sidebarWidth + 40);
+  const sidebarWidth = isCollapsed ? 64 : 280;
+  const infoLeft = isCollapsed ? 96 : 340;
 
   appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
   appShell.style.setProperty("--sidebar-top", "20px");
