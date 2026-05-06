@@ -1832,59 +1832,223 @@ button { user-select: none; }
   }
 }
 
-
 /* =========================================================
-   Mobile-only layout fix: fixed action buttons + sidebar width
-   Scope: <=768px only. Desktop / Web remains untouched.
+   Mobile-only Bottom Sheet override
+   Scope: <=768px only. Desktop / Web layout remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  html,
-  body,
-  .app-shell {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-  }
-
-  /* Sidebar open: exact viewport width minus 16px, no extra right gap. */
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px !important;
-    right: 8px !important;
-    width: auto !important;
+  #mainResizeHandle,
+  #innerResizeHandle,
+  #infoRightResizeHandle,
+  .resize-handle.horizontal,
+  .resize-handle.vertical,
+  .resize-handle.info-right {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
     min-width: 0 !important;
-    max-width: calc(100vw - 16px) !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    transform: none !important;
-    box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    pointer-events: none !important;
   }
 
-  /* Keep the three graph action buttons fixed. Do not let sidebar open state push them. */
+  .info-panel,
+  #infoPanel,
+  #infoPanel:not(.info-compact),
+  #infoPanel.info-compact {
+    position: fixed !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    min-height: 200px !important;
+    height: auto;
+    max-height: 80vh !important;
+    z-index: 120 !important;
+    display: block !important;
+    padding: 24px 14px calc(16px + env(safe-area-inset-bottom)) !important;
+    border-radius: 16px 16px 0 0 !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(199, 220, 222, 0.72) !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 -14px 40px rgba(23, 60, 67, 0.16) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(calc(100% + 16px));
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.22s ease,
+      height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #infoPanel::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(83, 113, 118, 0.34);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  #infoPanel.bottom-sheet-open {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel.bottom-sheet-hidden,
+  #infoPanel.info-compact.bottom-sheet-hidden {
+    transform: translateY(calc(100% + 16px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #infoPanel.bottom-sheet-expanded {
+    max-height: 90vh !important;
+  }
+
+  #infoPanel.bottom-sheet-dragging {
+    transition: none !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-header-row,
+  #infoPanel.info-compact .info-header-row,
+  #infoPanel.info-compact .info-header {
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    grid-template-areas:
+      "icon title"
+      "icon tags"
+      "icon related" !important;
+    align-items: start !important;
+    column-gap: 10px !important;
+    row-gap: 8px !important;
+    width: 100% !important;
+    margin: 0 0 10px !important;
+  }
+
+  #infoPanel .info-icon {
+    grid-area: icon;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  #infoPanel .info-title-block {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  #infoPanel #infoTitle {
+    font-size: clamp(16px, 4.4vw, 20px) !important;
+    line-height: 1.2 !important;
+  }
+
+  #infoPanel .info-tags {
+    grid-area: tags;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    max-height: none !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-related-row {
+    grid-area: related;
+    display: block !important;
+    margin: 0 0 10px !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-split-area {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-box,
+  #infoPanel .sentence-box,
+  #infoPanel .source-box {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel .quote-list,
+  #infoPanel .source-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+
+/* =========================================================
+   Mobile-only floating actions fixed viewport override
+   Scope: <=768px only. Desktop / Web layout remains untouched.
+========================================================= */
+@media (max-width: 768px) {
   .floating-actions,
   .app-shell:not(.sidebar-collapsed) .floating-actions,
   .app-shell.sidebar-collapsed .floating-actions {
     position: fixed !important;
-    top: 64px !important;
+    top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
     left: 8px !important;
-    right: 8px !important;
+    right: auto !important;
+    bottom: auto !important;
     width: auto !important;
-    max-width: calc(100vw - 16px) !important;
-    margin: 0 !important;
-    transform: none !important;
+    max-width: calc(100vw - 76px) !important;
+    min-width: 0 !important;
     display: flex !important;
     flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
     justify-content: flex-start !important;
     gap: 8px !important;
+    margin: 0 !important;
     padding: 0 !important;
+    transform: none !important;
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scrollbar-width: none !important;
-    z-index: 65 !important;
+    z-index: 180 !important;
+    pointer-events: auto !important;
+    white-space: nowrap !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .floating-actions::-webkit-scrollbar,
@@ -1900,38 +2064,31 @@ button { user-select: none; }
     height: 42px !important;
     min-width: max-content !important;
     padding: 0 13px !important;
+    margin: 0 !important;
     font-size: 12px !important;
-    border-radius: 999px !important;
+    line-height: 42px !important;
+    white-space: nowrap !important;
+    pointer-events: auto !important;
     box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
   }
-}
 
-@media (max-width: 480px) {
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 8px !important;
     right: 8px !important;
+    width: auto !important;
     max-width: calc(100vw - 16px) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    overflow-x: hidden !important;
   }
 
-  .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions {
-    top: 62px !important;
-    left: 8px !important;
-    right: 8px !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-}
-
-@media (max-width: 380px) {
-  .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions {
-    top: 58px !important;
-    left: 8px !important;
-    right: 8px !important;
-    max-width: calc(100vw - 16px) !important;
+  html,
+  body,
+  .app-shell {
+    overflow-x: hidden !important;
   }
 }
