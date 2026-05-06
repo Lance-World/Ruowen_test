@@ -1084,9 +1084,26 @@ button { user-select: none; }
   transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
-.intro-overlay.intro-overlay-leaving { opacity: 0; }
+/* Overlay 預設保持隱藏；JS 寫入最終文字後才加 intro-overlay-ready 顯示，避免載入瞬間跳字。 */
+.intro-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-overlay.intro-overlay-ready {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.intro-overlay.intro-overlay-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .intro-overlay.intro-overlay-hidden {
+  opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }

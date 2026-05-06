@@ -24,6 +24,8 @@ const state = {
   lastMobileTapNodeId: null,
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
+  introOverlayInitialized: false,
+  introOverlayText: "",
 };
 
 const nodeColors = {
@@ -421,9 +423,15 @@ function setupInfoCompactToggle() {
   infoIcon.addEventListener("click", (event) => {
     event.stopPropagation();
 
-    // Mobile Bottom Sheet：避免 icon click 和 sheet drag/scroll 混在一起。
-    // 手機版僅允許「下拉手勢」關閉；Desktop 保留原本點擊收合。
-    if (isMobileLayout()) return;
+    // Mobile Bottom Sheet：圖案點擊可切換開啟 / 收合；Desktop 保留原本 compact 收合。
+    if (isMobileLayout()) {
+      if (state.mobileSheetOpen) {
+        closeMobileBottomSheet();
+      } else {
+        openMobileBottomSheet(60);
+      }
+      return;
+    }
 
     toggleInfoCompact();
   });
@@ -432,7 +440,14 @@ function setupInfoCompactToggle() {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
 
-      if (isMobileLayout()) return;
+      if (isMobileLayout()) {
+        if (state.mobileSheetOpen) {
+          closeMobileBottomSheet();
+        } else {
+          openMobileBottomSheet(60);
+        }
+        return;
+      }
 
       toggleInfoCompact();
     }
@@ -447,7 +462,14 @@ function setupInfoCompactToggle() {
 }
 
 function toggleInfoCompact() {
-  if (isMobileLayout()) return;
+  if (isMobileLayout()) {
+    if (state.mobileSheetOpen) {
+      closeMobileBottomSheet();
+    } else {
+      openMobileBottomSheet(60);
+    }
+    return;
+  }
 
   state.infoCompact = !state.infoCompact;
   applyInfoCompactState();
@@ -991,10 +1013,22 @@ async function setupIntroOverlay() {
   const overlay = document.getElementById("introOverlay");
   const textEl = document.getElementById("introMessageText");
 
-  if (!overlay || !textEl) return;
+  if (!overlay || !textEl || state.introOverlayInitialized) return;
 
-  const message = await pickIntroMessage();
+  state.introOverlayInitialized = true;
+
+  // 避免 HTML 預設文字在 JS 決定 overlayText 前短暫露出。
+  overlay.classList.remove("intro-overlay-ready", "intro-overlay-leaving");
+  overlay.classList.add("intro-overlay-hidden");
+  overlay.setAttribute("aria-hidden", "true");
+  textEl.textContent = "";
+
+  const message = await getIntroOverlayTextOnce();
   textEl.textContent = message;
+
+  overlay.classList.remove("intro-overlay-hidden");
+  overlay.classList.add("intro-overlay-ready");
+  overlay.setAttribute("aria-hidden", "false");
 
   let closed = false;
 
@@ -1005,6 +1039,7 @@ async function setupIntroOverlay() {
 
     window.setTimeout(() => {
       overlay.classList.add("intro-overlay-hidden");
+      overlay.classList.remove("intro-overlay-ready");
       overlay.setAttribute("aria-hidden", "true");
     }, 720);
   }
@@ -1020,6 +1055,15 @@ async function setupIntroOverlay() {
   }
 
   window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
+}
+
+async function getIntroOverlayTextOnce() {
+  if (state.introOverlayText) {
+    return state.introOverlayText;
+  }
+
+  state.introOverlayText = await pickIntroMessage();
+  return state.introOverlayText;
 }
 
 async function pickIntroMessage() {
