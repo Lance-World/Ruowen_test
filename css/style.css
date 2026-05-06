@@ -1624,6 +1624,16 @@ button { user-select: none; }
 ========================================================= */
 
 @media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px;
+    right: auto;
+    top: 8px;
+    width: calc(100vw - 16px) !important;
+    min-height: 136px;
+    border-radius: 20px;
+    box-sizing: border-box;
+  }
+
   .app-shell:not(.sidebar-collapsed) .sidebar-title {
     width: min(46vw, 196px);
   }
@@ -1750,12 +1760,13 @@ button { user-select: none; }
   }
 }
 
+
 /* =========================================================
-   Mobile-only final layout + Bottom Sheet behavior
+   Mobile-only layout and Bottom Sheet interaction fix
    Scope: <=768px only. Desktop / Web remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  /* 1. Graph control buttons: always fixed to viewport top-left. */
+  /* 1. Keep graph control buttons fixed at the top-left in every sidebar state. */
   .floating-actions,
   .app-shell:not(.sidebar-collapsed) .floating-actions,
   .app-shell.sidebar-collapsed .floating-actions {
@@ -1805,7 +1816,7 @@ button { user-select: none; }
     -webkit-backdrop-filter: blur(12px) !important;
   }
 
-  /* 2. Sidebar: exactly 8px gutters on all mobile widths. */
+  /* 2. Mobile sidebar open width: exactly viewport minus 8px gutters. */
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 8px !important;
     right: auto !important;
@@ -1819,7 +1830,7 @@ button { user-select: none; }
     overflow-x: hidden !important;
   }
 
-  /* 3. Old info-panel drag bars are disabled only on mobile. */
+  /* 3. Disable old mobile info-panel drag bars only on mobile. */
   #mainResizeHandle,
   #innerResizeHandle,
   #infoRightResizeHandle,
@@ -1841,7 +1852,7 @@ button { user-select: none; }
     pointer-events: none !important;
   }
 
-  /* 4. Info Panel becomes a single-scroll-container Bottom Sheet. */
+  /* 4. Mobile Info Panel becomes a bottom sheet. */
   .info-panel,
   #infoPanel,
   #infoPanel:not(.info-compact),
@@ -1868,7 +1879,7 @@ button { user-select: none; }
     overflow-x: hidden !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    touch-action: auto;
     will-change: transform;
     transform: translateY(calc(100% + 16px));
     opacity: 0;
