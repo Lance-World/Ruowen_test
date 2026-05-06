@@ -1,0 +1,90 @@
+# =========================
+# Secrets / credentials
+# =========================
+.env
+.env.*
+*.env
+secrets.*
+credentials.*
+token.*
+tokens.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# YouTube / browser cookies
+cookies.txt
+*.cookies
+youtube_cookies.txt
+yt_cookies.txt
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Node / frontend
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+
+# =========================
+# OS / editor
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# =========================
+# Logs / temp
+# =========================
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# =========================
+# Large media / raw data
+# =========================
+*.mp3
+*.mp4
+*.wav
+*.m4a
+*.webm
+*.mov
+manual_audio/
+tmp_audio/
+tmp_subtitles/
+
+# =========================
+# Local backup / temporary files
+# =========================
+*.bak
+*.backup
+*.tmp
