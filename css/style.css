@@ -2196,3 +2196,79 @@ body.about-modal-lock {
     line-height: 1.7;
   }
 }
+
+
+/* =========================================================
+   Toolbar Icon Buttons - RotateCcw / Expand / XCircle / About
+   Keeps existing JS ids; no graph or sidebar behavior changes.
+========================================================= */
+.toolbar-icon-btn,
+.floating-actions .toolbar-icon-btn {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  line-height: 1 !important;
+}
+
+.toolbar-icon-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.toolbar-icon-btn.about-btn,
+.floating-actions .toolbar-icon-btn.about-btn {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  color: #245b62 !important;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255,255,255,0.92), rgba(215,238,233,0.82) 45%, rgba(92,166,168,0.88)) !important;
+  border: 1px solid rgba(255,255,255,0.62) !important;
+  box-shadow:
+    0 10px 24px rgba(23, 60, 67, 0.14),
+    inset 0 1px 0 rgba(255,255,255,0.82) !important;
+}
+
+.toolbar-icon-btn:focus-visible {
+  outline: 3px solid rgba(92, 166, 168, 0.34);
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .floating-actions .toolbar-icon-btn,
+  .app-shell:not(.sidebar-collapsed) .floating-actions .toolbar-icon-btn,
+  .app-shell.sidebar-collapsed .floating-actions .toolbar-icon-btn {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+  }
+
+  .floating-actions .toolbar-icon-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .floating-actions .toolbar-icon-btn.about-btn {
+    width: 42px !important;
+    min-width: 42px !important;
+    font-size: 18px !important;
+  }
+}

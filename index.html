@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=mobile_about_b_20260506_01" />
+  <link rel="stylesheet" href="./css/style.css?v=toolbar_icons_20260506_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -74,11 +74,53 @@
       <section id="workspace" class="workspace">
         <section class="graph-section">
           <div class="graph-card">
-            <div class="floating-actions">
-              <button type="button" id="resetViewBtn">重置視角</button>
-              <button type="button" id="expandAllBtn">顯示全部</button>
-              <button type="button" id="clearSelectionBtn">清除選取</button>
-              <button type="button" id="aboutBtn" class="about-btn" title="關於本站" aria-label="關於本站">ⓘ</button>
+            <div class="floating-actions" aria-label="圖譜工具列">
+              <button
+                type="button"
+                id="resetViewBtn"
+                class="toolbar-icon-btn"
+                title="重置視角"
+                aria-label="重置視角"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M3 12a9 9 0 1 0 3-6.7" />
+                  <path d="M3 3v6h6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="expandAllBtn"
+                class="toolbar-icon-btn"
+                title="顯示全部"
+                aria-label="顯示全部"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M15 3h6v6" />
+                  <path d="M21 3l-7 7" />
+                  <path d="M9 21H3v-6" />
+                  <path d="M3 21l7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="clearSelectionBtn"
+                class="toolbar-icon-btn"
+                title="清除選取"
+                aria-label="清除選取"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M15 9l-6 6" />
+                  <path d="M9 9l6 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="aboutBtn"
+                class="toolbar-icon-btn about-btn"
+                title="關於本站"
+                aria-label="關於本站"
+              >ⓘ</button>
             </div>
 
             <svg id="graphSvg"></svg>
@@ -172,6 +214,6 @@
     </section>
   </div>
 
-  <script src="./app.js?v=mobile_about_b_20260506_01"></script>
+  <script src="./app.js?v=toolbar_icons_20260506_01"></script>
 </body>
 </html>
