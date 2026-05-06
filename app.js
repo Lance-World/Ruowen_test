@@ -22,6 +22,8 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
+  mobileSheetOpen: false,
+  mobileSheetExpanded: false,
 };
 
 const nodeColors = {
@@ -49,10 +51,12 @@ async function init() {
     restoreSearchPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
+    syncMobileOnlyResizeHandles();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
+    setupMobileBottomSheetGestures();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -427,11 +431,6 @@ function setupInfoCompactToggle() {
     }
   });
 
-  if (isMobileLayout()) {
-    closeMobileBottomSheet(false);
-    return;
-  }
-
   applyInfoCompactState();
 }
 
@@ -479,6 +478,7 @@ function applyInfoCompactState() {
   );
   infoPanel.style.transform = "";
   infoPanel.style.height = "";
+
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
 
   if (workspace) {
@@ -506,6 +506,7 @@ function openMobileBottomSheet(targetVh = 60) {
 
   requestAnimationFrame(() => {
     setMobileBottomSheetHeight(targetVh);
+    infoPanel.scrollTop = 0;
   });
 }
 
@@ -543,37 +544,18 @@ function setMobileBottomSheetHeight(targetVh = 60) {
   infoPanel.style.height = `${nextHeight}px`;
 }
 
-function getMobileSheetScrollContainer(eventTarget, infoPanel) {
-  let current = eventTarget instanceof Element ? eventTarget : null;
-
-  while (current && current !== infoPanel) {
-    const style = window.getComputedStyle(current);
-    const canScrollY = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1;
-
-    if (canScrollY) {
-      return current;
-    }
-
-    current = current.parentElement;
-  }
-
-  return infoPanel;
-}
-
 function setupMobileBottomSheetGestures() {
   const infoPanel = document.getElementById("infoPanel");
   if (!infoPanel) return;
 
   let startY = 0;
   let startTime = 0;
-  let dragging = false;
   let tracking = false;
-  let activeScrollContainer = infoPanel;
+  let dragging = false;
 
   function resetDragState() {
     tracking = false;
     dragging = false;
-    activeScrollContainer = infoPanel;
     infoPanel.classList.remove("bottom-sheet-dragging");
   }
 
@@ -583,9 +565,8 @@ function setupMobileBottomSheetGestures() {
     const touch = event.touches[0];
     startY = touch.clientY;
     startTime = performance.now();
-    dragging = false;
     tracking = true;
-    activeScrollContainer = getMobileSheetScrollContainer(event.target, infoPanel);
+    dragging = false;
   }, { passive: true });
 
   infoPanel.addEventListener("touchmove", (event) => {
@@ -594,24 +575,22 @@ function setupMobileBottomSheetGestures() {
     const touch = event.touches[0];
     const deltaY = touch.clientY - startY;
     const isPullingDown = deltaY > 0;
-    const scrollTop = activeScrollContainer ? activeScrollContainer.scrollTop : infoPanel.scrollTop;
+    const scrollTop = infoPanel.scrollTop;
 
-    // 內容仍可向上回捲時，維持原生 scroll，不接管成 sheet drag。
-    if (!dragging && (!isPullingDown || scrollTop > 0)) {
-      return;
-    }
-
+    // 方案 A：整個 Bottom Sheet 是單一 scroll container。
+    // 內容尚未回到頂部，或使用者不是往下拉時，保持原生 scroll。
+    if (!dragging && (!isPullingDown || scrollTop > 0)) return;
     if (!dragging && deltaY < 6) return;
 
     dragging = true;
     infoPanel.classList.add("bottom-sheet-dragging");
     infoPanel.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
 
-    // 只有在 scrollTop = 0 且向下拉時才阻止原生 scroll，避免兩者互搶。
+    // 只有 scrollTop = 0 且向下拉時才接管手勢，避免與內容 scroll 互搶。
     event.preventDefault();
   }, { passive: false });
 
-  function finishTouchDrag(event) {
+  function finishDrag(event) {
     if (!tracking) return;
 
     const touch = event.changedTouches && event.changedTouches[0];
@@ -637,7 +616,7 @@ function setupMobileBottomSheetGestures() {
     setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
   }
 
-  infoPanel.addEventListener("touchend", finishTouchDrag, { passive: true });
+  infoPanel.addEventListener("touchend", finishDrag, { passive: true });
   infoPanel.addEventListener("touchcancel", () => {
     resetDragState();
     infoPanel.style.transform = "";

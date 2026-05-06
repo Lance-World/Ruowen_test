@@ -1471,50 +1471,6 @@ button { user-select: none; }
     line-height: 1.25;
   }
 
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 170px;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-width: none;
-    overflow-x: auto;
-    border-radius: 18px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions {
-    position: fixed;
-    top: 12px;
-    left: 10px;
-    right: 68px;
-    width: auto;
-    max-width: none;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 8px;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    overflow-x: auto;
-    scrollbar-width: none;
-    z-index: 60;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar { display: none; }
-
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 44px;
-    padding: 0 15px;
-    font-size: 13px;
-    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
   .floating-note {
     top: 64px;
     right: 8px;
@@ -1668,15 +1624,6 @@ button { user-select: none; }
 ========================================================= */
 
 @media (max-width: 480px) {
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 6px;
-    right: 6px;
-    top: 6px;
-    width: auto !important;
-    min-height: 136px;
-    border-radius: 20px;
-  }
-
   .app-shell:not(.sidebar-collapsed) .sidebar-title {
     width: min(46vw, 196px);
   }
@@ -1689,24 +1636,6 @@ button { user-select: none; }
     top: 10px;
     width: 46px;
     height: 46px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions {
-    left: 8px;
-    right: 64px;
-    gap: 7px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 42px;
-    padding: 0 13px;
-    font-size: 12px;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: 164px;
-    left: 6px;
-    right: 6px;
   }
 
   .filter-chip-row .side-item,
@@ -1804,17 +1733,6 @@ button { user-select: none; }
     height: 42px;
   }
 
-  .app-shell.sidebar-collapsed .floating-actions {
-    left: 6px;
-    right: 56px;
-    gap: 6px;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 38px;
-    padding: 0 10px;
-    font-size: 11px;
-  }
 }
 
 /* =========================================================
@@ -1832,13 +1750,12 @@ button { user-select: none; }
   }
 }
 
-
 /* =========================================================
-   Mobile-only layout and Bottom Sheet interaction fix
+   Mobile-only final layout + Bottom Sheet behavior
    Scope: <=768px only. Desktop / Web remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  /* 1. Keep graph control buttons fixed at the top-left in every sidebar state. */
+  /* 1. Graph control buttons: always fixed to viewport top-left. */
   .floating-actions,
   .app-shell:not(.sidebar-collapsed) .floating-actions,
   .app-shell.sidebar-collapsed .floating-actions {
@@ -1888,7 +1805,7 @@ button { user-select: none; }
     -webkit-backdrop-filter: blur(12px) !important;
   }
 
-  /* 2. Mobile sidebar open width: exactly viewport minus 8px gutters. */
+  /* 2. Sidebar: exactly 8px gutters on all mobile widths. */
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 8px !important;
     right: auto !important;
@@ -1902,7 +1819,7 @@ button { user-select: none; }
     overflow-x: hidden !important;
   }
 
-  /* 3. Disable old mobile info-panel drag bars only on mobile. */
+  /* 3. Old info-panel drag bars are disabled only on mobile. */
   #mainResizeHandle,
   #innerResizeHandle,
   #infoRightResizeHandle,
@@ -1924,7 +1841,7 @@ button { user-select: none; }
     pointer-events: none !important;
   }
 
-  /* 4. Mobile Info Panel becomes a bottom sheet. */
+  /* 4. Info Panel becomes a single-scroll-container Bottom Sheet. */
   .info-panel,
   #infoPanel,
   #infoPanel:not(.info-compact),
@@ -1951,7 +1868,7 @@ button { user-select: none; }
     overflow-x: hidden !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch;
-    touch-action: auto;
+    touch-action: pan-y;
     will-change: transform;
     transform: translateY(calc(100% + 16px));
     opacity: 0;
