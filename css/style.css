@@ -1084,26 +1084,9 @@ button { user-select: none; }
   transition: opacity 0.72s ease, visibility 0.72s ease;
 }
 
-/* Overlay 預設保持隱藏；JS 寫入最終文字後才加 intro-overlay-ready 顯示，避免載入瞬間跳字。 */
-.intro-overlay {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.intro-overlay.intro-overlay-ready {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-.intro-overlay.intro-overlay-leaving {
-  opacity: 0;
-  pointer-events: none;
-}
+.intro-overlay.intro-overlay-leaving { opacity: 0; }
 
 .intro-overlay.intro-overlay-hidden {
-  opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
@@ -1849,147 +1832,106 @@ button { user-select: none; }
   }
 }
 
+
 /* =========================================================
-   Mobile-only Bottom Sheet drag fix
-   Scope: <=768px only. Desktop / Web layout remains untouched.
+   Mobile-only layout fix: fixed action buttons + sidebar width
+   Scope: <=768px only. Desktop / Web remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  #mainResizeHandle,
-  #innerResizeHandle,
-  #infoRightResizeHandle,
-  .resize-handle.horizontal,
-  .resize-handle.vertical,
-  .resize-handle.info-right {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    max-width: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    pointer-events: none !important;
-  }
-
-  #infoPanel,
-  #infoPanel:not(.info-compact),
-  #infoPanel.info-compact {
-    position: fixed !important;
-    left: 0 !important;
-    right: auto !important;
-    bottom: 0 !important;
+  html,
+  body,
+  .app-shell {
     width: 100% !important;
-    min-width: 100% !important;
     max-width: 100% !important;
-    min-height: 200px !important;
-    height: auto;
-    max-height: 80vh !important;
-    z-index: 120 !important;
-    display: block !important;
-    padding: 24px 14px calc(16px + env(safe-area-inset-bottom)) !important;
-    border-radius: 16px 16px 0 0 !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    border: 1px solid rgba(199, 220, 222, 0.72) !important;
-    border-bottom: 0 !important;
-    box-shadow: 0 -14px 40px rgba(23, 60, 67, 0.16) !important;
-    overflow-y: auto !important;
     overflow-x: hidden !important;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-    will-change: transform;
-    transform: translate3d(0, calc(100% + 16px), 0);
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
-      opacity 0.22s ease,
-      height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  #infoPanel::before {
-    content: "";
-    position: sticky;
-    top: -16px;
-    left: 50%;
-    display: block;
-    width: 42px;
-    height: 4px;
-    margin: -12px auto 12px;
-    border-radius: 999px;
-    background: rgba(83, 113, 118, 0.34);
-    pointer-events: none;
+  /* Sidebar open: exact viewport width minus 16px, no extra right gap. */
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 16px) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
   }
 
-  #infoPanel.bottom-sheet-open {
-    transform: translate3d(0, 0, 0) !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel.bottom-sheet-hidden {
-    transform: translate3d(0, calc(100% + 16px), 0) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  #infoPanel.bottom-sheet-expanded {
-    max-height: 90vh !important;
-  }
-
-  #infoPanel.bottom-sheet-dragging {
-    transition: none !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    cursor: grabbing;
-  }
-
-  #infoPanel .info-header-row {
-    display: grid !important;
-    grid-template-columns: auto 1fr !important;
-    grid-template-areas:
-      "icon title"
-      "icon tags"
-      "icon related" !important;
-    align-items: start !important;
-    column-gap: 10px !important;
-    row-gap: 8px !important;
-    width: 100% !important;
-    margin: 0 0 10px !important;
-  }
-
-  #infoPanel .info-icon {
-    grid-area: icon;
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    font-size: 16px !important;
-  }
-
-  #infoPanel .info-title-block { grid-area: title; min-width: 0; }
-  #infoPanel .info-tags { grid-area: tags; }
-  #infoPanel .info-related-row { grid-area: related; }
-
-  #infoPanel .info-split-area {
+  /* Keep the three graph action buttons fixed. Do not let sidebar open state push them. */
+  .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: fixed !important;
+    top: 64px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px) !important;
+    margin: 0 !important;
+    transform: none !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
     gap: 8px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    z-index: 65 !important;
   }
 
-  #infoPanel .info-box,
-  #infoPanel .sentence-box,
-  #infoPanel .source-box {
-    min-height: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
+  .floating-actions::-webkit-scrollbar,
+  .app-shell:not(.sidebar-collapsed) .floating-actions::-webkit-scrollbar,
+  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .floating-actions button,
+  .app-shell:not(.sidebar-collapsed) .floating-actions button,
+  .app-shell.sidebar-collapsed .floating-actions button {
+    flex: 0 0 auto !important;
+    height: 42px !important;
+    min-width: max-content !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px !important;
+    right: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions {
+    top: 62px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions {
+    top: 58px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: calc(100vw - 16px) !important;
   }
 }

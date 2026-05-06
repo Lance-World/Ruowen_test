@@ -22,10 +22,6 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
-  mobileSheetOpen: false,
-  mobileSheetExpanded: false,
-  introOverlayInitialized: false,
-  introOverlayText: "",
 };
 
 const nodeColors = {
@@ -57,7 +53,6 @@ async function init() {
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
-    setupMobileBottomSheetGestures();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -391,20 +386,12 @@ function showAll() {
 
   updateGraph();
   renderDefaultInfo();
-
-  if (isMobileLayout()) {
-    closeMobileBottomSheet(false);
-  }
 }
 
 function clearSelection() {
   state.selectedNodeId = null;
   highlightSelection();
   renderDefaultInfo();
-
-  if (isMobileLayout()) {
-    closeMobileBottomSheet();
-  }
 }
 
 /* ================================
@@ -422,55 +409,20 @@ function setupInfoCompactToggle() {
 
   infoIcon.addEventListener("click", (event) => {
     event.stopPropagation();
-
-    // Mobile Bottom Sheet：圖案點擊可切換開啟 / 收合；Desktop 保留原本 compact 收合。
-    if (isMobileLayout()) {
-      if (state.mobileSheetOpen) {
-        closeMobileBottomSheet();
-      } else {
-        openMobileBottomSheet(60);
-      }
-      return;
-    }
-
     toggleInfoCompact();
   });
 
   infoIcon.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-
-      if (isMobileLayout()) {
-        if (state.mobileSheetOpen) {
-          closeMobileBottomSheet();
-        } else {
-          openMobileBottomSheet(60);
-        }
-        return;
-      }
-
       toggleInfoCompact();
     }
   });
-
-  if (isMobileLayout()) {
-    closeMobileBottomSheet(false);
-    return;
-  }
 
   applyInfoCompactState();
 }
 
 function toggleInfoCompact() {
-  if (isMobileLayout()) {
-    if (state.mobileSheetOpen) {
-      closeMobileBottomSheet();
-    } else {
-      openMobileBottomSheet(60);
-    }
-    return;
-  }
-
   state.infoCompact = !state.infoCompact;
   applyInfoCompactState();
 }
@@ -481,30 +433,6 @@ function applyInfoCompactState() {
 
   if (!infoPanel) return;
 
-  if (isMobileLayout()) {
-    infoPanel.classList.remove("info-compact");
-    infoPanel.classList.toggle("bottom-sheet-open", Boolean(state.mobileSheetOpen));
-    infoPanel.classList.toggle("bottom-sheet-hidden", !state.mobileSheetOpen);
-    infoPanel.classList.toggle("bottom-sheet-expanded", Boolean(state.mobileSheetExpanded));
-
-    if (workspace) {
-      workspace.classList.remove("info-compact-workspace");
-    }
-
-    requestAnimationFrame(() => {
-      resizeGraphAfterPanelChange();
-    });
-    return;
-  }
-
-  infoPanel.classList.remove(
-    "bottom-sheet-open",
-    "bottom-sheet-hidden",
-    "bottom-sheet-expanded",
-    "bottom-sheet-dragging"
-  );
-  infoPanel.style.transform = "";
-  infoPanel.style.height = "";
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
 
   if (workspace) {
@@ -514,192 +442,6 @@ function applyInfoCompactState() {
   requestAnimationFrame(() => {
     resizeGraphAfterPanelChange();
   });
-}
-
-function openMobileBottomSheet(targetVh = 60) {
-  if (!isMobileLayout()) return;
-
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  state.mobileSheetOpen = true;
-  state.mobileSheetExpanded = targetVh >= 88;
-  state.infoCompact = false;
-
-  infoPanel.classList.remove("bottom-sheet-dragging");
-  infoPanel.style.transform = "";
-  applyInfoCompactState();
-
-  requestAnimationFrame(() => {
-    setMobileBottomSheetHeight(targetVh);
-    infoPanel.scrollTop = 0;
-  });
-}
-
-function closeMobileBottomSheet(animate = true) {
-  if (!isMobileLayout()) return;
-
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  state.mobileSheetOpen = false;
-  state.mobileSheetExpanded = false;
-  state.infoCompact = true;
-
-  infoPanel.classList.remove("bottom-sheet-dragging", "bottom-sheet-expanded");
-  infoPanel.style.transform = "";
-  infoPanel.style.height = "";
-
-  if (!animate) {
-    infoPanel.classList.add("bottom-sheet-hidden");
-  }
-
-  applyInfoCompactState();
-}
-
-function setMobileBottomSheetHeight(targetVh = 60) {
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel || !isMobileLayout()) return;
-
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
-  const minHeight = 200;
-  const maxHeight = viewportHeight * (targetVh / 100);
-  const naturalHeight = Math.ceil(infoPanel.scrollHeight || minHeight);
-  const nextHeight = clamp(naturalHeight, minHeight, maxHeight);
-
-  infoPanel.style.height = `${nextHeight}px`;
-}
-
-function findMobileSheetScrollContainer(eventTarget, infoPanel) {
-  let element = eventTarget instanceof Element ? eventTarget : null;
-
-  while (element && element !== infoPanel && element !== document.body) {
-    const style = window.getComputedStyle(element);
-    const canScrollY = /(auto|scroll)/.test(style.overflowY);
-
-    if (canScrollY && element.scrollHeight > element.clientHeight + 1) {
-      return element;
-    }
-
-    element = element.parentElement;
-  }
-
-  return infoPanel;
-}
-
-function setupMobileBottomSheetGestures() {
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  let startY = 0;
-  let lastY = 0;
-  let startTime = 0;
-  let dragging = false;
-  let tracking = false;
-  let scrollContainer = null;
-  let startScrollTop = 0;
-  let startExpanded = false;
-
-  function resetGesture() {
-    tracking = false;
-    dragging = false;
-    scrollContainer = null;
-    startScrollTop = 0;
-    startExpanded = false;
-    infoPanel.classList.remove("bottom-sheet-dragging");
-  }
-
-  function onTouchStart(event) {
-    if (!isMobileLayout() || !state.mobileSheetOpen) return;
-    if (!event.touches || event.touches.length !== 1) return;
-
-    const touch = event.touches[0];
-    startY = touch.clientY;
-    lastY = touch.clientY;
-    startTime = performance.now();
-    dragging = false;
-    tracking = true;
-    startExpanded = Boolean(state.mobileSheetExpanded);
-    scrollContainer = findMobileSheetScrollContainer(event.target, infoPanel);
-    startScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-  }
-
-  function onTouchMove(event) {
-    if (!tracking || !isMobileLayout() || !state.mobileSheetOpen) return;
-    if (!event.touches || event.touches.length !== 1) return;
-
-    const touch = event.touches[0];
-    const deltaY = touch.clientY - startY;
-    const frameDeltaY = touch.clientY - lastY;
-    lastY = touch.clientY;
-
-    const currentScrollTop = scrollContainer ? scrollContainer.scrollTop : infoPanel.scrollTop;
-    const isPullingDown = deltaY > 0 && frameDeltaY >= 0;
-    const canStartSheetDrag = currentScrollTop <= 0 && startScrollTop <= 0 && isPullingDown;
-
-    // 內容還有 scrollTop 時，讓內容正常捲動，不搶事件。
-    if (!dragging && !canStartSheetDrag) {
-      return;
-    }
-
-    // 到頂後向下拉，才正式接管手勢並拖動整個 sheet。
-    if (!dragging) {
-      if (deltaY < 8) return;
-      dragging = true;
-      infoPanel.classList.add("bottom-sheet-dragging");
-    }
-
-    event.preventDefault();
-
-    if (deltaY > 0) {
-      infoPanel.style.transform = `translate3d(0, ${deltaY}px, 0)`;
-    }
-  }
-
-  function onTouchEnd(event) {
-    if (!tracking) return;
-
-    const changedTouch = event.changedTouches && event.changedTouches[0];
-    const endY = changedTouch ? changedTouch.clientY : lastY;
-    const deltaY = endY - startY;
-    const elapsed = Math.max(1, performance.now() - startTime);
-    const velocity = deltaY / elapsed;
-
-    if (!dragging) {
-      resetGesture();
-      return;
-    }
-
-    infoPanel.classList.remove("bottom-sheet-dragging");
-
-    if (deltaY > 80 || velocity > 0.55) {
-      resetGesture();
-      closeMobileBottomSheet();
-      return;
-    }
-
-    // 未達關閉門檻，回彈到原本開啟位置。
-    infoPanel.style.transform = "";
-    state.mobileSheetExpanded = startExpanded;
-    applyInfoCompactState();
-    setMobileBottomSheetHeight(startExpanded ? 90 : 60);
-    resetGesture();
-  }
-
-  function onTouchCancel() {
-    if (!tracking) return;
-
-    infoPanel.style.transform = "";
-    state.mobileSheetExpanded = startExpanded;
-    applyInfoCompactState();
-    setMobileBottomSheetHeight(startExpanded ? 90 : 60);
-    resetGesture();
-  }
-
-  infoPanel.addEventListener("touchstart", onTouchStart, { passive: true });
-  infoPanel.addEventListener("touchmove", onTouchMove, { passive: false });
-  infoPanel.addEventListener("touchend", onTouchEnd, { passive: true });
-  infoPanel.addEventListener("touchcancel", onTouchCancel, { passive: true });
 }
 
 function getRandomTitleNumber() {
@@ -1013,22 +755,10 @@ async function setupIntroOverlay() {
   const overlay = document.getElementById("introOverlay");
   const textEl = document.getElementById("introMessageText");
 
-  if (!overlay || !textEl || state.introOverlayInitialized) return;
+  if (!overlay || !textEl) return;
 
-  state.introOverlayInitialized = true;
-
-  // 避免 HTML 預設文字在 JS 決定 overlayText 前短暫露出。
-  overlay.classList.remove("intro-overlay-ready", "intro-overlay-leaving");
-  overlay.classList.add("intro-overlay-hidden");
-  overlay.setAttribute("aria-hidden", "true");
-  textEl.textContent = "";
-
-  const message = await getIntroOverlayTextOnce();
+  const message = await pickIntroMessage();
   textEl.textContent = message;
-
-  overlay.classList.remove("intro-overlay-hidden");
-  overlay.classList.add("intro-overlay-ready");
-  overlay.setAttribute("aria-hidden", "false");
 
   let closed = false;
 
@@ -1039,7 +769,6 @@ async function setupIntroOverlay() {
 
     window.setTimeout(() => {
       overlay.classList.add("intro-overlay-hidden");
-      overlay.classList.remove("intro-overlay-ready");
       overlay.setAttribute("aria-hidden", "true");
     }, 720);
   }
@@ -1055,15 +784,6 @@ async function setupIntroOverlay() {
   }
 
   window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
-}
-
-async function getIntroOverlayTextOnce() {
-  if (state.introOverlayText) {
-    return state.introOverlayText;
-  }
-
-  state.introOverlayText = await pickIntroMessage();
-  return state.introOverlayText;
 }
 
 async function pickIntroMessage() {
@@ -1550,7 +1270,8 @@ function selectNode(nodeId) {
 
     // JS-7C：手機點節點後自動展開資訊欄，桌機維持目前狀態。
     if (isMobileLayout()) {
-      openMobileBottomSheet(60);
+      state.infoCompact = false;
+      applyInfoCompactState();
     }
   }
 }
@@ -1953,20 +1674,5 @@ function dragEnded(event, node) {
 
 window.addEventListener("resize", () => {
   updateFloatingLayoutVars();
-
-  if (isMobileLayout()) {
-    if (state.mobileSheetOpen) {
-      setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
-    } else {
-      closeMobileBottomSheet(false);
-    }
-  } else {
-    const infoPanel = document.getElementById("infoPanel");
-    if (infoPanel) {
-      infoPanel.style.transform = "";
-      infoPanel.style.height = "";
-    }
-  }
-
   resizeGraphAfterPanelChange();
 });
