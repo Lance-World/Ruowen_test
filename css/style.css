@@ -1767,56 +1767,6 @@ button { user-select: none; }
    Scope: <=768px only. Desktop / Web remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  /* 1. Keep graph control buttons fixed at the top-left in every sidebar state. */
-  .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions {
-    position: fixed !important;
-    top: 8px !important;
-    left: 8px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: auto !important;
-    max-width: calc(100vw - 76px) !important;
-    z-index: 160 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-    padding: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    scrollbar-width: none;
-    transform: none !important;
-  }
-
-  .floating-actions::-webkit-scrollbar,
-  .app-shell:not(.sidebar-collapsed) .floating-actions::-webkit-scrollbar,
-  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  .floating-actions button,
-  .app-shell:not(.sidebar-collapsed) .floating-actions button,
-  .app-shell.sidebar-collapsed .floating-actions button {
-    flex: 0 0 auto !important;
-    height: 42px !important;
-    min-width: max-content !important;
-    padding: 0 13px !important;
-    border-radius: 999px !important;
-    font-size: 12px !important;
-    line-height: 42px !important;
-    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-  }
-
   /* 2. Mobile sidebar open width: exactly viewport minus 8px gutters. */
   .app-shell:not(.sidebar-collapsed) .sidebar {
     left: 8px !important;
@@ -2113,68 +2063,6 @@ body.about-modal-lock {
 }
 
 @media (max-width: 768px) {
-  .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions {
-    position: fixed !important;
-    left: 8px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: auto !important;
-    z-index: 160 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-    padding: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    scrollbar-width: none;
-    transform: none !important;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions {
-    top: 8px !important;
-    max-width: calc(100vw - 76px) !important;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: var(--mobile-toolbar-top, 8px) !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px !important;
-    right: auto !important;
-    top: 8px !important;
-    width: calc(100vw - 16px) !important;
-    max-width: calc(100vw - 16px) !important;
-    box-sizing: border-box !important;
-  }
-
-  .floating-actions button,
-  .app-shell:not(.sidebar-collapsed) .floating-actions button,
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 42px !important;
-    min-width: max-content !important;
-    padding: 0 13px !important;
-    font-size: 12px !important;
-    line-height: 42px !important;
-  }
-
-  .floating-actions .about-btn {
-    min-width: 42px !important;
-    width: 42px !important;
-    padding: 0 !important;
-    font-size: 16px !important;
-  }
-
   .about-modal {
     padding: 18px;
   }
@@ -2197,11 +2085,37 @@ body.about-modal-lock {
   }
 }
 
-
 /* =========================================================
-   Toolbar Icon Buttons - RotateCcw / Expand / XCircle / About
-   Keeps existing JS ids; no graph or sidebar behavior changes.
+   FINAL CONSOLIDATED OVERRIDES
+   - Sidebar typography all screens
+   - Mobile sidebar labels / chips
+   - Mobile toolbar strategy B
+   - Toolbar icon buttons
 ========================================================= */
+
+/* All screens: make sidebar typography slightly larger. */
+.sidebar {
+  font-size: 15px;
+}
+
+.sidebar-label {
+  font-size: 13px;
+}
+
+.filter-chip-row .side-item,
+.filter-chip-row .filter-chip {
+  font-size: 14px;
+}
+
+.category-chip {
+  font-size: 13px;
+}
+
+.category-toggle-btn {
+  font-size: 15px;
+}
+
+/* Toolbar icon buttons: keep existing JS ids; only visual changes. */
 .toolbar-icon-btn,
 .floating-actions .toolbar-icon-btn {
   width: 42px !important;
@@ -2250,6 +2164,68 @@ body.about-modal-lock {
 }
 
 @media (max-width: 768px) {
+  /* Hide duplicated section labels on mobile only. */
+  .filter-section .sidebar-label,
+  .sidebar-category-section .sidebar-label {
+    display: none !important;
+  }
+
+  /* Mobile toolbar strategy B: collapsed = viewport top; expanded = below sidebar. */
+  .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: fixed !important;
+    left: 8px !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    z-index: 160 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    scrollbar-width: none;
+    transform: none !important;
+  }
+
+  .floating-actions::-webkit-scrollbar,
+  .app-shell:not(.sidebar-collapsed) .floating-actions::-webkit-scrollbar,
+  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    top: 8px !important;
+    max-width: calc(100vw - 76px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: var(--mobile-toolbar-top, 8px) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .floating-actions button,
+  .app-shell:not(.sidebar-collapsed) .floating-actions button,
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 42px !important;
+    min-width: max-content !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+    line-height: 42px !important;
+    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
   .floating-actions .toolbar-icon-btn,
   .app-shell:not(.sidebar-collapsed) .floating-actions .toolbar-icon-btn,
   .app-shell.sidebar-collapsed .floating-actions .toolbar-icon-btn {
@@ -2271,10 +2247,45 @@ body.about-modal-lock {
     min-width: 42px !important;
     font-size: 18px !important;
   }
-   @media (max-width: 768px) {
-  .filter-section .sidebar-label,
-  .sidebar-category-section .sidebar-label {
-    display: none !important;
+
+  /* Mobile sidebar: keep 8px gutters and make pill controls more compact. */
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px !important;
+    right: auto !important;
+    top: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    box-sizing: border-box !important;
   }
 
+  .filter-chip-row {
+    gap: 5px !important;
+  }
+
+  .filter-chip-row .side-item,
+  .filter-chip-row .filter-chip {
+    height: 34px !important;
+    min-height: 34px !important;
+    line-height: 34px !important;
+    font-size: 13px !important;
+    padding: 0 6px !important;
+  }
+
+  .category-toggle-btn {
+    height: 40px !important;
+    min-height: 40px !important;
+    line-height: 40px !important;
+    margin: 8px 0 0 !important;
+    font-size: 14px !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
+    margin-top: 8px !important;
+  }
+
+  .category-chip {
+    min-height: 36px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+  }
 }
