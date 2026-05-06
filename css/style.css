@@ -2271,4 +2271,10 @@ body.about-modal-lock {
     min-width: 42px !important;
     font-size: 18px !important;
   }
+   @media (max-width: 768px) {
+  .filter-section .sidebar-label,
+  .sidebar-category-section .sidebar-label {
+    display: none !important;
+  }
+
 }
