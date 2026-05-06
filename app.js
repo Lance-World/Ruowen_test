@@ -24,6 +24,7 @@ const state = {
   lastMobileTapNodeId: null,
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
+  aboutModalOpen: false,
 };
 
 const nodeColors = {
@@ -52,11 +53,13 @@ async function init() {
     restorePanelPreferences();
     updateFloatingLayoutVars();
     syncMobileOnlyResizeHandles();
+    updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
     setupMobileBottomSheetGestures();
+    setupAboutModal();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -154,9 +157,11 @@ function toggleSidebar() {
   }
 
   updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
 
   setTimeout(() => {
     updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 320);
 }
@@ -185,8 +190,10 @@ function toggleSearchPanel() {
   }
 
   updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
 
   setTimeout(() => {
+    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 120);
 }
@@ -331,6 +338,8 @@ function setupControls() {
       sidebar.classList.toggle("categories-open");
       const isOpen = sidebar.classList.contains("categories-open");
       categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      updateMobileToolbarPosition();
+      setTimeout(updateMobileToolbarPosition, 220);
     });
   }
 
@@ -650,6 +659,56 @@ function setupMobileBottomSheetGestures() {
   }, { passive: true });
 }
 
+
+function setupAboutModal() {
+  const aboutBtn = document.getElementById("aboutBtn");
+  const modal = document.getElementById("aboutModal");
+  const closeBtn = document.getElementById("aboutCloseBtn");
+
+  if (!aboutBtn || !modal) return;
+
+  function openAboutModal() {
+    state.aboutModalOpen = true;
+    modal.classList.remove("hidden");
+    modal.classList.add("about-modal-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("about-modal-lock");
+
+    if (closeBtn) {
+      setTimeout(() => closeBtn.focus(), 0);
+    }
+  }
+
+  function closeAboutModal() {
+    state.aboutModalOpen = false;
+    modal.classList.remove("about-modal-open");
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("about-modal-lock");
+  }
+
+  aboutBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openAboutModal();
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeAboutModal);
+  }
+
+  modal.addEventListener("click", (event) => {
+    if (event.target && event.target.dataset && event.target.dataset.aboutClose === "true") {
+      closeAboutModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.aboutModalOpen) {
+      closeAboutModal();
+    }
+  });
+}
+
 function getRandomTitleNumber() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
@@ -929,6 +988,29 @@ function syncMobileOnlyResizeHandles() {
       handle.removeAttribute("aria-hidden");
     }
   });
+}
+
+
+function updateMobileToolbarPosition() {
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!appShell) return;
+
+  if (!isMobileLayout()) {
+    appShell.style.removeProperty("--mobile-toolbar-top");
+    return;
+  }
+
+  if (!sidebar || appShell.classList.contains("sidebar-collapsed")) {
+    appShell.style.setProperty("--mobile-toolbar-top", "8px");
+    return;
+  }
+
+  const rect = sidebar.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+  const nextTop = Math.min(Math.max(8, Math.ceil(rect.bottom + 8)), Math.max(8, viewportHeight - 58));
+  appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
 }
 
 function isMobileLayout() {
@@ -1901,6 +1983,7 @@ function dragEnded(event, node) {
 window.addEventListener("resize", () => {
   updateFloatingLayoutVars();
   syncMobileOnlyResizeHandles();
+  updateMobileToolbarPosition();
 
   if (isMobileLayout()) {
     if (state.mobileSheetOpen) {

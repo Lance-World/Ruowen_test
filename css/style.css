@@ -1471,6 +1471,7 @@ button { user-select: none; }
     line-height: 1.25;
   }
 
+
   .floating-note {
     top: 64px;
     right: 8px;
@@ -1625,13 +1626,12 @@ button { user-select: none; }
 
 @media (max-width: 480px) {
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px;
-    right: auto;
-    top: 8px;
-    width: calc(100vw - 16px) !important;
+    left: 6px;
+    right: 6px;
+    top: 6px;
+    width: auto !important;
     min-height: 136px;
     border-radius: 20px;
-    box-sizing: border-box;
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar-title {
@@ -1647,6 +1647,7 @@ button { user-select: none; }
     width: 46px;
     height: 46px;
   }
+
 
   .filter-chip-row .side-item,
   .filter-chip-row .filter-chip {
@@ -2009,5 +2010,189 @@ button { user-select: none; }
   #infoPanel .source-list {
     max-height: none !important;
     overflow: visible !important;
+  }
+}
+
+/* =========================================================
+   About Modal + Mobile Toolbar Strategy B
+   Final override. Desktop graph/sidebar/bottom-sheet core remains unchanged.
+========================================================= */
+.about-btn {
+  min-width: 40px !important;
+  padding: 0 13px !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  background: rgba(36, 91, 98, 0.78) !important;
+}
+
+.about-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.about-modal.hidden {
+  display: none !important;
+}
+
+.about-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 42, 47, 0.34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.about-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 48px));
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  border-radius: 24px;
+  padding: 24px 24px 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(199, 220, 222, 0.78);
+  box-shadow: 0 24px 72px rgba(23, 60, 67, 0.22);
+  color: var(--text-main);
+}
+
+.about-modal-card h2 {
+  margin: 0 0 14px;
+  color: var(--teal-deep);
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.about-modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.about-modal-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.about-modal-body .about-copyright {
+  margin-top: 4px;
+  color: var(--teal-deep);
+  font-weight: 700;
+}
+
+.about-close-btn {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: rgba(83, 113, 118, 0.12);
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.about-close-btn:hover {
+  background: rgba(92, 166, 168, 0.18);
+  color: var(--teal-deep);
+}
+
+body.about-modal-lock {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .floating-actions,
+  .app-shell:not(.sidebar-collapsed) .floating-actions,
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: fixed !important;
+    left: 8px !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    z-index: 160 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    scrollbar-width: none;
+    transform: none !important;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    top: 8px !important;
+    max-width: calc(100vw - 76px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: var(--mobile-toolbar-top, 8px) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    left: 8px !important;
+    right: auto !important;
+    top: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    box-sizing: border-box !important;
+  }
+
+  .floating-actions button,
+  .app-shell:not(.sidebar-collapsed) .floating-actions button,
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 42px !important;
+    min-width: max-content !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+    line-height: 42px !important;
+  }
+
+  .floating-actions .about-btn {
+    min-width: 42px !important;
+    width: 42px !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+  }
+
+  .about-modal {
+    padding: 18px;
+  }
+
+  .about-modal-card {
+    width: min(100%, calc(100vw - 32px));
+    max-height: min(82vh, 620px);
+    border-radius: 20px;
+    padding: 22px 18px 20px;
+  }
+
+  .about-modal-card h2 {
+    font-size: 20px;
+    padding-right: 34px;
+  }
+
+  .about-modal-body p {
+    font-size: 13px;
+    line-height: 1.7;
   }
 }

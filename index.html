@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=mobile_sheet_integrated_20260506_02" />
+  <link rel="stylesheet" href="./css/style.css?v=mobile_about_b_20260506_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -78,6 +78,7 @@
               <button type="button" id="resetViewBtn">重置視角</button>
               <button type="button" id="expandAllBtn">顯示全部</button>
               <button type="button" id="clearSelectionBtn">清除選取</button>
+              <button type="button" id="aboutBtn" class="about-btn" title="關於本站" aria-label="關於本站">ⓘ</button>
             </div>
 
             <svg id="graphSvg"></svg>
@@ -156,6 +157,21 @@
     </div>
   </div>
 
-  <script src="./app.js?v=mobile_sheet_integrated_20260506_02"></script>
+
+  <div id="aboutModal" class="about-modal hidden" aria-hidden="true">
+    <div class="about-modal-backdrop" data-about-close="true"></div>
+    <section class="about-modal-card" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
+      <button type="button" id="aboutCloseBtn" class="about-close-btn" aria-label="關閉關於本站視窗">×</button>
+      <h2 id="aboutModalTitle">關於本站</h2>
+      <div class="about-modal-body">
+        <p>本網站內容為個人學習筆記與知識整理，部分卡片會引用或標記外部影片、文章與筆記來源。</p>
+        <p>除個人心得、整理架構與補充說明外，原始內容之著作權歸原作者、節目或平台所有。</p>
+        <p>本站不提供完整逐字稿重製，僅保留短句、摘要、概念連結與來源時間戳，方便回溯學習。</p>
+        <p class="about-copyright">© Ruowen Knowledge Notes｜整理與心得：Lance<br />Sources credited in each card.</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="./app.js?v=mobile_about_b_20260506_01"></script>
 </body>
 </html>
