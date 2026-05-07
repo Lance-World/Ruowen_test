@@ -25,7 +25,10 @@ const state = {
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
   aboutModalOpen: false,
-  simulationStopTimer: null,
+  currentLayer: "main",
+  activeConceptId: null,
+  activeHashtag: null,
+  previousMainTransform: null,
 };
 
 const nodeColors = {
@@ -57,6 +60,9 @@ async function init() {
     updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
+    setupLayerToolbar();
+    setupHashtagInteractions();
+    setupMobileSidebarAutoCollapse();
     setupResizablePanels();
     setupInfoCompactToggle();
     setupMobileBottomSheetGestures();
@@ -229,7 +235,12 @@ function setupCategoryChips() {
 
     button.classList.add("active");
     state.selectedCategory = button.dataset.category || "all";
+    state.activeHashtag = null;
     updateGraph();
+
+    if (isMobileLayout()) {
+      collapseMobileSidebar();
+    }
   });
 }
 
@@ -1035,6 +1046,7 @@ function resizeGraphAfterPanelChange() {
 
   if (state.simulation) {
     state.simulation.force("center", d3.forceCenter(width / 2, height / 2));
+    state.simulation.alpha(0.18).restart();
   }
 }
 
@@ -1228,7 +1240,19 @@ function getFilteredData() {
   const searchInput = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(searchInput ? searchInput.value : "");
 
+  if (state.currentLayer === "detail") {
+    return getDetailLayerData(state.activeConceptId, keyword);
+  }
+
+  return getMainLayerData(keyword);
+}
+
+function getMainLayerData(keyword = "") {
+  const allowedTypes = new Set(["topic", "concept"]);
+  const matchedConceptIdsFromTermSearch = keyword ? getConceptIdsMatchingTermKeyword(keyword) : new Set();
+
   let nodes = state.allNodes.filter((node) => {
+    if (!allowedTypes.has(node.type)) return false;
     if (!state.visibleTypes.has(node.type)) return false;
 
     if (
@@ -1239,23 +1263,29 @@ function getFilteredData() {
     }
 
     if (keyword) {
-      return buildSearchHaystack(node).includes(keyword);
+      return buildSearchHaystack(node).includes(keyword) || matchedConceptIdsFromTermSearch.has(node.id);
     }
 
     return true;
   });
 
   const visibleIds = new Set(nodes.map((node) => node.id));
+  const edges = state.allEdges.filter((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
 
-  let edges = state.allEdges.filter((edge) => {
-    return visibleIds.has(edge.source) && visibleIds.has(edge.target);
+    const sourceNode = getNodeById(sourceId);
+    const targetNode = getNodeById(targetId);
+    if (!sourceNode || !targetNode) return false;
+
+    return allowedTypes.has(sourceNode.type) && allowedTypes.has(targetNode.type);
   });
 
   const connectedIds = new Set();
-
   edges.forEach((edge) => {
-    connectedIds.add(edge.source);
-    connectedIds.add(edge.target);
+    connectedIds.add(getEdgeSourceId(edge));
+    connectedIds.add(getEdgeTargetId(edge));
   });
 
   if (keyword) {
@@ -1269,6 +1299,108 @@ function getFilteredData() {
   });
 
   return { nodes, edges };
+}
+
+function getDetailLayerData(conceptId, keyword = "") {
+  const conceptNode = getNodeById(conceptId);
+  if (!conceptNode || conceptNode.type !== "concept") {
+    return { nodes: [], edges: [] };
+  }
+
+  const allowedIds = new Set([conceptId]);
+  const conceptTermEdges = [];
+
+  state.allEdges.forEach((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+    const sourceNode = getNodeById(sourceId);
+    const targetNode = getNodeById(targetId);
+    if (!sourceNode || !targetNode) return;
+
+    const isConceptTerm =
+      (sourceId === conceptId && targetNode.type === "term") ||
+      (targetId === conceptId && sourceNode.type === "term");
+
+    if (!isConceptTerm) return;
+
+    const termNode = sourceId === conceptId ? targetNode : sourceNode;
+    allowedIds.add(termNode.id);
+    conceptTermEdges.push(edge);
+  });
+
+  let nodes = state.allNodes.filter((node) => allowedIds.has(node.id));
+
+  if (keyword) {
+    const matchedIds = new Set(
+      nodes
+        .filter((node) => node.id === conceptId || buildSearchHaystack(node).includes(keyword))
+        .map((node) => node.id)
+    );
+    matchedIds.add(conceptId);
+    nodes = nodes.filter((node) => matchedIds.has(node.id));
+  }
+
+  const visibleIds = new Set(nodes.map((node) => node.id));
+
+  const termTermEdges = state.allEdges.filter((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
+    const sourceNode = getNodeById(sourceId);
+    const targetNode = getNodeById(targetId);
+    return sourceNode?.type === "term" && targetNode?.type === "term";
+  });
+
+  const edges = [...conceptTermEdges, ...termTermEdges].filter((edge) => {
+    return visibleIds.has(getEdgeSourceId(edge)) && visibleIds.has(getEdgeTargetId(edge));
+  });
+
+  return { nodes, edges };
+}
+
+function getNodeById(nodeId) {
+  return state.allNodes.find((node) => node.id === nodeId);
+}
+
+function getEdgeSourceId(edge) {
+  return typeof edge.source === "object" ? edge.source.id : edge.source;
+}
+
+function getEdgeTargetId(edge) {
+  return typeof edge.target === "object" ? edge.target.id : edge.target;
+}
+
+function getConceptIdsMatchingTermKeyword(keyword) {
+  const conceptIds = new Set();
+  if (!keyword) return conceptIds;
+
+  state.allNodes
+    .filter((node) => node.type === "term" && buildSearchHaystack(node).includes(keyword))
+    .forEach((termNode) => {
+      const parentId = getParentConceptIdForTerm(termNode.id);
+      if (parentId) conceptIds.add(parentId);
+    });
+
+  return conceptIds;
+}
+
+function getParentConceptIdForTerm(termId) {
+  for (const edge of state.allEdges) {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+    const sourceNode = getNodeById(sourceId);
+    const targetNode = getNodeById(targetId);
+    if (!sourceNode || !targetNode) continue;
+
+    if (sourceId === termId && targetNode.type === "concept") return targetId;
+    if (targetId === termId && sourceNode.type === "concept") return sourceId;
+  }
+
+  return null;
+}
+
+function getCurrentVisibleGraphData() {
+  return getFilteredData();
 }
 
 /* ================================
@@ -1336,6 +1468,8 @@ function renderGraph() {
 function updateGraph() {
   const { nodes, edges } = getFilteredData();
 
+  updateLayerToolbarState();
+
   const emptyState = document.getElementById("emptyState");
   if (emptyState) {
     emptyState.classList.toggle("hidden", nodes.length > 0);
@@ -1345,11 +1479,6 @@ function updateGraph() {
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
-  if (state.simulationStopTimer) {
-    window.clearTimeout(state.simulationStopTimer);
-    state.simulationStopTimer = null;
-  }
-
   if (state.simulation) {
     state.simulation.stop();
   }
@@ -1357,12 +1486,12 @@ function updateGraph() {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
   const preparedEdges = edges
-    .filter((edge) => nodeMap.has(edge.source) && nodeMap.has(edge.target))
+    .filter((edge) => nodeMap.has(getEdgeSourceId(edge)) && nodeMap.has(getEdgeTargetId(edge)))
     .map((edge) => ({ ...edge }));
 
   state.linkSelection
     .selectAll("line")
-    .data(preparedEdges, (edge) => edge.id)
+    .data(preparedEdges, (edge) => edge.id || `${getEdgeSourceId(edge)}__${getEdgeTargetId(edge)}__${edge.type || "edge"}`)
     .join(
       (enter) =>
         enter
@@ -1408,26 +1537,20 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
-
-          // JS-9B：手機點同一節點第二次才聚焦；桌機維持單擊選取。
-          if (isMobileLayout()) {
-            if (state.selectedNodeId === node.id && state.lastMobileTapNodeId === node.id) {
-              focusNode(node.id);
-            } else {
-              selectNode(node.id);
-              state.lastMobileTapNodeId = node.id;
-            }
-            return;
-          }
-
           selectNode(node.id);
+          pulseSelectedNode(node.id);
+          focusNode(node.id);
         });
 
         g.on("dblclick", (event, node) => {
           event.stopPropagation();
-          if (!isMobileLayout()) {
-            focusNode(node.id);
+
+          if (state.currentLayer === "main" && node.type === "concept") {
+            enterConceptDetailLayer(node.id);
+            return;
           }
+
+          focusNode(node.id);
         });
 
         return g;
@@ -1451,17 +1574,25 @@ function updateGraph() {
       (exit) => exit.remove()
     );
 
-  state.svg.on("click", () => {
-    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
-    if (!isMobileLayout()) {
-      clearSelection();
+  state.svg.on("click", (event) => {
+    if (!isBlankGraphEvent(event)) return;
+
+    if (isMobileLayout()) {
+      collapseMobileSidebar();
+      return;
     }
+
+    clearSelection();
+  });
+
+  state.svg.on("dblclick", (event) => {
+    if (!isBlankGraphEvent(event)) return;
+    event.preventDefault();
+    resetZoom();
   });
 
   state.simulation = d3
     .forceSimulation(nodes)
-    .alphaDecay(0.08)
-    .velocityDecay(0.45)
     .force(
       "link",
       d3
@@ -1472,9 +1603,11 @@ function updateGraph() {
     )
     .force("charge", d3.forceManyBody().strength((node) => getCharge(node)))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (isMobileLayout() ? 34 : 38)))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 34))
     .force("x", d3.forceX(width / 2).strength(0.035))
     .force("y", d3.forceY(height / 2).strength(0.035))
+    .alphaDecay(0.08)
+    .velocityDecay(0.45)
     .on("tick", () => {
       state.linkSelection
         .selectAll("line")
@@ -1486,11 +1619,8 @@ function updateGraph() {
       nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
     });
 
-  state.simulationStopTimer = window.setTimeout(() => {
-    if (state.simulation) {
-      state.simulation.stop();
-    }
-    state.simulationStopTimer = null;
+  setTimeout(() => {
+    if (state.simulation) state.simulation.stop();
   }, 2500);
 
   highlightSelection();
@@ -1528,23 +1658,21 @@ function formatCount(count) {
 
 function getNodeRadius(node) {
   const size = Number(node.size || 20);
-  const isMobile = isMobileLayout();
-  const adjustedSize = isMobile ? size : size * 1.08;
 
-  if (node.type === "topic") return Math.max(22, Math.min(isMobile ? 36 : 40, adjustedSize));
-  if (node.type === "concept") return Math.max(20, Math.min(isMobile ? 42 : 46, adjustedSize));
-  if (node.type === "term") return Math.max(12, Math.min(isMobile ? 27 : 30, adjustedSize));
-  if (node.type === "phrase") return Math.max(10, Math.min(isMobile ? 24 : 26, adjustedSize));
+  if (node.type === "topic") return Math.max(22, Math.min(36, size));
+  if (node.type === "concept") return Math.max(20, Math.min(42, size));
+  if (node.type === "term") return Math.max(12, Math.min(27, size));
+  if (node.type === "phrase") return Math.max(10, Math.min(24, size));
 
-  return isMobile ? 16 : 18;
+  return 16;
 }
 
 function getLabelSize(node) {
-  if (node.type === "topic") return 15;
-  if (node.type === "concept") return 15;
-  if (node.type === "term") return 13;
-  if (node.type === "phrase") return 12;
-  return 13;
+  if (node.type === "topic") return 13;
+  if (node.type === "concept") return 13;
+  if (node.type === "term") return 11;
+  if (node.type === "phrase") return 10;
+  return 11;
 }
 
 function getCharge(node) {
@@ -1580,11 +1708,10 @@ function selectNode(nodeId) {
   state.selectedNodeId = nodeId;
   highlightSelection();
 
-  const node = state.allNodes.find((item) => item.id === nodeId);
+  const node = getNodeById(nodeId);
   if (node) {
     renderInfoPanel(node);
 
-    // JS-7C：手機點節點後開啟 Bottom Sheet；桌機維持目前狀態。
     if (isMobileLayout()) {
       openMobileBottomSheet(60);
     }
@@ -1594,6 +1721,35 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
+  const directIds = getDirectNeighborIds(nodeId);
+  const nodeIds = new Set([nodeId, ...directIds]);
+  const visibleIds = new Set(state.nodeSelection.selectAll("g").data().map((node) => node.id));
+  const visibleNodeIds = Array.from(nodeIds).filter((id) => visibleIds.has(id));
+
+  if (visibleNodeIds.length <= 1) {
+    focusSingleNode(nodeId);
+    return;
+  }
+
+  focusNodeGroup(visibleNodeIds);
+}
+
+function getDirectNeighborIds(nodeId) {
+  const neighbors = new Set();
+  const visibleIds = new Set(state.nodeSelection.selectAll("g").data().map((node) => node.id));
+
+  state.linkSelection.selectAll("line").data().forEach((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+
+    if (sourceId === nodeId && visibleIds.has(targetId)) neighbors.add(targetId);
+    if (targetId === nodeId && visibleIds.has(sourceId)) neighbors.add(sourceId);
+  });
+
+  return neighbors;
+}
+
+function focusSingleNode(nodeId) {
   const visibleNode = state.nodeSelection
     .selectAll("g")
     .data()
@@ -1604,24 +1760,83 @@ function focusNode(nodeId) {
   const graphCard = document.querySelector(".graph-card");
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
+  const scale = isMobileLayout() ? 1.08 : 1.35;
+  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -height * 0.12 : 0;
 
   const transform = d3.zoomIdentity
-    .translate(width / 2, height / 2)
-    .scale(1.55)
+    .translate(width / 2, height / 2 + yOffset)
+    .scale(scale)
     .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
     .duration(650)
+    .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
+}
+
+function focusNodeGroup(nodeIds) {
+  const visibleNodes = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .filter((node) => nodeIds.includes(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y));
+
+  if (visibleNodes.length === 0) return;
+  if (visibleNodes.length === 1) {
+    focusSingleNode(visibleNodes[0].id);
+    return;
+  }
+
+  const graphCard = document.querySelector(".graph-card");
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+
+  const minX = d3.min(visibleNodes, (node) => node.x - getNodeRadius(node));
+  const maxX = d3.max(visibleNodes, (node) => node.x + getNodeRadius(node));
+  const minY = d3.min(visibleNodes, (node) => node.y - getNodeRadius(node));
+  const maxY = d3.max(visibleNodes, (node) => node.y + getNodeRadius(node));
+
+  const boxWidth = Math.max(1, maxX - minX);
+  const boxHeight = Math.max(1, maxY - minY);
+  const padding = isMobileLayout() ? 92 : 160;
+  const availableWidth = Math.max(1, width - padding);
+  const availableHeight = Math.max(1, height - padding - (isMobileLayout() && state.mobileSheetOpen ? height * 0.18 : 0));
+  const minScale = isMobileLayout() ? 0.42 : 0.36;
+  const maxScale = isMobileLayout() ? 1.45 : 1.9;
+  const scale = clamp(Math.min(availableWidth / boxWidth, availableHeight / boxHeight), minScale, maxScale);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -height * 0.10 : 0;
+
+  const transform = d3.zoomIdentity
+    .translate(width / 2, height / 2 + yOffset)
+    .scale(scale)
+    .translate(-centerX, -centerY);
+
+  state.svg
+    .transition()
+    .duration(700)
+    .ease(d3.easeCubicInOut)
+    .call(state.zoomBehavior.transform, transform);
+}
+
+function pulseSelectedNode(nodeId) {
+  if (!state.nodeSelection) return;
+
+  const selection = state.nodeSelection
+    .selectAll("g")
+    .filter((node) => node.id === nodeId);
+
+  selection.classed("tap-feedback", true);
+  window.setTimeout(() => selection.classed("tap-feedback", false), 220);
 }
 
 function getConnectedNodeIds(selectedId) {
   const connected = new Set([selectedId]);
 
   state.allEdges.forEach((edge) => {
-    const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
-    const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
 
     if (sourceId === selectedId) connected.add(targetId);
     if (targetId === selectedId) connected.add(sourceId);
@@ -1632,42 +1847,41 @@ function getConnectedNodeIds(selectedId) {
 
 function highlightSelection() {
   const selectedId = state.selectedNodeId;
-
-  if (!selectedId) {
-    state.nodeSelection
-      .selectAll("g")
-      .classed("selected", false)
-      .classed("related", false)
-      .classed("dimmed", false);
-
-    state.linkSelection
-      .selectAll("line")
-      .classed("highlight", false)
-      .classed("dimmed", false);
-
-    return;
-  }
-
-  const connectedIds = getConnectedNodeIds(selectedId);
+  const activeHashtag = state.activeHashtag;
+  const connectedIds = selectedId ? getConnectedNodeIds(selectedId) : new Set();
 
   state.nodeSelection
     .selectAll("g")
     .classed("selected", (node) => node.id === selectedId)
-    .classed("related", (node) => connectedIds.has(node.id))
-    .classed("dimmed", (node) => !connectedIds.has(node.id));
+    .classed("related", (node) => Boolean(selectedId) && connectedIds.has(node.id))
+    .classed("dimmed", (node) => {
+      if (activeHashtag) return !nodeHasHashtag(node, activeHashtag);
+      if (!selectedId) return false;
+      return !connectedIds.has(node.id);
+    })
+    .classed("hashtag-active", (node) => Boolean(activeHashtag) && nodeHasHashtag(node, activeHashtag));
 
   state.linkSelection
     .selectAll("line")
     .classed("highlight", (edge) => {
-      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
-      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+
+      if (activeHashtag) {
+        return nodeHasHashtag(getNodeById(sourceId), activeHashtag) || nodeHasHashtag(getNodeById(targetId), activeHashtag);
+      }
 
       return sourceId === selectedId || targetId === selectedId;
     })
     .classed("dimmed", (edge) => {
-      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
-      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
 
+      if (activeHashtag) {
+        return !nodeHasHashtag(getNodeById(sourceId), activeHashtag) && !nodeHasHashtag(getNodeById(targetId), activeHashtag);
+      }
+
+      if (!selectedId) return false;
       return sourceId !== selectedId && targetId !== selectedId;
     });
 }
@@ -1695,12 +1909,13 @@ function renderInfoPanel(node) {
   ].filter(Boolean);
 
   document.getElementById("infoTags").innerHTML = tags
-    .map((tag) => `<span>${escapeHtml(tag)}</span>`)
+    .map((tag) => renderClickableHashtag(tag))
     .join("");
 
   renderRelatedTerms(node);
   renderRelatedPhrases(node);
   renderSources(node);
+  renderInfoTagActiveState();
 }
 
 function renderRelatedTerms(node) {
@@ -1863,6 +2078,203 @@ function getNeighborNodes(nodeId) {
   return state.allNodes.filter((node) => neighborIds.has(node.id));
 }
 
+function getNodeHashtags(node) {
+  if (!node) return [];
+
+  const rawValues = [
+    node.tags,
+    node.hashtags,
+    node.level1_category,
+    node.level2_concept,
+  ];
+
+  const tags = [];
+  rawValues.forEach((value) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => tags.push(String(item).trim()));
+      return;
+    }
+
+    String(value)
+      .split(/[、,#，|/]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => tags.push(item));
+  });
+
+  return Array.from(new Set(tags.filter(Boolean)));
+}
+
+function nodeHasHashtag(node, hashtag) {
+  if (!node || !hashtag) return false;
+  return getNodeHashtags(node).some((tag) => normalizeHashtag(tag) === normalizeHashtag(hashtag));
+}
+
+function normalizeHashtag(tag) {
+  return String(tag || "").replace(/^#/, "").trim().toLowerCase();
+}
+
+function renderClickableHashtag(tag) {
+  const safeTag = escapeHtml(tag);
+  const activeClass = state.activeHashtag && normalizeHashtag(state.activeHashtag) === normalizeHashtag(tag) ? " active" : "";
+  return `<button type="button" class="hashtag-chip clickable${activeClass}" data-hashtag="${escapeAttribute(tag)}">${safeTag}</button>`;
+}
+
+function setupHashtagInteractions() {
+  document.addEventListener("click", (event) => {
+    const chip = event.target.closest(".hashtag-chip[data-hashtag]");
+    if (!chip) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    toggleHashtag(chip.dataset.hashtag || "");
+  });
+}
+
+function toggleHashtag(hashtag) {
+  if (!hashtag) return;
+
+  if (state.activeHashtag && normalizeHashtag(state.activeHashtag) === normalizeHashtag(hashtag)) {
+    state.activeHashtag = null;
+  } else {
+    state.activeHashtag = hashtag;
+  }
+
+  renderInfoTagActiveState();
+  highlightSelection();
+}
+
+function renderInfoTagActiveState() {
+  document.querySelectorAll(".hashtag-chip[data-hashtag]").forEach((chip) => {
+    chip.classList.toggle(
+      "active",
+      Boolean(state.activeHashtag) && normalizeHashtag(state.activeHashtag) === normalizeHashtag(chip.dataset.hashtag)
+    );
+  });
+}
+
+function enterConceptDetailLayer(conceptId) {
+  const node = getNodeById(conceptId);
+  if (!node || node.type !== "concept") return;
+
+  if (state.svg) {
+    state.previousMainTransform = d3.zoomTransform(state.svg.node());
+  }
+
+  state.currentLayer = "detail";
+  state.activeConceptId = conceptId;
+  state.activeHashtag = null;
+  state.selectedNodeId = conceptId;
+
+  updateGraph();
+  renderInfoPanel(node);
+  updateLayerToolbarState();
+
+  requestAnimationFrame(() => {
+    resetZoom();
+    setTimeout(() => focusNode(conceptId), 260);
+  });
+}
+
+function returnToMainLayer() {
+  state.currentLayer = "main";
+  state.activeConceptId = null;
+  state.activeHashtag = null;
+  updateGraph();
+  updateLayerToolbarState();
+
+  if (state.previousMainTransform && state.svg && state.zoomBehavior) {
+    state.svg
+      .transition()
+      .duration(650)
+      .ease(d3.easeCubicInOut)
+      .call(state.zoomBehavior.transform, state.previousMainTransform);
+  } else {
+    resetZoom();
+  }
+}
+
+function setupLayerToolbar() {
+  const toolbar = document.querySelector(".floating-actions");
+  if (!toolbar || document.getElementById("backToMainBtn")) return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.id = "backToMainBtn";
+  button.className = "back-main-btn hidden";
+  button.textContent = "返回主網絡";
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    returnToMainLayer();
+  });
+
+  toolbar.prepend(button);
+  updateLayerToolbarState();
+}
+
+function updateLayerToolbarState() {
+  const button = document.getElementById("backToMainBtn");
+  if (!button) return;
+
+  const isDetail = state.currentLayer === "detail";
+  button.classList.toggle("hidden", !isDetail);
+  button.disabled = !isDetail;
+}
+
+function collapseMobileSidebar() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+}
+
+function setupMobileSidebarAutoCollapse() {
+  document.addEventListener("pointerdown", (event) => {
+    if (!isMobileLayout()) return;
+
+    const appShell = document.querySelector(".app-shell");
+    if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+    const target = event.target;
+    if (!target) return;
+
+    if (
+      target.closest("#sidebar") ||
+      target.closest(".floating-actions") ||
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("#infoPanel") ||
+      target.closest(".about-modal") ||
+      target.closest(".node")
+    ) {
+      return;
+    }
+
+    collapseMobileSidebar();
+  }, { capture: true });
+}
+
+function isEventFromNode(event) {
+  return Boolean(event && event.target && event.target.closest && event.target.closest(".node"));
+}
+
+function isBlankGraphEvent(event) {
+  if (!event || !event.target) return false;
+  if (isEventFromNode(event)) return false;
+  if (event.target.closest && event.target.closest("#sidebar, .floating-actions, #infoPanel, .about-modal")) return false;
+  return event.target === state.svg.node() || event.target.id === "graphSvg";
+}
+
 /* ================================
    Search / Zoom
 ================================ */
@@ -1875,19 +2287,26 @@ function searchNode() {
 
   if (!keyword) return;
 
-  const matchedNodes = state.allNodes.filter((node) => {
-    return buildSearchHaystack(node).includes(keyword);
-  });
+  const visibleData = getFilteredData();
+  let matchedNodes = visibleData.nodes.filter((node) => buildSearchHaystack(node).includes(keyword));
+  let matchedNode = matchedNodes[0];
 
-  if (matchedNodes.length === 0) {
+  if (!matchedNode && state.currentLayer === "main") {
+    const termMatch = state.allNodes.find((node) => node.type === "term" && buildSearchHaystack(node).includes(keyword));
+    const parentConceptId = termMatch ? getParentConceptIdForTerm(termMatch.id) : null;
+    if (parentConceptId) {
+      matchedNode = getNodeById(parentConceptId);
+      matchedNodes = [matchedNode];
+    }
+  }
+
+  if (!matchedNode) {
     appendSearchFeedback(0);
     return;
   }
 
-  const matchedNode = matchedNodes[0];
   setVisibleTypes(["topic", "concept", "term", "phrase"]);
 
-  // JS-6C：手機搜尋後自動收合 Sidebar，桌機維持原狀。
   if (isMobileLayout()) {
     const appShell = document.querySelector(".app-shell");
     const panel = document.getElementById("sidebarSearchPanel");
@@ -1895,6 +2314,7 @@ function searchNode() {
     if (panel) panel.classList.add("search-collapsed");
     localStorage.setItem("searchPanelOpen", "0");
     updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
   }
 
   setTimeout(() => {
@@ -1920,9 +2340,20 @@ function appendSearchFeedback(count) {
 function resetZoom() {
   if (!state.svg || !state.zoomBehavior) return;
 
+  const visibleNodes = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .filter((node) => Number.isFinite(node.x) && Number.isFinite(node.y));
+
+  if (visibleNodes.length >= 2) {
+    focusNodeGroup(visibleNodes.map((node) => node.id));
+    return;
+  }
+
   state.svg
     .transition()
     .duration(550)
+    .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, d3.zoomIdentity);
 }
 
