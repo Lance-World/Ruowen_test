@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=viewmode_local_20260507_01" />
+  <link rel="stylesheet" href="./css/style.css?v=viewmode_toolbar_20260507_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -75,6 +75,21 @@
         <section class="graph-section">
           <div class="graph-card">
             <div class="floating-actions" aria-label="圖譜工具列">
+              <button
+                type="button"
+                id="backToMainBtn"
+                class="toolbar-icon-btn back-main-btn hidden"
+                title="返回主網絡"
+                aria-label="返回主網絡"
+                aria-hidden="true"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M3 10.5 12 3l9 7.5" />
+                  <path d="M5 10v10h14V10" />
+                  <path d="M9 20v-6h6v6" />
+                </svg>
+              </button>
               <button
                 type="button"
                 id="resetViewBtn"
@@ -214,6 +229,6 @@
     </section>
   </div>
 
-  <script src="./app.js?v=viewmode_local_20260507_01"></script>
+  <script src="./app.js?v=viewmode_toolbar_20260507_01"></script>
 </body>
 </html>

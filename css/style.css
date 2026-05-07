@@ -2421,15 +2421,11 @@ body.about-modal-lock {
 }
 
 /* =========================================================
-   SAME-LAYER LOCAL VIEW MODE OVERRIDES
-   - Home-only back button
-   - Term search highlight
-   - Keep toolbar icon sizes identical
+   ViewMode Toolbar: Home button icon-only, same size as toolbar icons
 ========================================================= */
 .back-main-btn,
 .floating-actions .back-main-btn,
-.app-shell:not(.sidebar-collapsed) .floating-actions .back-main-btn,
-.app-shell.sidebar-collapsed .floating-actions .back-main-btn {
+.floating-actions .toolbar-icon-btn.back-main-btn {
   width: 42px !important;
   min-width: 42px !important;
   height: 42px !important;
@@ -2458,11 +2454,15 @@ body.about-modal-lock {
   display: none !important;
 }
 
-.node.term-search-hit circle {
-  stroke: #d8a36f !important;
-  stroke-width: 4.2px !important;
-}
-
-.node.term-search-hit text {
-  fill: var(--teal-deep) !important;
+@media (max-width: 768px) {
+  .back-main-btn,
+  .floating-actions .back-main-btn,
+  .floating-actions .toolbar-icon-btn.back-main-btn {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+  }
 }
