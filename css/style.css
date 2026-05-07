@@ -2302,7 +2302,7 @@ body.about-modal-lock {
 .back-main-btn {
   min-width: max-content;
   height: 40px;
-  padding: 0 15px;
+  padding: 0 15px 0 13px;
   border: 0;
   border-radius: 999px;
   cursor: pointer;
@@ -2310,6 +2310,27 @@ body.about-modal-lock {
   color: #ffffff;
   font-size: 13px;
   font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.back-main-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.back-main-text {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .hashtag-chip {
@@ -2350,8 +2371,14 @@ body.about-modal-lock {
 @media (max-width: 768px) {
   .back-main-btn {
     height: 42px;
-    padding: 0 13px;
+    padding: 0 13px 0 12px;
     font-size: 12px;
+    gap: 6px;
+  }
+
+  .back-main-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .sidebar.categories-open .sidebar-category-section,

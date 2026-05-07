@@ -1989,7 +1989,10 @@ function renderRelatedPhrases(node) {
   }
 
   box.innerHTML = uniqueTexts
-    .map((text) => `<div class="quote-item">「${escapeHtml(text)}」</div>`)
+    .map((text) => {
+      const displayText = truncateText(text, 160);
+      return `<div class="quote-item" data-full-text="${escapeAttribute(text)}">「${escapeHtml(displayText)}」</div>`;
+    })
     .join("");
 }
 
@@ -2023,7 +2026,7 @@ function renderSources(node) {
         <div class="source-item">
           <div class="source-title">${escapeHtml(title)}</div>
           <div>${linkHtml}</div>
-          <div class="source-text">${escapeHtml(shortenText(text, 100))}</div>
+          <div class="source-text" data-full-text="${escapeAttribute(text)}">${escapeHtml(truncateText(text, 160))}</div>
         </div>
       `;
     })
@@ -2203,7 +2206,16 @@ function setupLayerToolbar() {
   button.type = "button";
   button.id = "backToMainBtn";
   button.className = "back-main-btn hidden";
-  button.textContent = "返回主網絡";
+  button.title = "返回主網絡";
+  button.setAttribute("aria-label", "返回主網絡");
+  button.innerHTML = `
+    <svg class="back-main-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 11.5L12 4l9 7.5" />
+      <path d="M5.5 10.5V20h13v-9.5" />
+      <path d="M9.5 20v-5.5h5V20" />
+    </svg>
+    <span class="back-main-text">返回主網絡</span>
+  `;
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     returnToMainLayer();
@@ -2370,6 +2382,20 @@ function typeLabel(type) {
   };
 
   return map[type] || type;
+}
+
+function truncateText(text, maxTokens = 160) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+
+  const tokenPattern = /[\p{Script=Han}]|[A-Za-z0-9]+(?:[-_'][A-Za-z0-9]+)*|[^\s]/gu;
+  const matches = Array.from(value.matchAll(tokenPattern));
+
+  if (matches.length <= maxTokens) return value;
+
+  const lastToken = matches[maxTokens - 1];
+  const endIndex = lastToken.index + lastToken[0].length;
+  return value.slice(0, endIndex).trimEnd() + "…";
 }
 
 function shortenText(text, maxLen) {
