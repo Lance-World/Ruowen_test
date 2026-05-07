@@ -22,6 +22,9 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
+  mobileSheetOpen: false,
+  mobileSheetExpanded: false,
+  aboutModalOpen: false,
 };
 
 const nodeColors = {
@@ -49,10 +52,15 @@ async function init() {
     restoreSearchPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
+    syncMobileOnlyResizeHandles();
+    updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
+    setupMobileBottomSheetGestures();
+    setupAboutModal();
+    setupMobileSidebarAutoCollapse();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -150,9 +158,11 @@ function toggleSidebar() {
   }
 
   updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
 
   setTimeout(() => {
     updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 320);
 }
@@ -181,69 +191,12 @@ function toggleSearchPanel() {
   }
 
   updateFloatingLayoutVars();
-
-  setTimeout(() => {
-    resizeGraphAfterPanelChange();
-  }, 120);
-}
-
-function collapseMobileSidebar() {
-  if (!isMobileLayout()) return;
-
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-
-  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-  appShell.classList.add("sidebar-collapsed");
-  localStorage.setItem("sidebarCollapsed", "1");
-
-  if (sidebar) sidebar.classList.remove("categories-open");
-  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-
-  updateFloatingLayoutVars();
   updateMobileToolbarPosition();
 
   setTimeout(() => {
-    updateFloatingLayoutVars();
     updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
-  }, 260);
-}
-
-function setupMobileSidebarAutoCollapse() {
-  document.addEventListener("click", (event) => {
-    if (!isMobileLayout()) return;
-
-    const appShell = document.querySelector(".app-shell");
-    const sidebar = document.getElementById("sidebar");
-
-    if (!appShell || !sidebar || appShell.classList.contains("sidebar-collapsed")) return;
-
-    const target = event.target;
-    const blockedSelectors = [
-      "#sidebar",
-      ".floating-actions",
-      "button",
-      "input",
-      "select",
-      "textarea",
-      "#infoPanel",
-      ".info-panel",
-      ".about-modal",
-      ".intro-overlay",
-      ".node"
-    ];
-
-    const shouldIgnore = blockedSelectors.some((selector) => {
-      return target instanceof Element && target.closest(selector);
-    });
-
-    if (shouldIgnore) return;
-
-    collapseMobileSidebar();
-  });
+  }, 120);
 }
 
 function setupCategoryChips() {
@@ -390,6 +343,8 @@ function setupControls() {
       sidebar.classList.toggle("categories-open");
       const isOpen = sidebar.classList.contains("categories-open");
       categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      updateMobileToolbarPosition();
+      setTimeout(updateMobileToolbarPosition, 220);
     });
   }
 
@@ -449,12 +404,20 @@ function showAll() {
 
   updateGraph();
   renderDefaultInfo();
+
+  if (isMobileLayout()) {
+    closeMobileBottomSheet();
+  }
 }
 
 function clearSelection() {
   state.selectedNodeId = null;
   highlightSelection();
   renderDefaultInfo();
+
+  if (isMobileLayout()) {
+    closeMobileBottomSheet();
+  }
 }
 
 /* ================================
@@ -482,10 +445,24 @@ function setupInfoCompactToggle() {
     }
   });
 
+  if (isMobileLayout()) {
+    closeMobileBottomSheet(false);
+    return;
+  }
+
   applyInfoCompactState();
 }
 
 function toggleInfoCompact() {
+  if (isMobileLayout()) {
+    if (state.mobileSheetOpen) {
+      closeMobileBottomSheet();
+    } else {
+      openMobileBottomSheet(60);
+    }
+    return;
+  }
+
   state.infoCompact = !state.infoCompact;
   applyInfoCompactState();
 }
@@ -496,6 +473,30 @@ function applyInfoCompactState() {
 
   if (!infoPanel) return;
 
+  if (isMobileLayout()) {
+    infoPanel.classList.toggle("bottom-sheet-open", Boolean(state.mobileSheetOpen));
+    infoPanel.classList.toggle("bottom-sheet-hidden", !state.mobileSheetOpen);
+    infoPanel.classList.toggle("bottom-sheet-expanded", Boolean(state.mobileSheetExpanded));
+    infoPanel.classList.toggle("info-compact", !state.mobileSheetOpen);
+
+    if (workspace) {
+      workspace.classList.toggle("info-compact-workspace", !state.mobileSheetOpen);
+    }
+
+    requestAnimationFrame(() => {
+      resizeGraphAfterPanelChange();
+    });
+    return;
+  }
+
+  infoPanel.classList.remove(
+    "bottom-sheet-open",
+    "bottom-sheet-hidden",
+    "bottom-sheet-expanded",
+    "bottom-sheet-dragging"
+  );
+  infoPanel.style.transform = "";
+  infoPanel.style.height = "";
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
 
   if (workspace) {
@@ -504,6 +505,212 @@ function applyInfoCompactState() {
 
   requestAnimationFrame(() => {
     resizeGraphAfterPanelChange();
+  });
+}
+
+function openMobileBottomSheet(targetVh = 60) {
+  if (!isMobileLayout()) return;
+
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  state.mobileSheetOpen = true;
+  state.mobileSheetExpanded = targetVh >= 88;
+  state.infoCompact = false;
+
+  infoPanel.classList.remove("bottom-sheet-dragging");
+  infoPanel.style.transform = "";
+  applyInfoCompactState();
+
+  requestAnimationFrame(() => {
+    setMobileBottomSheetHeight(targetVh);
+  });
+}
+
+function closeMobileBottomSheet(animate = true) {
+  if (!isMobileLayout()) return;
+
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  state.mobileSheetOpen = false;
+  state.mobileSheetExpanded = false;
+  state.infoCompact = true;
+
+  infoPanel.classList.remove("bottom-sheet-dragging", "bottom-sheet-expanded");
+  infoPanel.style.transform = "";
+  infoPanel.style.height = "";
+
+  if (!animate) {
+    infoPanel.classList.add("bottom-sheet-hidden");
+  }
+
+  applyInfoCompactState();
+}
+
+function setMobileBottomSheetHeight(targetVh = 60) {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel || !isMobileLayout() || !state.mobileSheetOpen) return;
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+  const minHeight = 200;
+  const maxHeight = viewportHeight * (targetVh / 100);
+  const naturalHeight = Math.ceil(infoPanel.scrollHeight || minHeight);
+  const nextHeight = clamp(naturalHeight, minHeight, maxHeight);
+
+  infoPanel.style.height = `${nextHeight}px`;
+}
+
+function getMobileSheetScrollContainer(eventTarget, infoPanel) {
+  let current = eventTarget instanceof Element ? eventTarget : null;
+
+  while (current && current !== infoPanel) {
+    const style = window.getComputedStyle(current);
+    const canScrollY = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1;
+
+    if (canScrollY) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return infoPanel;
+}
+
+function setupMobileBottomSheetGestures() {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  let startY = 0;
+  let startTime = 0;
+  let dragging = false;
+  let tracking = false;
+  let activeScrollContainer = infoPanel;
+
+  function resetDragState() {
+    tracking = false;
+    dragging = false;
+    activeScrollContainer = infoPanel;
+    infoPanel.classList.remove("bottom-sheet-dragging");
+  }
+
+  infoPanel.addEventListener("touchstart", (event) => {
+    if (!isMobileLayout() || !state.mobileSheetOpen || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    startY = touch.clientY;
+    startTime = performance.now();
+    dragging = false;
+    tracking = true;
+    activeScrollContainer = getMobileSheetScrollContainer(event.target, infoPanel);
+  }, { passive: true });
+
+  infoPanel.addEventListener("touchmove", (event) => {
+    if (!tracking || !isMobileLayout() || !state.mobileSheetOpen || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    const deltaY = touch.clientY - startY;
+    const isPullingDown = deltaY > 0;
+    const scrollTop = activeScrollContainer ? activeScrollContainer.scrollTop : infoPanel.scrollTop;
+
+    // 內容仍可向上回捲時，維持原生 scroll，不接管成 sheet drag。
+    if (!dragging && (!isPullingDown || scrollTop > 0)) {
+      return;
+    }
+
+    if (!dragging && deltaY < 6) return;
+
+    dragging = true;
+    infoPanel.classList.add("bottom-sheet-dragging");
+    infoPanel.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
+
+    // 只有在 scrollTop = 0 且向下拉時才阻止原生 scroll，避免兩者互搶。
+    event.preventDefault();
+  }, { passive: false });
+
+  function finishTouchDrag(event) {
+    if (!tracking) return;
+
+    const touch = event.changedTouches && event.changedTouches[0];
+    const endY = touch ? touch.clientY : startY;
+    const deltaY = endY - startY;
+    const elapsed = Math.max(1, performance.now() - startTime);
+    const velocity = deltaY / elapsed;
+
+    if (!dragging) {
+      resetDragState();
+      return;
+    }
+
+    resetDragState();
+
+    if (deltaY > 80 || velocity > 0.62) {
+      closeMobileBottomSheet();
+      return;
+    }
+
+    infoPanel.style.transform = "";
+    applyInfoCompactState();
+    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+  }
+
+  infoPanel.addEventListener("touchend", finishTouchDrag, { passive: true });
+  infoPanel.addEventListener("touchcancel", () => {
+    resetDragState();
+    infoPanel.style.transform = "";
+    applyInfoCompactState();
+    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+  }, { passive: true });
+}
+
+
+function setupAboutModal() {
+  const aboutBtn = document.getElementById("aboutBtn");
+  const modal = document.getElementById("aboutModal");
+  const closeBtn = document.getElementById("aboutCloseBtn");
+
+  if (!aboutBtn || !modal) return;
+
+  function openAboutModal() {
+    state.aboutModalOpen = true;
+    modal.classList.remove("hidden");
+    modal.classList.add("about-modal-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("about-modal-lock");
+
+    if (closeBtn) {
+      setTimeout(() => closeBtn.focus(), 0);
+    }
+  }
+
+  function closeAboutModal() {
+    state.aboutModalOpen = false;
+    modal.classList.remove("about-modal-open");
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("about-modal-lock");
+  }
+
+  aboutBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openAboutModal();
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeAboutModal);
+  }
+
+  modal.addEventListener("click", (event) => {
+    if (event.target && event.target.dataset && event.target.dataset.aboutClose === "true") {
+      closeAboutModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.aboutModalOpen) {
+      closeAboutModal();
+    }
   });
 }
 
@@ -569,6 +776,7 @@ function setupMainVerticalResize() {
 
   enablePointerResize(handle, {
     cursor: "row-resize",
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
@@ -600,6 +808,7 @@ function setupInnerHorizontalResize() {
 
   enablePointerResize(handle, {
     cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = splitArea.getBoundingClientRect();
 
@@ -627,6 +836,7 @@ function setupInfoRightResize() {
 
   enablePointerResize(handle, {
     cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
+    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = workspace.getBoundingClientRect();
 
@@ -657,6 +867,8 @@ function enablePointerResize(handle, options) {
   let isDragging = false;
 
   handle.addEventListener("pointerdown", (event) => {
+    if (typeof options.canStart === "function" && !options.canStart(event)) return;
+
     isDragging = true;
 
     try {
@@ -765,6 +977,107 @@ function updateFloatingLayoutVars() {
   appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
   appShell.style.setProperty("--info-left", `${infoLeft}px`);
   appShell.style.setProperty("--info-right", "20px");
+}
+
+function syncMobileOnlyResizeHandles() {
+  const shouldHide = isMobileLayout();
+  ["mainResizeHandle", "innerResizeHandle", "infoRightResizeHandle"].forEach((id) => {
+    const handle = document.getElementById(id);
+    if (!handle) return;
+
+    if (shouldHide) {
+      handle.setAttribute("hidden", "");
+      handle.setAttribute("aria-hidden", "true");
+    } else {
+      handle.removeAttribute("hidden");
+      handle.removeAttribute("aria-hidden");
+    }
+  });
+}
+
+
+function updateMobileToolbarPosition() {
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!appShell) return;
+
+  if (!isMobileLayout()) {
+    appShell.style.removeProperty("--mobile-toolbar-top");
+    return;
+  }
+
+  if (!sidebar || appShell.classList.contains("sidebar-collapsed")) {
+    appShell.style.setProperty("--mobile-toolbar-top", "8px");
+    return;
+  }
+
+  const rect = sidebar.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+  const nextTop = Math.min(Math.max(8, Math.ceil(rect.bottom + 8)), Math.max(8, viewportHeight - 58));
+  appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
+}
+
+function collapseMobileSidebar() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+  resizeGraphAfterPanelChange();
+}
+
+function setupMobileSidebarAutoCollapse() {
+  document.addEventListener("pointerdown", (event) => {
+    if (!isMobileLayout()) return;
+
+    const appShell = document.querySelector(".app-shell");
+    if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (
+      target.closest("#sidebar") ||
+      target.closest(".floating-actions") ||
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("select") ||
+      target.closest("textarea") ||
+      target.closest("#infoPanel") ||
+      target.closest(".about-modal") ||
+      target.closest(".node")
+    ) {
+      return;
+    }
+
+    collapseMobileSidebar();
+  }, { capture: true });
+}
+
+function isEventFromNode(event) {
+  const target = event && event.target;
+  return target instanceof Element && Boolean(target.closest(".node"));
+}
+
+function isBlankGraphEvent(event) {
+  const target = event && event.target;
+  if (!(target instanceof Element)) return false;
+  if (target.closest(".node")) return false;
+  if (target.closest("#sidebar, .floating-actions, #infoPanel, .about-modal")) return false;
+
+  return Boolean(target.closest("#graphSvg") || target.id === "graphSvg");
 }
 
 function isMobileLayout() {
@@ -1158,10 +1471,12 @@ function updateGraph() {
         g.on("click", (event, node) => {
           event.stopPropagation();
           focusNode(node.id);
+          state.lastMobileTapNodeId = node.id;
         });
 
-        g.on("dblclick", (event) => {
+        g.on("dblclick", (event, node) => {
           event.stopPropagation();
+          focusNode(node.id);
         });
 
         return g;
@@ -1186,17 +1501,22 @@ function updateGraph() {
     );
 
   state.svg.on("click", (event) => {
-    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
-    if (!isMobileLayout() && event.target === state.svg.node()) {
-      clearSelection();
+    if (isEventFromNode(event)) return;
+
+    if (isMobileLayout()) {
+      collapseMobileSidebar();
+      return;
     }
+
+    clearSelection();
   });
 
-  state.svg.on("dblclick", (event) => {
-    if (event.target === state.svg.node()) {
-      event.preventDefault();
-      resetZoom();
-    }
+  state.svg.on("dblclick.blankReset", (event) => {
+    if (!isBlankGraphEvent(event)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    resetZoom();
   });
 
   state.simulation = d3
@@ -1323,65 +1643,74 @@ function selectNode(nodeId) {
   if (node) {
     renderInfoPanel(node);
 
-    // JS-7C：手機點節點後自動展開資訊欄，桌機維持目前狀態。
+    // JS-7C：手機點節點後開啟 Bottom Sheet；桌機維持目前狀態。
     if (isMobileLayout()) {
-      state.infoCompact = false;
-      applyInfoCompactState();
+      openMobileBottomSheet(60);
     }
   }
 }
 
 function focusNode(nodeId) {
   selectNode(nodeId);
+  pulseSelectedNode(nodeId);
 
-  const visibleNodes = state.nodeSelection.selectAll("g").data();
-  const visibleNodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
-  const targetNode = visibleNodeMap.get(nodeId);
+  const directIds = getDirectNeighborIds(nodeId);
+  const targetIds = new Set([nodeId, ...directIds]);
 
-  if (!targetNode || targetNode.x === undefined || targetNode.y === undefined) return;
+  const visibleNodes = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .filter((node) => {
+      return (
+        targetIds.has(node.id) &&
+        Number.isFinite(node.x) &&
+        Number.isFinite(node.y)
+      );
+    });
 
-  const directNeighborIds = getDirectNeighborIds(nodeId);
-  const focusNodes = [nodeId, ...directNeighborIds]
-    .map((id) => visibleNodeMap.get(id))
-    .filter((node) => node && Number.isFinite(node.x) && Number.isFinite(node.y));
-
-  if (focusNodes.length <= 1) {
-    focusSingleNode(targetNode);
-    pulseSelectedNode(nodeId);
+  if (visibleNodes.length <= 1) {
+    focusSingleNode(nodeId);
     return;
   }
 
-  focusNodeGroup(focusNodes);
-  pulseSelectedNode(nodeId);
+  focusNodeGroup(visibleNodes);
 }
 
-function getDirectNeighborIds(selectedId) {
-  const neighbors = new Set();
+function getDirectNeighborIds(nodeId) {
+  const ids = new Set();
 
   state.allEdges.forEach((edge) => {
     const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
     const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
-    if (sourceId === selectedId) neighbors.add(targetId);
-    if (targetId === selectedId) neighbors.add(sourceId);
+    if (sourceId === nodeId) ids.add(targetId);
+    if (targetId === nodeId) ids.add(sourceId);
   });
 
-  return neighbors;
+  return ids;
 }
 
-function focusSingleNode(node) {
+function focusSingleNode(nodeId) {
+  const visibleNode = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .find((item) => item.id === nodeId);
+
+  if (!visibleNode || !Number.isFinite(visibleNode.x) || !Number.isFinite(visibleNode.y)) return;
+
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard || !state.svg || !state.zoomBehavior) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const scale = isMobileLayout() ? 1.18 : 1.55;
-  const centerY = isMobileLayout() && state.mobileSheetOpen ? height * 0.40 : height / 2;
+  const isMobile = isMobileLayout();
+  const scale = isMobile ? 1.18 : 1.55;
+  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(92, height * 0.14) : 0;
 
   const transform = d3.zoomIdentity
-    .translate(width / 2, centerY)
+    .translate(width / 2, height / 2 + centerYOffset)
     .scale(scale)
-    .translate(-node.x, -node.y);
+    .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
@@ -1392,15 +1721,13 @@ function focusSingleNode(node) {
 
 function focusNodeGroup(nodes) {
   const graphCard = document.querySelector(".graph-card");
-  if (!graphCard || !state.svg || !state.zoomBehavior) return;
+  if (!graphCard || !state.svg || !state.zoomBehavior || nodes.length === 0) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const mobile = isMobileLayout();
-  const padding = mobile ? 72 : 120;
-  const centerY = mobile && state.mobileSheetOpen ? height * 0.40 : height / 2;
-  const minScale = mobile ? 0.34 : 0.28;
-  const maxScale = mobile ? 1.25 : 1.75;
+  const isMobile = isMobileLayout();
+  const padding = isMobile ? 92 : 150;
+  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(92, height * 0.14) : 0;
 
   let minX = Infinity;
   let minY = Infinity;
@@ -1408,30 +1735,32 @@ function focusNodeGroup(nodes) {
   let maxY = -Infinity;
 
   nodes.forEach((node) => {
-    const radius = getNodeRadius(node) + 28;
+    const radius = getNodeRadius(node) + (isMobile ? 24 : 34);
     minX = Math.min(minX, node.x - radius);
     minY = Math.min(minY, node.y - radius);
     maxX = Math.max(maxX, node.x + radius);
     maxY = Math.max(maxY, node.y + radius);
   });
 
+  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return;
+
   const boxWidth = Math.max(1, maxX - minX);
   const boxHeight = Math.max(1, maxY - minY);
-  const availableWidth = Math.max(1, width - padding * 2);
-  const availableHeight = Math.max(1, height - padding * 2 - (mobile && state.mobileSheetOpen ? 96 : 0));
-  const rawScale = Math.min(availableWidth / boxWidth, availableHeight / boxHeight);
-  const scale = clamp(rawScale, minScale, maxScale);
+  const fitWidth = Math.max(1, width - padding * 2);
+  const fitHeight = Math.max(1, height - padding * 2 - (isMobile && state.mobileSheetOpen ? 120 : 0));
+  const rawScale = Math.min(fitWidth / boxWidth, fitHeight / boxHeight);
+  const scale = clamp(rawScale, isMobile ? 0.48 : 0.42, isMobile ? 1.45 : 2.1);
   const centerX = (minX + maxX) / 2;
-  const centerNodeY = (minY + maxY) / 2;
+  const centerY = (minY + maxY) / 2;
 
   const transform = d3.zoomIdentity
-    .translate(width / 2, centerY)
+    .translate(width / 2, height / 2 + centerYOffset)
     .scale(scale)
-    .translate(-centerX, -centerNodeY);
+    .translate(-centerX, -centerY);
 
   state.svg
     .transition()
-    .duration(700)
+    .duration(720)
     .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
 }
@@ -1439,19 +1768,14 @@ function focusNodeGroup(nodes) {
 function pulseSelectedNode(nodeId) {
   if (!state.nodeSelection) return;
 
-  const node = state.nodeSelection
+  const selected = state.nodeSelection
     .selectAll("g")
-    .filter((item) => item.id === nodeId);
+    .filter((node) => node.id === nodeId);
 
-  node.classed("tap-feedback", false);
-
-  window.requestAnimationFrame(() => {
-    node.classed("tap-feedback", true);
-
-    window.setTimeout(() => {
-      node.classed("tap-feedback", false);
-    }, 240);
-  });
+  selected.classed("tap-feedback", true);
+  window.setTimeout(() => {
+    selected.classed("tap-feedback", false);
+  }, 260);
 }
 
 function getConnectedNodeIds(selectedId) {
@@ -1828,5 +2152,22 @@ function dragEnded(event, node) {
 
 window.addEventListener("resize", () => {
   updateFloatingLayoutVars();
+  syncMobileOnlyResizeHandles();
+  updateMobileToolbarPosition();
+
+  if (isMobileLayout()) {
+    if (state.mobileSheetOpen) {
+      setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
+    } else {
+      closeMobileBottomSheet(false);
+    }
+  } else {
+    const infoPanel = document.getElementById("infoPanel");
+    if (infoPanel) {
+      infoPanel.style.transform = "";
+      infoPanel.style.height = "";
+    }
+  }
+
   resizeGraphAfterPanelChange();
 });
