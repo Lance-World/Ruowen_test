@@ -185,7 +185,7 @@ button { user-select: none; }
   width: 100%;
   color: var(--teal-deep);
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 850;
   line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
@@ -416,7 +416,7 @@ button { user-select: none; }
   display: block;
   color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
@@ -457,7 +457,7 @@ button { user-select: none; }
   text-align: center;
   white-space: nowrap;
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 38px;
   border-radius: 999px;
 }
@@ -531,7 +531,7 @@ button { user-select: none; }
   background: rgba(92, 166, 168, 0.88);
   color: #ffffff;
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .floating-note {
@@ -711,7 +711,7 @@ button { user-select: none; }
   min-width: max-content;
   font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", sans-serif;
   font-size: 1em;
-  font-weight: 950;
+  font-weight: 900;
   line-height: 1;
   letter-spacing: 0.02em;
   background: linear-gradient(135deg, #c99aa3 0%, #ebcbb8 38%, #b9b4dd 74%, #88a9bf 100%);
@@ -747,7 +747,7 @@ button { user-select: none; }
   color: #315b63;
   padding: 5px 10px;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   border: 1px solid rgba(241, 223, 172, 0.42);
   flex-shrink: 0;
 }
@@ -830,7 +830,7 @@ button { user-select: none; }
 .source-title {
   font-size: 13px;
   color: var(--text-main);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .source-text {
@@ -843,7 +843,7 @@ button { user-select: none; }
   font-size: 12px;
   color: #2d7d86;
   text-decoration: none;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .source-link:hover { text-decoration: underline; }
@@ -852,7 +852,7 @@ button { user-select: none; }
   color: var(--text-muted);
   cursor: default;
   text-decoration: none;
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .resize-handle.info-right {
@@ -933,7 +933,7 @@ button { user-select: none; }
   white-space: nowrap;
   font-size: clamp(18px, 2.1vw, 24px);
   line-height: 1.15;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 #infoPanel.info-compact .info-title-text {
@@ -992,7 +992,7 @@ button { user-select: none; }
 .node text {
   pointer-events: none;
   fill: #173c43;
-  font-weight: 750;
+  font-weight: 700;
   paint-order: stroke;
   stroke: rgba(255, 255, 255, 0.88);
   stroke-width: 4px;
@@ -1003,17 +1003,17 @@ button { user-select: none; }
 
 .node-label .label-name {
   fill: #173c43;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .node-label .label-count {
   fill: url(#countGradient);
-  font-weight: 950;
+  font-weight: 900;
   letter-spacing: 0.3px;
   font-size: 1.08em;
 }
 
-.node.selected .label-count { font-weight: 1000; }
+.node.selected .label-count { font-weight: 950; }
 
 .link {
   stroke: rgba(96, 129, 137, 0.5);
@@ -1122,7 +1122,7 @@ button { user-select: none; }
   max-width: min(9em, 100%);
   color: rgba(255, 248, 240, 0.96);
   font-size: clamp(24px, 3.6vw, 38px);
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.16;
   letter-spacing: 0.08em;
   text-align: center;
@@ -1429,7 +1429,7 @@ button { user-select: none; }
     background: rgba(255, 255, 255, 0.58);
     color: var(--text-secondary);
     font-size: 14px;
-    font-weight: 750;
+    font-weight: 700;
     cursor: pointer;
   }
 
@@ -1971,7 +1971,7 @@ button { user-select: none; }
   min-width: 40px !important;
   padding: 0 13px !important;
   font-size: 16px !important;
-  font-weight: 950 !important;
+  font-weight: 900 !important;
   line-height: 1 !important;
   background: rgba(36, 91, 98, 0.78) !important;
 }
@@ -2033,7 +2033,7 @@ button { user-select: none; }
 .about-modal-body .about-copyright {
   margin-top: 4px;
   color: var(--teal-deep);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .about-close-btn {
@@ -2147,7 +2147,7 @@ body.about-modal-lock {
   height: 42px !important;
   padding: 0 !important;
   font-size: 18px !important;
-  font-weight: 950 !important;
+  font-weight: 900 !important;
   line-height: 1 !important;
   color: #245b62 !important;
   background:
@@ -2291,71 +2291,145 @@ body.about-modal-lock {
 }
 
 /* =========================================================
-   FINAL FIX - Mobile Sidebar Category Compactness + Focus Feedback
-   Scope notes:
-   - Mobile sidebar category chips only: <=768px and .sidebar categories.
-   - No icon button size / Bottom Sheet / graph container size changes.
+   FINAL READABILITY OVERRIDES - Request 13 / 14
+   Scope:
+   - Mobile <=768px: larger readable text + compact sidebar category scroll list.
+   - Desktop >768px: enlarge Info Panel and graph node labels/circles via JS only.
+   - No Sidebar width / icon button size / Bottom Sheet geometry changes.
 ========================================================= */
 
-.node circle {
-  transition: stroke-width 0.18s ease, stroke 0.18s ease;
-}
-
-.node.tap-feedback circle {
-  stroke-width: 4px;
-}
-
-@media (min-width: 769px) {
-  /* Desktop / Web keeps a more comfortable category layout. */
-  .sidebar-category-list {
-    gap: 7px;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .category-chip {
-    min-height: 38px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    line-height: 1.3;
-  }
+/* Keep node labels but hide count suffix. */
+.node-label .label-count {
+  display: none !important;
 }
 
 @media (max-width: 768px) {
-  /* Mobile category list remains vertical scroll; only height/spacing is compressed. */
+  /* Mobile readability: text larger without changing layout containers. */
+  body,
+  button,
+  input,
+  select {
+    font-size: 15px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar {
+    font-size: 15.5px !important;
+  }
+
+  .sidebar-title strong {
+    font-size: 22px !important;
+  }
+
+  .sidebar-title span {
+    font-size: 14.5px !important;
+  }
+
+  .sidebar-search {
+    font-size: 15px !important;
+  }
+
+  .floating-actions button:not(.toolbar-icon-btn),
+  .app-shell:not(.sidebar-collapsed) .floating-actions button:not(.toolbar-icon-btn),
+  .app-shell.sidebar-collapsed .floating-actions button:not(.toolbar-icon-btn) {
+    font-size: 13px !important;
+  }
+
+  /* Mobile category list: vertical scroll, about 3 category chips visible. */
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
     margin-top: 6px !important;
+    max-height: 132px !important;
+    overflow: hidden !important;
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
     display: grid !important;
     gap: 4px !important;
     row-gap: 4px !important;
+    max-height: 112px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
     padding-top: 2px !important;
     padding-bottom: 2px !important;
+    padding-right: 4px !important;
+    scrollbar-width: thin;
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .category-chip {
-    min-height: 28px !important;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    min-height: 30px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
     padding-left: 10px !important;
     padding-right: 10px !important;
     line-height: 1.18 !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     border-radius: 999px !important;
   }
+
+  /* Mobile tags / chips readability. */
+  .info-tags span,
+  .inline-pill-list span {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Mobile Bottom Sheet text only; geometry and z-index are intentionally untouched. */
+  #infoPanel {
+    font-size: 15px !important;
+  }
+
+  #infoPanel #infoTitle {
+    font-size: clamp(18px, 4.8vw, 21px) !important;
+    line-height: 1.22 !important;
+  }
+
+  #infoPanel .info-related-row h3,
+  #infoPanel .info-box h3 {
+    font-size: 15px !important;
+  }
+
+  #infoPanel .quote-item,
+  #infoPanel .source-item,
+  #infoPanel .source-text,
+  #infoPanel .source-link {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
 }
 
-/* =========================================================
-   Node label count hidden
-   Keep node labels, hide the trailing count number only.
-========================================================= */
-.node-label .label-count {
-  display: none !important;
+@media (min-width: 769px) {
+  /* Desktop/Web: enlarge only Info Panel readability. Sidebar / toolbar / search stay unchanged. */
+  .info-panel {
+    font-size: 15.5px;
+  }
+
+  .info-title-block h2,
+  #infoTitle {
+    font-size: 23px;
+    line-height: 1.32;
+  }
+
+  .info-related-row h3,
+  .info-box h3 {
+    font-size: 15.5px;
+  }
+
+  .info-tags span,
+  .inline-pill-list span {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .quote-item,
+  .source-text,
+  .source-link {
+    font-size: 14px;
+    line-height: 1.56;
+  }
+
+  .source-title {
+    font-size: 14.5px;
+  }
 }
