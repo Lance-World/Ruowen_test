@@ -1886,19 +1886,19 @@ button { user-select: none; }
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
-    gap: 5px !important;
+    gap: 4px !important;
     max-height: min(250px, 34vh) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    padding: 2px 4px 2px 0 !important;
+    padding: 1px 4px 1px 0 !important;
     -webkit-overflow-scrolling: touch;
   }
 
-  .category-chip {
-    min-height: 30px !important;
+  .app-shell:not(.sidebar-collapsed) .sidebar .category-chip {
+    min-height: 28px !important;
     height: auto !important;
-    padding: 5px 10px !important;
-    line-height: 1.2 !important;
+    padding: 4px 10px !important;
+    line-height: 1.18 !important;
     font-size: 13px !important;
     border-radius: 14px !important;
   }

@@ -1648,21 +1648,84 @@ function focusNode(nodeId) {
 
   if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
 
+  if (isMobileLayout()) {
+    focusMobileNodeNeighborhood(nodeId, visibleNode);
+    return;
+  }
+
   const graphCard = document.querySelector(".graph-card");
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
-  const targetScale = isMobileLayout() ? 1.05 : 1.55;
-  const targetY = isMobileLayout() ? height * 0.42 : height / 2;
-
   const transform = d3.zoomIdentity
-    .translate(width / 2, targetY)
-    .scale(targetScale)
+    .translate(width / 2, height / 2)
+    .scale(1.55)
     .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
     .duration(650)
+    .call(state.zoomBehavior.transform, transform);
+}
+
+function focusMobileNodeNeighborhood(nodeId, fallbackNode) {
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.svg || !state.zoomBehavior) return;
+
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const connectedIds = getConnectedNodeIds(nodeId);
+
+  const visibleNeighbors = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .filter((node) => {
+      return (
+        connectedIds.has(node.id) &&
+        Number.isFinite(node.x) &&
+        Number.isFinite(node.y)
+      );
+    });
+
+  const focusNodes = visibleNeighbors.length > 0 ? visibleNeighbors : [fallbackNode];
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  focusNodes.forEach((node) => {
+    const radius = getNodeRadius(node) + 44;
+    minX = Math.min(minX, node.x - radius);
+    minY = Math.min(minY, node.y - radius);
+    maxX = Math.max(maxX, node.x + radius);
+    maxY = Math.max(maxY, node.y + radius);
+  });
+
+  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return;
+
+  const bboxWidth = Math.max(1, maxX - minX);
+  const bboxHeight = Math.max(1, maxY - minY);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  // Keep the focus above the Bottom Sheet area while still showing direct neighbors.
+  const usableWidth = Math.max(1, width - 44);
+  const usableHeight = Math.max(1, height * 0.58);
+  const rawScale = Math.min(usableWidth / bboxWidth, usableHeight / bboxHeight);
+  const targetScale = clamp(rawScale, 0.72, 1.15);
+  const targetX = width / 2;
+  const targetY = height * 0.36;
+
+  const transform = d3.zoomIdentity
+    .translate(targetX, targetY)
+    .scale(targetScale)
+    .translate(-centerX, -centerY);
+
+  state.svg
+    .transition()
+    .duration(680)
+    .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
 }
 
