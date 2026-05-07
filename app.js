@@ -229,6 +229,10 @@ function setupCategoryChips() {
     button.classList.add("active");
     state.selectedCategory = button.dataset.category || "all";
     updateGraph();
+
+    // Mobile: category selection is a completed action, so dismiss the Sidebar
+    // without changing graph zoom/pan or Bottom Sheet state.
+    collapseMobileSidebarOnly();
   });
 }
 
@@ -450,6 +454,10 @@ function setupInfoCompactToggle() {
 
 function toggleInfoCompact() {
   if (isMobileLayout()) {
+    if (state.svg) {
+      state.svg.on("dblclick.zoom", null);
+    }
+
     if (state.mobileSheetOpen) {
       closeMobileBottomSheet();
     } else {
@@ -991,6 +999,30 @@ function syncMobileOnlyResizeHandles() {
 }
 
 
+function collapseMobileSidebarOnly() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+
+  if (!appShell) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+
+  requestAnimationFrame(() => {
+    updateMobileToolbarPosition();
+    resizeGraphAfterPanelChange();
+  });
+}
+
 function updateMobileToolbarPosition() {
   const appShell = document.querySelector(".app-shell");
   const sidebar = document.getElementById("sidebar");
@@ -1330,6 +1362,12 @@ function renderGraph() {
 
   svg.call(state.zoomBehavior);
 
+  // Mobile uses double-tap blank space as an intentional reset / escape action.
+  // Disable D3's default double-click zoom only on mobile so it does not fight resetZoom().
+  if (isMobileLayout()) {
+    svg.on("dblclick.zoom", null);
+  }
+
   updateGraph();
 }
 
@@ -1446,11 +1484,27 @@ function updateGraph() {
       (exit) => exit.remove()
     );
 
-  state.svg.on("click", () => {
-    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
-    if (!isMobileLayout()) {
-      clearSelection();
+  state.svg.on("click", (event) => {
+    // Mobile backdrop dismissal: tapping blank graph space collapses Sidebar only.
+    // It intentionally preserves current zoom/pan and does not reset selection.
+    if (isMobileLayout()) {
+      event.preventDefault();
+      collapseMobileSidebarOnly();
+      return;
     }
+
+    // Desktop keeps existing behavior.
+    clearSelection();
+  });
+
+  state.svg.on("dblclick", (event) => {
+    // Mobile escape hatch: double-tap blank graph space returns to the full view.
+    // Node dblclick/tap handlers already stop propagation, so this is blank-space only.
+    if (!isMobileLayout()) return;
+
+    event.preventDefault();
+    collapseMobileSidebarOnly();
+    resetZoom();
   });
 
   state.simulation = d3
@@ -1598,9 +1652,12 @@ function focusNode(nodeId) {
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
+  const targetScale = isMobileLayout() ? 1.05 : 1.55;
+  const targetY = isMobileLayout() ? height * 0.42 : height / 2;
+
   const transform = d3.zoomIdentity
-    .translate(width / 2, height / 2)
-    .scale(1.55)
+    .translate(width / 2, targetY)
+    .scale(targetScale)
     .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg

@@ -1471,6 +1471,49 @@ button { user-select: none; }
     line-height: 1.25;
   }
 
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 170px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    overflow-x: auto;
+    border-radius: 18px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions {
+    position: fixed;
+    top: 12px;
+    left: 10px;
+    right: 68px;
+    width: auto;
+    max-width: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    z-index: 60;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar { display: none; }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 44px;
+    padding: 0 15px;
+    font-size: 13px;
+    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
   .floating-note {
     top: 64px;
@@ -1648,6 +1691,23 @@ button { user-select: none; }
     height: 46px;
   }
 
+  .app-shell.sidebar-collapsed .floating-actions {
+    left: 8px;
+    right: 64px;
+    gap: 7px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 42px;
+    padding: 0 13px;
+    font-size: 12px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .floating-actions {
+    top: 164px;
+    left: 6px;
+    right: 6px;
+  }
 
   .filter-chip-row .side-item,
   .filter-chip-row .filter-chip {
@@ -1744,6 +1804,17 @@ button { user-select: none; }
     height: 42px;
   }
 
+  .app-shell.sidebar-collapsed .floating-actions {
+    left: 6px;
+    right: 56px;
+    gap: 6px;
+  }
+
+  .app-shell.sidebar-collapsed .floating-actions button {
+    height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
 }
 
 /* =========================================================
@@ -1761,503 +1832,26 @@ button { user-select: none; }
   }
 }
 
-
 /* =========================================================
-   Mobile-only layout and Bottom Sheet interaction fix
+   FINAL MOBILE SIDEBAR COMPACT + GRAPH INTERACTION POLISH
    Scope: <=768px only. Desktop / Web remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
-  /* 2. Mobile sidebar open width: exactly viewport minus 8px gutters. */
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px !important;
-    right: auto !important;
-    top: 8px !important;
-    width: calc(100vw - 16px) !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 16px) !important;
-    box-sizing: border-box !important;
-    transform: none !important;
-    margin: 0 !important;
-    overflow-x: hidden !important;
-  }
-
-  /* 3. Disable old mobile info-panel drag bars only on mobile. */
-  #mainResizeHandle,
-  #innerResizeHandle,
-  #infoRightResizeHandle,
-  .resize-handle.horizontal,
-  .resize-handle.vertical,
-  .resize-handle.info-right {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    max-width: 0 !important;
-    max-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    pointer-events: none !important;
-  }
-
-  /* 4. Mobile Info Panel becomes a bottom sheet. */
-  .info-panel,
-  #infoPanel,
-  #infoPanel:not(.info-compact),
-  #infoPanel.info-compact {
-    position: fixed !important;
-    left: 0 !important;
-    right: auto !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    min-height: 200px !important;
-    height: auto;
-    max-height: 80vh !important;
-    z-index: 140 !important;
-    display: block !important;
-    padding: 24px 14px calc(16px + env(safe-area-inset-bottom)) !important;
-    border-radius: 16px 16px 0 0 !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    border: 1px solid rgba(199, 220, 222, 0.72) !important;
-    border-bottom: 0 !important;
-    box-shadow: 0 -14px 40px rgba(23, 60, 67, 0.16) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch;
-    touch-action: auto;
-    will-change: transform;
-    transform: translateY(calc(100% + 16px));
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
-      opacity 0.22s ease,
-      height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  #infoPanel::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    width: 42px;
-    height: 4px;
-    border-radius: 999px;
-    background: rgba(83, 113, 118, 0.34);
-    transform: translateX(-50%);
-    pointer-events: none;
-  }
-
-  #infoPanel.bottom-sheet-open {
-    transform: translateY(0) !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel.bottom-sheet-hidden,
-  #infoPanel.info-compact.bottom-sheet-hidden {
-    transform: translateY(calc(100% + 16px)) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  #infoPanel.bottom-sheet-expanded {
-    max-height: 90vh !important;
-  }
-
-  #infoPanel.bottom-sheet-dragging {
-    transition: none !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-  }
-
-  #infoPanel:not(.info-compact) .info-header-row,
-  #infoPanel.info-compact .info-header-row,
-  #infoPanel.info-compact .info-header {
-    display: grid !important;
-    grid-template-columns: auto 1fr !important;
-    grid-template-areas:
-      "icon title"
-      "icon tags"
-      "icon related" !important;
-    align-items: start !important;
-    column-gap: 10px !important;
-    row-gap: 8px !important;
-    width: 100% !important;
-    margin: 0 0 10px !important;
-  }
-
-  #infoPanel .info-icon {
-    grid-area: icon;
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    font-size: 16px !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel .info-title-block {
-    grid-area: title;
-    min-width: 0;
-  }
-
-  #infoPanel #infoTitle {
-    font-size: clamp(16px, 4.4vw, 20px) !important;
-    line-height: 1.2 !important;
-  }
-
-  #infoPanel .info-tags {
-    grid-area: tags;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    max-height: none !important;
-    overflow: visible !important;
-    white-space: normal !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel .info-related-row {
-    grid-area: related;
-    display: block !important;
-    margin: 0 0 10px !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel .info-split-area {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  #infoPanel .info-box,
-  #infoPanel .sentence-box,
-  #infoPanel .source-box {
-    min-height: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  #infoPanel .quote-list,
-  #infoPanel .source-list {
-    max-height: none !important;
-    overflow: visible !important;
-  }
-}
-
-/* =========================================================
-   About Modal + Mobile Toolbar Strategy B
-   Final override. Desktop graph/sidebar/bottom-sheet core remains unchanged.
-========================================================= */
-.about-btn {
-  min-width: 40px !important;
-  padding: 0 13px !important;
-  font-size: 16px !important;
-  font-weight: 900 !important;
-  line-height: 1 !important;
-  background: rgba(36, 91, 98, 0.78) !important;
-}
-
-.about-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-
-.about-modal.hidden {
-  display: none !important;
-}
-
-.about-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(23, 42, 47, 0.34);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.about-modal-card {
-  position: relative;
-  z-index: 1;
-  width: min(560px, calc(100vw - 48px));
-  max-height: min(78vh, 640px);
-  overflow: auto;
-  border-radius: 24px;
-  padding: 24px 24px 22px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(199, 220, 222, 0.78);
-  box-shadow: 0 24px 72px rgba(23, 60, 67, 0.22);
-  color: var(--text-main);
-}
-
-.about-modal-card h2 {
-  margin: 0 0 14px;
-  color: var(--teal-deep);
-  font-size: 22px;
-  line-height: 1.25;
-}
-
-.about-modal-body {
-  display: grid;
-  gap: 12px;
-}
-
-.about-modal-body p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.75;
-}
-
-.about-modal-body .about-copyright {
-  margin-top: 4px;
-  color: var(--teal-deep);
-  font-weight: 700;
-}
-
-.about-close-btn {
-  position: absolute;
-  right: 14px;
-  top: 14px;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  background: rgba(83, 113, 118, 0.12);
-  color: var(--text-secondary);
-  font-size: 22px;
-  line-height: 1;
-}
-
-.about-close-btn:hover {
-  background: rgba(92, 166, 168, 0.18);
-  color: var(--teal-deep);
-}
-
-body.about-modal-lock {
-  overflow: hidden;
-}
-
-@media (max-width: 768px) {
-  .about-modal {
-    padding: 18px;
-  }
-
-  .about-modal-card {
-    width: min(100%, calc(100vw - 32px));
-    max-height: min(82vh, 620px);
-    border-radius: 20px;
-    padding: 22px 18px 20px;
-  }
-
-  .about-modal-card h2 {
-    font-size: 20px;
-    padding-right: 34px;
-  }
-
-  .about-modal-body p {
-    font-size: 13px;
-    line-height: 1.7;
-  }
-}
-
-/* =========================================================
-   FINAL CONSOLIDATED OVERRIDES
-   - Sidebar typography all screens
-   - Mobile sidebar labels / chips
-   - Mobile toolbar strategy B
-   - Toolbar icon buttons
-========================================================= */
-
-/* All screens: make sidebar typography slightly larger. */
-.sidebar {
-  font-size: 15px;
-}
-
-.sidebar-label {
-  font-size: 13px;
-}
-
-.filter-chip-row .side-item,
-.filter-chip-row .filter-chip {
-  font-size: 14px;
-}
-
-.category-chip {
-  font-size: 13px;
-}
-
-.category-toggle-btn {
-  font-size: 15px;
-}
-
-/* Toolbar icon buttons: keep existing JS ids; only visual changes. */
-.toolbar-icon-btn,
-.floating-actions .toolbar-icon-btn {
-  width: 42px !important;
-  min-width: 42px !important;
-  height: 42px !important;
-  padding: 0 !important;
-  display: inline-grid !important;
-  place-items: center !important;
-  border-radius: 999px !important;
-  line-height: 1 !important;
-}
-
-.toolbar-icon-btn svg {
-  width: 20px;
-  height: 20px;
-  display: block;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-.toolbar-icon-btn.about-btn,
-.floating-actions .toolbar-icon-btn.about-btn {
-  width: 42px !important;
-  min-width: 42px !important;
-  height: 42px !important;
-  padding: 0 !important;
-  font-size: 18px !important;
-  font-weight: 900 !important;
-  line-height: 1 !important;
-  color: #245b62 !important;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(255,255,255,0.92), rgba(215,238,233,0.82) 45%, rgba(92,166,168,0.88)) !important;
-  border: 1px solid rgba(255,255,255,0.62) !important;
-  box-shadow:
-    0 10px 24px rgba(23, 60, 67, 0.14),
-    inset 0 1px 0 rgba(255,255,255,0.82) !important;
-}
-
-.toolbar-icon-btn:focus-visible {
-  outline: 3px solid rgba(92, 166, 168, 0.34);
-  outline-offset: 3px;
-}
-
-@media (max-width: 768px) {
-  /* Hide duplicated section labels on mobile only. */
+  /* Hide duplicated section labels in mobile Sidebar. */
   .filter-section .sidebar-label,
   .sidebar-category-section .sidebar-label {
     display: none !important;
   }
 
-  /* Mobile toolbar strategy B: collapsed = viewport top; expanded = below sidebar. */
-  .floating-actions,
-  .app-shell:not(.sidebar-collapsed) .floating-actions,
-  .app-shell.sidebar-collapsed .floating-actions {
-    position: fixed !important;
-    left: 8px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: auto !important;
-    z-index: 160 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-    padding: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    scrollbar-width: none;
-    transform: none !important;
-  }
-
-  .floating-actions::-webkit-scrollbar,
-  .app-shell:not(.sidebar-collapsed) .floating-actions::-webkit-scrollbar,
-  .app-shell.sidebar-collapsed .floating-actions::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  .app-shell.sidebar-collapsed .floating-actions {
-    top: 8px !important;
-    max-width: calc(100vw - 76px) !important;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .floating-actions {
-    top: var(--mobile-toolbar-top, 8px) !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-
-  .floating-actions button,
-  .app-shell:not(.sidebar-collapsed) .floating-actions button,
-  .app-shell.sidebar-collapsed .floating-actions button {
-    height: 42px !important;
-    min-width: max-content !important;
-    padding: 0 13px !important;
-    font-size: 12px !important;
-    line-height: 42px !important;
-    box-shadow: 0 10px 24px rgba(23, 60, 67, 0.13) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-  }
-
-  .floating-actions .toolbar-icon-btn,
-  .app-shell:not(.sidebar-collapsed) .floating-actions .toolbar-icon-btn,
-  .app-shell.sidebar-collapsed .floating-actions .toolbar-icon-btn {
-    width: 42px !important;
-    min-width: 42px !important;
-    height: 42px !important;
-    padding: 0 !important;
-    font-size: 12px !important;
-    line-height: 1 !important;
-  }
-
-  .floating-actions .toolbar-icon-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .floating-actions .toolbar-icon-btn.about-btn {
-    width: 42px !important;
-    min-width: 42px !important;
-    font-size: 18px !important;
-  }
-
-  /* Mobile sidebar: keep 8px gutters and make pill controls more compact. */
+  /* Keep mobile Sidebar floating/glass-like while improving readability. */
   .app-shell:not(.sidebar-collapsed) .sidebar {
-    left: 8px !important;
-    right: auto !important;
-    top: 8px !important;
-    width: calc(100vw - 16px) !important;
-    max-width: calc(100vw - 16px) !important;
-    box-sizing: border-box !important;
+    backdrop-filter: blur(20px) saturate(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.08) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
 
+  /* Top filter pills: slightly smaller but still easy to tap. */
   .filter-chip-row {
     gap: 5px !important;
   }
@@ -2267,25 +1861,65 @@ body.about-modal-lock {
     height: 34px !important;
     min-height: 34px !important;
     line-height: 34px !important;
-    font-size: 13px !important;
     padding: 0 6px !important;
+    font-size: 13px !important;
+    border-radius: 999px !important;
   }
 
+  /* Main category toggle: tighter spacing under the three filter pills. */
   .category-toggle-btn {
     height: 40px !important;
     min-height: 40px !important;
     line-height: 40px !important;
     margin: 8px 0 0 !important;
+    padding: 0 14px !important;
     font-size: 14px !important;
+    border-radius: 999px !important;
   }
 
+  /* Expanded category panel: keep all 18 items, but reduce display height per item. */
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
     margin-top: 8px !important;
+    padding: 8px !important;
+    max-height: min(300px, 40vh) !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
+    gap: 5px !important;
+    max-height: min(250px, 34vh) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 2px 4px 2px 0 !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .category-chip {
-    min-height: 36px !important;
-    padding: 8px 10px !important;
+    min-height: 30px !important;
+    height: auto !important;
+    padding: 5px 10px !important;
+    line-height: 1.2 !important;
     font-size: 13px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Mobile selected-node feedback: visual pulse without changing data or layout. */
+  .node.selected circle {
+    animation: mobileNodeSelectedPulse 0.42s ease-out;
+  }
+}
+
+@keyframes mobileNodeSelectedPulse {
+  0% {
+    stroke-width: 6px;
+    filter: drop-shadow(0 0 0 rgba(92, 166, 168, 0));
+  }
+  45% {
+    stroke-width: 6px;
+    filter: drop-shadow(0 0 10px rgba(92, 166, 168, 0.45));
+  }
+  100% {
+    stroke-width: 4px;
+    filter: drop-shadow(0 11px 20px rgba(23, 60, 67, 0.17));
   }
 }
