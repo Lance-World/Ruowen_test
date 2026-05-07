@@ -157,35 +157,6 @@ function toggleSidebar() {
   }, 320);
 }
 
-function collapseMobileSidebarOnly() {
-  if (!isMobileLayout()) return;
-
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-  const searchPanel = document.getElementById("sidebarSearchPanel");
-
-  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-  appShell.classList.add("sidebar-collapsed");
-  localStorage.setItem("sidebarCollapsed", "1");
-
-  if (sidebar) sidebar.classList.remove("categories-open");
-  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-  if (searchPanel) {
-    searchPanel.classList.add("search-collapsed");
-    localStorage.setItem("searchPanelOpen", "0");
-  }
-
-  updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
-
-  window.setTimeout(() => {
-    updateFloatingLayoutVars();
-    updateMobileToolbarPosition();
-  }, 120);
-}
-
 function toggleSearchPanel() {
   const panel = document.getElementById("sidebarSearchPanel");
   const appShell = document.querySelector(".app-shell");
@@ -214,6 +185,65 @@ function toggleSearchPanel() {
   setTimeout(() => {
     resizeGraphAfterPanelChange();
   }, 120);
+}
+
+function collapseMobileSidebar() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+
+  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+
+  setTimeout(() => {
+    updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
+    resizeGraphAfterPanelChange();
+  }, 260);
+}
+
+function setupMobileSidebarAutoCollapse() {
+  document.addEventListener("click", (event) => {
+    if (!isMobileLayout()) return;
+
+    const appShell = document.querySelector(".app-shell");
+    const sidebar = document.getElementById("sidebar");
+
+    if (!appShell || !sidebar || appShell.classList.contains("sidebar-collapsed")) return;
+
+    const target = event.target;
+    const blockedSelectors = [
+      "#sidebar",
+      ".floating-actions",
+      "button",
+      "input",
+      "select",
+      "textarea",
+      "#infoPanel",
+      ".info-panel",
+      ".about-modal",
+      ".intro-overlay",
+      ".node"
+    ];
+
+    const shouldIgnore = blockedSelectors.some((selector) => {
+      return target instanceof Element && target.closest(selector);
+    });
+
+    if (shouldIgnore) return;
+
+    collapseMobileSidebar();
+  });
 }
 
 function setupCategoryChips() {
@@ -248,9 +278,8 @@ function setupCategoryChips() {
     state.selectedCategory = button.dataset.category || "all";
     updateGraph();
 
-    // Mobile: after a category is applied, close the sidebar without resetting zoom/pan.
     if (isMobileLayout()) {
-      collapseMobileSidebarOnly();
+      collapseMobileSidebar();
     }
   });
 }
@@ -1055,10 +1084,6 @@ function renderGraph() {
 
   svg.call(state.zoomBehavior);
 
-  // Blank-canvas double click is handled explicitly below.
-  // Disable d3's built-in dblclick zoom so resetZoom() is predictable.
-  svg.on("dblclick.zoom", null);
-
   updateGraph();
 }
 
@@ -1132,15 +1157,11 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
-          state.lastMobileTapNodeId = node.id;
           focusNode(node.id);
         });
 
-        g.on("dblclick", (event, node) => {
+        g.on("dblclick", (event) => {
           event.stopPropagation();
-          if (!isMobileLayout()) {
-            focusNode(node.id);
-          }
         });
 
         return g;
@@ -1165,21 +1186,17 @@ function updateGraph() {
     );
 
   state.svg.on("click", (event) => {
-    // Mobile backdrop dismissal: clicking blank graph space closes the sidebar only.
-    // It does not reset zoom/pan and does not affect Bottom Sheet.
-    if (isMobileLayout()) {
-      collapseMobileSidebarOnly();
-      return;
+    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
+    if (!isMobileLayout() && event.target === state.svg.node()) {
+      clearSelection();
     }
-
-    clearSelection();
   });
 
   state.svg.on("dblclick", (event) => {
-    // Blank canvas double-click is the universal escape hatch back to the full view.
-    // Node double-click stops propagation, so it will not trigger this handler.
-    event.preventDefault();
-    resetZoom();
+    if (event.target === state.svg.node()) {
+      event.preventDefault();
+      resetZoom();
+    }
   });
 
   state.simulation = d3
@@ -1306,9 +1323,10 @@ function selectNode(nodeId) {
   if (node) {
     renderInfoPanel(node);
 
-    // Mobile: selecting a node opens the existing Bottom Sheet. Desktop keeps current panel state.
+    // JS-7C：手機點節點後自動展開資訊欄，桌機維持目前狀態。
     if (isMobileLayout()) {
-      openMobileBottomSheet(60);
+      state.infoCompact = false;
+      applyInfoCompactState();
     }
   }
 }
@@ -1316,51 +1334,54 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
-  const focusNodes = getFocusNodesForNode(nodeId);
+  const visibleNodes = state.nodeSelection.selectAll("g").data();
+  const visibleNodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
+  const targetNode = visibleNodeMap.get(nodeId);
+
+  if (!targetNode || targetNode.x === undefined || targetNode.y === undefined) return;
+
+  const directNeighborIds = getDirectNeighborIds(nodeId);
+  const focusNodes = [nodeId, ...directNeighborIds]
+    .map((id) => visibleNodeMap.get(id))
+    .filter((node) => node && Number.isFinite(node.x) && Number.isFinite(node.y));
 
   if (focusNodes.length <= 1) {
-    focusSingleNode(nodeId);
+    focusSingleNode(targetNode);
+    pulseSelectedNode(nodeId);
     return;
   }
 
-  fitNodesToView(focusNodes);
+  focusNodeGroup(focusNodes);
+  pulseSelectedNode(nodeId);
 }
 
-function getVisibleNodeById(nodeId) {
-  if (!state.nodeSelection) return null;
+function getDirectNeighborIds(selectedId) {
+  const neighbors = new Set();
 
-  return state.nodeSelection
-    .selectAll("g")
-    .data()
-    .find((item) => item.id === nodeId);
-}
+  state.allEdges.forEach((edge) => {
+    const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
+    const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
-function getFocusNodesForNode(nodeId) {
-  const connectedIds = getConnectedNodeIds(nodeId);
-  const visibleNodes = state.nodeSelection ? state.nodeSelection.selectAll("g").data() : [];
-
-  return visibleNodes.filter((node) => {
-    return connectedIds.has(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y);
+    if (sourceId === selectedId) neighbors.add(targetId);
+    if (targetId === selectedId) neighbors.add(sourceId);
   });
+
+  return neighbors;
 }
 
-function focusSingleNode(nodeId) {
-  const visibleNode = getVisibleNodeById(nodeId);
-
-  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
-
+function focusSingleNode(node) {
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard || !state.svg || !state.zoomBehavior) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const scale = isMobileLayout() ? 1.05 : 1.55;
-  const centerY = isMobileLayout() ? height * 0.42 : height / 2;
+  const scale = isMobileLayout() ? 1.18 : 1.55;
+  const centerY = isMobileLayout() && state.mobileSheetOpen ? height * 0.40 : height / 2;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, centerY)
     .scale(scale)
-    .translate(-visibleNode.x, -visibleNode.y);
+    .translate(-node.x, -node.y);
 
   state.svg
     .transition()
@@ -1369,44 +1390,68 @@ function focusSingleNode(nodeId) {
     .call(state.zoomBehavior.transform, transform);
 }
 
-function fitNodesToView(nodes) {
+function focusNodeGroup(nodes) {
   const graphCard = document.querySelector(".graph-card");
-  if (!graphCard || !state.svg || !state.zoomBehavior || nodes.length === 0) return;
+  if (!graphCard || !state.svg || !state.zoomBehavior) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const xs = nodes.map((node) => node.x);
-  const ys = nodes.map((node) => node.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
+  const mobile = isMobileLayout();
+  const padding = mobile ? 72 : 120;
+  const centerY = mobile && state.mobileSheetOpen ? height * 0.40 : height / 2;
+  const minScale = mobile ? 0.34 : 0.28;
+  const maxScale = mobile ? 1.25 : 1.75;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  nodes.forEach((node) => {
+    const radius = getNodeRadius(node) + 28;
+    minX = Math.min(minX, node.x - radius);
+    minY = Math.min(minY, node.y - radius);
+    maxX = Math.max(maxX, node.x + radius);
+    maxY = Math.max(maxY, node.y + radius);
+  });
+
   const boxWidth = Math.max(1, maxX - minX);
   const boxHeight = Math.max(1, maxY - minY);
-  const boxCenterX = (minX + maxX) / 2;
-  const boxCenterY = (minY + maxY) / 2;
-
-  const mobile = isMobileLayout();
-  const paddingX = mobile ? 64 : 120;
-  const paddingY = mobile ? 150 : 120;
-  const usableWidth = Math.max(120, width - paddingX);
-  const usableHeight = Math.max(120, height - paddingY);
-  const rawScale = Math.min(usableWidth / boxWidth, usableHeight / boxHeight);
-  const minScale = mobile ? 0.55 : 0.45;
-  const maxScale = mobile ? 1.18 : 1.7;
+  const availableWidth = Math.max(1, width - padding * 2);
+  const availableHeight = Math.max(1, height - padding * 2 - (mobile && state.mobileSheetOpen ? 96 : 0));
+  const rawScale = Math.min(availableWidth / boxWidth, availableHeight / boxHeight);
   const scale = clamp(rawScale, minScale, maxScale);
-  const centerY = mobile ? height * 0.42 : height / 2;
+  const centerX = (minX + maxX) / 2;
+  const centerNodeY = (minY + maxY) / 2;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, centerY)
     .scale(scale)
-    .translate(-boxCenterX, -boxCenterY);
+    .translate(-centerX, -centerNodeY);
 
   state.svg
     .transition()
-    .duration(720)
+    .duration(700)
     .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
+}
+
+function pulseSelectedNode(nodeId) {
+  if (!state.nodeSelection) return;
+
+  const node = state.nodeSelection
+    .selectAll("g")
+    .filter((item) => item.id === nodeId);
+
+  node.classed("tap-feedback", false);
+
+  window.requestAnimationFrame(() => {
+    node.classed("tap-feedback", true);
+
+    window.setTimeout(() => {
+      node.classed("tap-feedback", false);
+    }, 240);
+  });
 }
 
 function getConnectedNodeIds(selectedId) {

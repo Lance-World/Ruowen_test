@@ -185,7 +185,7 @@ button { user-select: none; }
   width: 100%;
   color: var(--teal-deep);
   font-size: 20px;
-  font-weight: 850;
+  font-weight: 900;
   line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
@@ -416,7 +416,7 @@ button { user-select: none; }
   display: block;
   color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
   margin-bottom: 8px;
 }
 
@@ -457,7 +457,7 @@ button { user-select: none; }
   text-align: center;
   white-space: nowrap;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
   line-height: 38px;
   border-radius: 999px;
 }
@@ -531,7 +531,7 @@ button { user-select: none; }
   background: rgba(92, 166, 168, 0.88);
   color: #ffffff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .floating-note {
@@ -711,7 +711,7 @@ button { user-select: none; }
   min-width: max-content;
   font-family: "Montserrat", "Poppins", "Lato", "Microsoft JhengHei", sans-serif;
   font-size: 1em;
-  font-weight: 900;
+  font-weight: 950;
   line-height: 1;
   letter-spacing: 0.02em;
   background: linear-gradient(135deg, #c99aa3 0%, #ebcbb8 38%, #b9b4dd 74%, #88a9bf 100%);
@@ -747,7 +747,7 @@ button { user-select: none; }
   color: #315b63;
   padding: 5px 10px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
   border: 1px solid rgba(241, 223, 172, 0.42);
   flex-shrink: 0;
 }
@@ -830,7 +830,7 @@ button { user-select: none; }
 .source-title {
   font-size: 13px;
   color: var(--text-main);
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .source-text {
@@ -843,7 +843,7 @@ button { user-select: none; }
   font-size: 12px;
   color: #2d7d86;
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .source-link:hover { text-decoration: underline; }
@@ -852,7 +852,7 @@ button { user-select: none; }
   color: var(--text-muted);
   cursor: default;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 550;
 }
 
 .resize-handle.info-right {
@@ -933,7 +933,7 @@ button { user-select: none; }
   white-space: nowrap;
   font-size: clamp(18px, 2.1vw, 24px);
   line-height: 1.15;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 #infoPanel.info-compact .info-title-text {
@@ -992,7 +992,7 @@ button { user-select: none; }
 .node text {
   pointer-events: none;
   fill: #173c43;
-  font-weight: 700;
+  font-weight: 750;
   paint-order: stroke;
   stroke: rgba(255, 255, 255, 0.88);
   stroke-width: 4px;
@@ -1003,17 +1003,17 @@ button { user-select: none; }
 
 .node-label .label-name {
   fill: #173c43;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .node-label .label-count {
   fill: url(#countGradient);
-  font-weight: 900;
+  font-weight: 950;
   letter-spacing: 0.3px;
   font-size: 1.08em;
 }
 
-.node.selected .label-count { font-weight: 950; }
+.node.selected .label-count { font-weight: 1000; }
 
 .link {
   stroke: rgba(96, 129, 137, 0.5);
@@ -1122,7 +1122,7 @@ button { user-select: none; }
   max-width: min(9em, 100%);
   color: rgba(255, 248, 240, 0.96);
   font-size: clamp(24px, 3.6vw, 38px);
-  font-weight: 800;
+  font-weight: 850;
   line-height: 1.16;
   letter-spacing: 0.08em;
   text-align: center;
@@ -1429,7 +1429,7 @@ button { user-select: none; }
     background: rgba(255, 255, 255, 0.58);
     color: var(--text-secondary);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 750;
     cursor: pointer;
   }
 
@@ -1833,45 +1833,247 @@ button { user-select: none; }
 }
 
 /* =========================================================
-   FINAL MOBILE SIDEBAR + GRAPH FOCUS PATCH
-   Scope notes:
-   - Sidebar category chips only under <=768px.
-   - Icon button sizes are intentionally untouched.
-   - Bottom Sheet selectors are intentionally not modified here.
+   Mobile-only Bottom Sheet override
+   Scope: <=768px only. Desktop / Web layout remains untouched.
 ========================================================= */
 @media (max-width: 768px) {
+  #mainResizeHandle,
+  #innerResizeHandle,
+  #infoRightResizeHandle,
+  .resize-handle.horizontal,
+  .resize-handle.vertical,
+  .resize-handle.info-right {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .info-panel,
+  #infoPanel,
+  #infoPanel:not(.info-compact),
+  #infoPanel.info-compact {
+    position: fixed !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    min-height: 200px !important;
+    height: auto;
+    max-height: 80vh !important;
+    z-index: 120 !important;
+    display: block !important;
+    padding: 24px 14px calc(16px + env(safe-area-inset-bottom)) !important;
+    border-radius: 16px 16px 0 0 !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(199, 220, 222, 0.72) !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 -14px 40px rgba(23, 60, 67, 0.16) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(calc(100% + 16px));
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.22s ease,
+      height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #infoPanel::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(83, 113, 118, 0.34);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  #infoPanel.bottom-sheet-open {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel.bottom-sheet-hidden,
+  #infoPanel.info-compact.bottom-sheet-hidden {
+    transform: translateY(calc(100% + 16px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #infoPanel.bottom-sheet-expanded {
+    max-height: 90vh !important;
+  }
+
+  #infoPanel.bottom-sheet-dragging {
+    transition: none !important;
+  }
+
+  #infoPanel:not(.info-compact) .info-header-row,
+  #infoPanel.info-compact .info-header-row,
+  #infoPanel.info-compact .info-header {
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    grid-template-areas:
+      "icon title"
+      "icon tags"
+      "icon related" !important;
+    align-items: start !important;
+    column-gap: 10px !important;
+    row-gap: 8px !important;
+    width: 100% !important;
+    margin: 0 0 10px !important;
+  }
+
+  #infoPanel .info-icon {
+    grid-area: icon;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  #infoPanel .info-title-block {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  #infoPanel #infoTitle {
+    font-size: clamp(16px, 4.4vw, 20px) !important;
+    line-height: 1.2 !important;
+  }
+
+  #infoPanel .info-tags {
+    grid-area: tags;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    max-height: none !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-related-row {
+    grid-area: related;
+    display: block !important;
+    margin: 0 0 10px !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-split-area {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #infoPanel .info-box,
+  #infoPanel .sentence-box,
+  #infoPanel .source-box {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #infoPanel .quote-list,
+  #infoPanel .source-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* =========================================================
+   FINAL REQUESTED OVERRIDES - Sidebar compactness + focus feedback
+   Scope notes:
+   - Mobile sidebar rules are strictly inside <=768px and only target sidebar/category selectors.
+   - Icon button dimensions are intentionally untouched.
+   - Bottom Sheet selectors are intentionally not included here.
+========================================================= */
+
+.node circle {
+  transition: stroke-width 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
+}
+
+.node.tap-feedback circle {
+  stroke-width: 4.8px;
+  filter: drop-shadow(0 0 8px rgba(92, 166, 168, 0.32));
+}
+
+@media (max-width: 768px) {
+  /* Sidebar typography: slightly stronger, without changing icon buttons or bottom sheet. */
+  .sidebar {
+    font-size: 15px;
+  }
+
+  /* Hide duplicated mobile section labels only; keep all category items. */
   .filter-section .sidebar-label,
   .sidebar-category-section .sidebar-label {
     display: none !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
-    margin-top: 7px !important;
-    padding: 7px 8px !important;
-  }
-
-  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
-    gap: 4px !important;
+  /* Keep vertical scroll; never switch category list to horizontal. */
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list,
+  .sidebar-category-list {
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
+    display: grid !important;
+    row-gap: 4px !important;
+    gap: 4px !important;
+    padding-top: 1px !important;
+    padding-bottom: 2px !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar .category-chip {
+  /* Category capsule compactness: preserve width, only reduce vertical density. */
+  .category-chip {
     width: 100% !important;
     min-height: 28px !important;
-    padding: 4px 10px !important;
-    font-size: 13px !important;
+    padding: 5px 10px !important;
+    margin: 0 !important;
     line-height: 1.18 !important;
+    font-size: 13.5px !important;
     border-radius: 999px !important;
   }
-}
 
-.node.selected circle {
-  animation: nodeSelectedPulse 420ms ease-out;
-}
+  .category-toggle-btn {
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-size: 14px !important;
+  }
 
-@keyframes nodeSelectedPulse {
-  0% { stroke-width: 7px; }
-  100% { stroke-width: 4px; }
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
+    margin-top: 6px !important;
+  }
 }
