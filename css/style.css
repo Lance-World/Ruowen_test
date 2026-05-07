@@ -2291,68 +2291,71 @@ body.about-modal-lock {
 }
 
 /* =========================================================
-   FINAL REQUEST OVERRIDES - Mobile Sidebar + Focus Feedback
-   Scope rules:
-   - Sidebar category spacing is mobile-only.
-   - Icon button dimensions are not changed here.
-   - Bottom Sheet selectors are intentionally not modified.
+   FINAL FIX - Mobile Sidebar Category Compactness + Focus Feedback
+   Scope notes:
+   - Mobile sidebar category chips only: <=768px and .sidebar categories.
+   - No icon button size / Bottom Sheet / graph container size changes.
 ========================================================= */
 
-/* All screens: slightly larger Sidebar typography only. */
-.sidebar {
-  font-size: 16px;
+.node circle {
+  transition: stroke-width 0.18s ease, stroke 0.18s ease;
 }
 
-.sidebar-label {
-  font-size: 14px;
+.node.tap-feedback circle {
+  stroke-width: 4px;
 }
 
-.category-toggle-btn {
-  font-size: 15px;
+@media (min-width: 769px) {
+  /* Desktop / Web keeps a more comfortable category layout. */
+  .sidebar-category-list {
+    gap: 7px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .category-chip {
+    min-height: 38px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    line-height: 1.3;
+  }
 }
 
 @media (max-width: 768px) {
-  /* Keep mobile Sidebar vertical scrolling and original width strategy. */
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Category chips: compact height/spacing only; width and Sidebar container are untouched. */
+  /* Mobile category list remains vertical scroll; only height/spacing is compressed. */
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
     margin-top: 6px !important;
   }
 
-  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list,
-  .sidebar-category-list {
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
     display: grid !important;
-    grid-auto-flow: row !important;
-    grid-template-columns: 1fr !important;
-    row-gap: 4px !important;
     gap: 4px !important;
+    row-gap: 4px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
   }
 
-  .category-chip {
-    min-height: 30px !important;
-    padding: 5px 10px !important;
+  .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .category-chip {
+    min-height: 28px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
     line-height: 1.18 !important;
-    font-size: 14px !important;
-    font-weight: 750 !important;
+    font-size: 13px !important;
+    margin-top: 0 !important;
     margin-bottom: 0 !important;
     border-radius: 999px !important;
   }
-
-  .category-toggle-btn {
-    margin-top: 7px !important;
-    margin-bottom: 0 !important;
-  }
 }
 
-/* Node click/tap feedback: stroke only, no radius/layout change. */
-.node.tap-feedback circle {
-  stroke-width: 4px !important;
-  transition: stroke-width 0.18s ease;
+/* =========================================================
+   Node label count hidden
+   Keep node labels, hide the trailing count number only.
+========================================================= */
+.node-label .label-count {
+  display: none !important;
 }

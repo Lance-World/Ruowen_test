@@ -25,6 +25,7 @@ const state = {
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
   aboutModalOpen: false,
+  simulationStopTimer: null,
 };
 
 const nodeColors = {
@@ -56,11 +57,11 @@ async function init() {
     updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
+    setupMobileSidebarAutoCollapse();
     setupResizablePanels();
     setupInfoCompactToggle();
     setupMobileBottomSheetGestures();
     setupAboutModal();
-    setupMobileSidebarAutoCollapse();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -996,6 +997,64 @@ function syncMobileOnlyResizeHandles() {
 }
 
 
+function collapseMobileSidebar() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+
+  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+}
+
+function setupMobileSidebarAutoCollapse() {
+  document.addEventListener("click", (event) => {
+    if (!isMobileLayout()) return;
+
+    const appShell = document.querySelector(".app-shell");
+    if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (
+      target.closest("#sidebar") ||
+      target.closest(".floating-actions") ||
+      target.closest("button") ||
+      target.closest("input, textarea, select") ||
+      target.closest("#infoPanel") ||
+      target.closest(".info-panel") ||
+      target.closest(".about-modal") ||
+      target.closest(".node")
+    ) {
+      return;
+    }
+
+    collapseMobileSidebar();
+  });
+}
+
+function isEventFromNode(event) {
+  const target = event && event.target;
+  return target instanceof Element && Boolean(target.closest(".node"));
+}
+
+function isBlankGraphEvent(event) {
+  if (!event || isEventFromNode(event)) return false;
+  const target = event.target;
+  if (!(target instanceof Element)) return false;
+  return target.id === "graphSvg";
+}
+
 function updateMobileToolbarPosition() {
   const appShell = document.querySelector(".app-shell");
   const sidebar = document.getElementById("sidebar");
@@ -1018,68 +1077,6 @@ function updateMobileToolbarPosition() {
   appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
 }
 
-function collapseMobileSidebar() {
-  if (!isMobileLayout()) return;
-
-  const appShell = document.querySelector(".app-shell");
-  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-  const sidebar = document.getElementById("sidebar");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-
-  appShell.classList.add("sidebar-collapsed");
-  localStorage.setItem("sidebarCollapsed", "1");
-
-  if (sidebar) sidebar.classList.remove("categories-open");
-  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-
-  updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
-  resizeGraphAfterPanelChange();
-}
-
-function setupMobileSidebarAutoCollapse() {
-  document.addEventListener("pointerdown", (event) => {
-    if (!isMobileLayout()) return;
-
-    const appShell = document.querySelector(".app-shell");
-    if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-
-    if (
-      target.closest("#sidebar") ||
-      target.closest(".floating-actions") ||
-      target.closest("button") ||
-      target.closest("input") ||
-      target.closest("select") ||
-      target.closest("textarea") ||
-      target.closest("#infoPanel") ||
-      target.closest(".about-modal") ||
-      target.closest(".node")
-    ) {
-      return;
-    }
-
-    collapseMobileSidebar();
-  }, { capture: true });
-}
-
-function isEventFromNode(event) {
-  const target = event && event.target;
-  return target instanceof Element && Boolean(target.closest(".node"));
-}
-
-function isBlankGraphEvent(event) {
-  const target = event && event.target;
-  if (!(target instanceof Element)) return false;
-  if (target.closest(".node")) return false;
-  if (target.closest("#sidebar, .floating-actions, #infoPanel, .about-modal")) return false;
-
-  return Boolean(target.closest("#graphSvg") || target.id === "graphSvg");
-}
-
 function isMobileLayout() {
   return window.matchMedia("(max-width: 768px)").matches;
 }
@@ -1100,8 +1097,8 @@ function resizeGraphAfterPanelChange() {
   state.svg.attr("viewBox", [0, 0, width, height]);
 
   if (state.simulation) {
+    // Keep center force updated, but do not restart simulation during resize/focus interactions.
     state.simulation.force("center", d3.forceCenter(width / 2, height / 2));
-    state.simulation.alpha(0.18).restart();
   }
 }
 
@@ -1416,6 +1413,11 @@ function updateGraph() {
     state.simulation.stop();
   }
 
+  if (state.simulationStopTimer) {
+    clearTimeout(state.simulationStopTimer);
+    state.simulationStopTimer = null;
+  }
+
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
   const preparedEdges = edges
@@ -1470,13 +1472,13 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
+          pulseSelectedNode(node.id);
           focusNode(node.id);
           state.lastMobileTapNodeId = node.id;
         });
 
-        g.on("dblclick", (event, node) => {
+        g.on("dblclick", (event) => {
           event.stopPropagation();
-          focusNode(node.id);
         });
 
         return g;
@@ -1501,26 +1503,28 @@ function updateGraph() {
     );
 
   state.svg.on("click", (event) => {
-    if (isEventFromNode(event)) return;
-
-    if (isMobileLayout()) {
+    if (isMobileLayout() && isBlankGraphEvent(event)) {
       collapseMobileSidebar();
       return;
     }
 
-    clearSelection();
+    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
+    if (!isMobileLayout() && isBlankGraphEvent(event)) {
+      clearSelection();
+    }
   });
 
-  state.svg.on("dblclick.blankReset", (event) => {
-    if (!isBlankGraphEvent(event)) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    resetZoom();
+  state.svg.on("dblclick", (event) => {
+    if (isBlankGraphEvent(event)) {
+      event.preventDefault();
+      resetZoom();
+    }
   });
 
   state.simulation = d3
     .forceSimulation(nodes)
+    .alphaDecay(0.08)
+    .velocityDecay(0.45)
     .force(
       "link",
       d3
@@ -1545,6 +1549,13 @@ function updateGraph() {
       nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
     });
 
+  state.simulationStopTimer = window.setTimeout(() => {
+    if (state.simulation) {
+      state.simulation.stop();
+    }
+    state.simulationStopTimer = null;
+  }, 2500);
+
   highlightSelection();
 }
 
@@ -1557,20 +1568,11 @@ function renderNodeLabel(textSelection, node) {
   textSelection.selectAll("*").remove();
 
   const label = shortenLabel(node.label, node.type);
-  const count = Number(node.count || 0);
 
   textSelection
     .append("tspan")
     .attr("class", "label-name")
     .text(label);
-
-  if (count > 0) {
-    textSelection
-      .append("tspan")
-      .attr("class", "label-count")
-      .attr("dx", 5)
-      .text(formatCount(count));
-  }
 }
 
 function formatCount(count) {
@@ -1652,42 +1654,34 @@ function selectNode(nodeId) {
 
 function focusNode(nodeId) {
   selectNode(nodeId);
-  pulseSelectedNode(nodeId);
 
-  const directIds = getDirectNeighborIds(nodeId);
-  const targetIds = new Set([nodeId, ...directIds]);
+  const visibleNodes = state.nodeSelection.selectAll("g").data();
+  const visibleNodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
+  const neighborIds = getDirectNeighborIds(nodeId);
+  const nodeGroup = [nodeId, ...neighborIds]
+    .map((id) => visibleNodeMap.get(id))
+    .filter((node) => node && Number.isFinite(node.x) && Number.isFinite(node.y));
 
-  const visibleNodes = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .filter((node) => {
-      return (
-        targetIds.has(node.id) &&
-        Number.isFinite(node.x) &&
-        Number.isFinite(node.y)
-      );
-    });
-
-  if (visibleNodes.length <= 1) {
+  if (nodeGroup.length <= 1) {
     focusSingleNode(nodeId);
     return;
   }
 
-  focusNodeGroup(visibleNodes);
+  focusNodeGroup(nodeGroup);
 }
 
 function getDirectNeighborIds(nodeId) {
-  const ids = new Set();
+  const neighbors = new Set();
 
   state.allEdges.forEach((edge) => {
     const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
     const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
-    if (sourceId === nodeId) ids.add(targetId);
-    if (targetId === nodeId) ids.add(sourceId);
+    if (sourceId === nodeId && targetId) neighbors.add(targetId);
+    if (targetId === nodeId && sourceId) neighbors.add(sourceId);
   });
 
-  return ids;
+  return neighbors;
 }
 
 function focusSingleNode(nodeId) {
@@ -1704,8 +1698,8 @@ function focusSingleNode(nodeId) {
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
   const isMobile = isMobileLayout();
-  const scale = isMobile ? 1.18 : 1.55;
-  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(92, height * 0.14) : 0;
+  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(96, height * 0.14) : 0;
+  const scale = isMobile ? 1.05 : 1.35;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, height / 2 + centerYOffset)
@@ -1721,13 +1715,14 @@ function focusSingleNode(nodeId) {
 
 function focusNodeGroup(nodes) {
   const graphCard = document.querySelector(".graph-card");
-  if (!graphCard || !state.svg || !state.zoomBehavior || nodes.length === 0) return;
+  if (!graphCard || !state.svg || !state.zoomBehavior || !nodes.length) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
   const isMobile = isMobileLayout();
-  const padding = isMobile ? 92 : 150;
-  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(92, height * 0.14) : 0;
+  const padding = isMobile ? 82 : 132;
+  const minScale = isMobile ? 0.42 : 0.32;
+  const maxScale = isMobile ? 1.18 : 1.72;
 
   let minX = Infinity;
   let minY = Infinity;
@@ -1735,10 +1730,10 @@ function focusNodeGroup(nodes) {
   let maxY = -Infinity;
 
   nodes.forEach((node) => {
-    const radius = getNodeRadius(node) + (isMobile ? 24 : 34);
+    const radius = getNodeRadius(node) + 22;
     minX = Math.min(minX, node.x - radius);
-    minY = Math.min(minY, node.y - radius);
     maxX = Math.max(maxX, node.x + radius);
+    minY = Math.min(minY, node.y - radius);
     maxY = Math.max(maxY, node.y + radius);
   });
 
@@ -1746,12 +1741,17 @@ function focusNodeGroup(nodes) {
 
   const boxWidth = Math.max(1, maxX - minX);
   const boxHeight = Math.max(1, maxY - minY);
-  const fitWidth = Math.max(1, width - padding * 2);
-  const fitHeight = Math.max(1, height - padding * 2 - (isMobile && state.mobileSheetOpen ? 120 : 0));
-  const rawScale = Math.min(fitWidth / boxWidth, fitHeight / boxHeight);
-  const scale = clamp(rawScale, isMobile ? 0.48 : 0.42, isMobile ? 1.45 : 2.1);
+  const availableWidth = Math.max(1, width - padding * 2);
+  const availableHeight = Math.max(1, height - padding * 2);
+  const scale = clamp(
+    Math.min(availableWidth / boxWidth, availableHeight / boxHeight),
+    minScale,
+    maxScale
+  );
+
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
+  const centerYOffset = isMobile && state.mobileSheetOpen ? -Math.min(96, height * 0.14) : 0;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, height / 2 + centerYOffset)
@@ -1760,7 +1760,7 @@ function focusNodeGroup(nodes) {
 
   state.svg
     .transition()
-    .duration(720)
+    .duration(700)
     .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
 }
@@ -1768,14 +1768,16 @@ function focusNodeGroup(nodes) {
 function pulseSelectedNode(nodeId) {
   if (!state.nodeSelection) return;
 
-  const selected = state.nodeSelection
+  state.nodeSelection
     .selectAll("g")
-    .filter((node) => node.id === nodeId);
+    .classed("tap-feedback", (node) => node.id === nodeId);
 
-  selected.classed("tap-feedback", true);
   window.setTimeout(() => {
-    selected.classed("tap-feedback", false);
-  }, 260);
+    if (!state.nodeSelection) return;
+    state.nodeSelection
+      .selectAll("g")
+      .classed("tap-feedback", false);
+  }, 220);
 }
 
 function getConnectedNodeIds(selectedId) {
