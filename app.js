@@ -22,12 +22,6 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
-  mobileSheetOpen: false,
-  mobileSheetExpanded: false,
-  aboutModalOpen: false,
-  viewMode: "main",
-  activeConceptId: null,
-  activeTermId: null,
 };
 
 const nodeColors = {
@@ -55,14 +49,10 @@ async function init() {
     restoreSearchPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
-    syncMobileOnlyResizeHandles();
-    updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
-    setupMobileBottomSheetGestures();
-    setupAboutModal();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -160,11 +150,9 @@ function toggleSidebar() {
   }
 
   updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
 
   setTimeout(() => {
     updateFloatingLayoutVars();
-    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 320);
 }
@@ -193,10 +181,8 @@ function toggleSearchPanel() {
   }
 
   updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
 
   setTimeout(() => {
-    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 120);
 }
@@ -284,7 +270,6 @@ function setupControls() {
   const resetViewBtn = document.getElementById("resetViewBtn");
   const expandAllBtn = document.getElementById("expandAllBtn");
   const clearSelectionBtn = document.getElementById("clearSelectionBtn");
-  const returnMainBtn = document.getElementById("returnMainBtn");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
   const categoryToggleBtn = document.getElementById("categoryToggleBtn");
@@ -342,8 +327,6 @@ function setupControls() {
       sidebar.classList.toggle("categories-open");
       const isOpen = sidebar.classList.contains("categories-open");
       categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      updateMobileToolbarPosition();
-      setTimeout(updateMobileToolbarPosition, 220);
     });
   }
 
@@ -357,10 +340,6 @@ function setupControls() {
 
   if (clearSelectionBtn) {
     clearSelectionBtn.addEventListener("click", clearSelection);
-  }
-
-  if (returnMainBtn) {
-    returnMainBtn.addEventListener("click", returnMainNetwork);
   }
 
   if (sidebarToggleBtn) {
@@ -393,7 +372,6 @@ function showAll() {
   state.visibleTypes = new Set(["topic", "concept", "term", "phrase"]);
   state.selectedCategory = "all";
   state.selectedNodeId = null;
-  setGraphViewMode("main");
 
   document.querySelectorAll(".filter-chip").forEach((item) => {
     item.classList.add("active");
@@ -412,18 +390,6 @@ function showAll() {
   if (isMobileLayout()) {
     closeMobileBottomSheet();
   }
-}
-
-function returnMainNetwork() {
-  state.selectedNodeId = null;
-  setGraphViewMode("main");
-
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) searchInput.value = "";
-
-  updateGraph();
-  renderDefaultInfo();
-  resetZoom();
 }
 
 function clearSelection() {
@@ -678,56 +644,6 @@ function setupMobileBottomSheetGestures() {
     applyInfoCompactState();
     setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
   }, { passive: true });
-}
-
-
-function setupAboutModal() {
-  const aboutBtn = document.getElementById("aboutBtn");
-  const modal = document.getElementById("aboutModal");
-  const closeBtn = document.getElementById("aboutCloseBtn");
-
-  if (!aboutBtn || !modal) return;
-
-  function openAboutModal() {
-    state.aboutModalOpen = true;
-    modal.classList.remove("hidden");
-    modal.classList.add("about-modal-open");
-    modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("about-modal-lock");
-
-    if (closeBtn) {
-      setTimeout(() => closeBtn.focus(), 0);
-    }
-  }
-
-  function closeAboutModal() {
-    state.aboutModalOpen = false;
-    modal.classList.remove("about-modal-open");
-    modal.classList.add("hidden");
-    modal.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("about-modal-lock");
-  }
-
-  aboutBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openAboutModal();
-  });
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeAboutModal);
-  }
-
-  modal.addEventListener("click", (event) => {
-    if (event.target && event.target.dataset && event.target.dataset.aboutClose === "true") {
-      closeAboutModal();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.aboutModalOpen) {
-      closeAboutModal();
-    }
-  });
 }
 
 function getRandomTitleNumber() {
@@ -1011,29 +927,6 @@ function syncMobileOnlyResizeHandles() {
   });
 }
 
-
-function updateMobileToolbarPosition() {
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-
-  if (!appShell) return;
-
-  if (!isMobileLayout()) {
-    appShell.style.removeProperty("--mobile-toolbar-top");
-    return;
-  }
-
-  if (!sidebar || appShell.classList.contains("sidebar-collapsed")) {
-    appShell.style.setProperty("--mobile-toolbar-top", "8px");
-    return;
-  }
-
-  const rect = sidebar.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
-  const nextTop = Math.min(Math.max(8, Math.ceil(rect.bottom + 8)), Math.max(8, viewportHeight - 58));
-  appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
-}
-
 function isMobileLayout() {
   return window.matchMedia("(max-width: 768px)").matches;
 }
@@ -1055,7 +948,6 @@ function resizeGraphAfterPanelChange() {
 
   if (state.simulation) {
     state.simulation.force("center", d3.forceCenter(width / 2, height / 2));
-    state.simulation.alpha(0.18).restart();
   }
 }
 
@@ -1248,10 +1140,8 @@ function buildSearchHaystack(node) {
 function getFilteredData() {
   const searchInput = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(searchInput ? searchInput.value : "");
-  const baseVisibleIds = getViewVisibleNodeIds();
 
   let nodes = state.allNodes.filter((node) => {
-    if (!baseVisibleIds.has(node.id)) return false;
     if (!state.visibleTypes.has(node.type)) return false;
 
     if (
@@ -1261,7 +1151,7 @@ function getFilteredData() {
       return false;
     }
 
-    if (keyword && state.viewMode === "main") {
+    if (keyword) {
       return buildSearchHaystack(node).includes(keyword);
     }
 
@@ -1271,167 +1161,28 @@ function getFilteredData() {
   const visibleIds = new Set(nodes.map((node) => node.id));
 
   let edges = state.allEdges.filter((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    return visibleIds.has(sourceId) && visibleIds.has(targetId);
+    return visibleIds.has(edge.source) && visibleIds.has(edge.target);
   });
 
-  if (state.viewMode === "term_context" && state.activeTermId) {
-    const directTermIds = getDirectTermNeighborIds(state.activeTermId);
-    edges = edges.filter((edge) => {
-      const sourceId = getEdgeSourceId(edge);
-      const targetId = getEdgeTargetId(edge);
+  const connectedIds = new Set();
 
-      if (sourceId === state.activeTermId && directTermIds.has(targetId)) return true;
-      if (targetId === state.activeTermId && directTermIds.has(sourceId)) return true;
-      return visibleIds.has(sourceId) && visibleIds.has(targetId) && edge.type === "contains";
-    });
+  edges.forEach((edge) => {
+    connectedIds.add(edge.source);
+    connectedIds.add(edge.target);
+  });
+
+  if (keyword) {
+    nodes.forEach((node) => connectedIds.add(node.id));
   }
+
+  nodes = nodes.filter((node) => {
+    if (node.type === "topic") return true;
+    if (keyword) return true;
+    return connectedIds.has(node.id);
+  });
 
   return { nodes, edges };
 }
-
-function setGraphViewMode(mode, options = {}) {
-  state.viewMode = mode;
-  state.activeConceptId = options.conceptId || null;
-  state.activeTermId = options.termId || null;
-}
-
-function getViewVisibleNodeIds() {
-  const ids = new Set();
-
-  state.allNodes.forEach((node) => {
-    if (node.type === "topic" || node.type === "concept") {
-      ids.add(node.id);
-    }
-  });
-
-  if (state.viewMode === "concept_terms" && state.activeConceptId) {
-    getTermsForConcept(state.activeConceptId).forEach((id) => ids.add(id));
-  }
-
-  if (state.viewMode === "term_context" && state.activeTermId) {
-    const parentConceptId = state.activeConceptId || findParentConceptIdForTerm(state.activeTermId);
-
-    if (parentConceptId) {
-      ids.add(parentConceptId);
-      getTermsForConcept(parentConceptId).forEach((id) => ids.add(id));
-    }
-
-    ids.add(state.activeTermId);
-    getDirectTermNeighborIds(state.activeTermId).forEach((id) => ids.add(id));
-  }
-
-  return ids;
-}
-
-function getEdgeSourceId(edge) {
-  return typeof edge.source === "object" ? edge.source.id : edge.source;
-}
-
-function getEdgeTargetId(edge) {
-  return typeof edge.target === "object" ? edge.target.id : edge.target;
-}
-
-function getNodeById(nodeId) {
-  return state.allNodes.find((node) => node.id === nodeId) || null;
-}
-
-function isConceptNode(node) {
-  return node && node.type === "concept";
-}
-
-function isTermNode(node) {
-  return node && node.type === "term";
-}
-
-function getTermsForConcept(conceptId) {
-  const concept = getNodeById(conceptId);
-  const conceptKeys = new Set([
-    conceptId,
-    concept && concept.label,
-    concept && concept.canonical_term,
-    concept && concept.level2_concept,
-  ].filter(Boolean).map((item) => String(item).trim()));
-
-  const termIds = new Set();
-
-  state.allEdges.forEach((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-
-    if (sourceId === conceptId && isTermNode(getNodeById(targetId))) termIds.add(targetId);
-    if (targetId === conceptId && isTermNode(getNodeById(sourceId))) termIds.add(sourceId);
-  });
-
-  state.allNodes.forEach((node) => {
-    if (!isTermNode(node)) return;
-
-    const possibleParents = [
-      node.parent_concept,
-      node.parentConcept,
-      node.concept_id,
-      node.conceptId,
-      node.level2_concept,
-    ].filter(Boolean).map((item) => String(item).trim());
-
-    if (possibleParents.some((item) => conceptKeys.has(item))) {
-      termIds.add(node.id);
-    }
-  });
-
-  return termIds;
-}
-
-function findParentConceptIdForTerm(termId) {
-  const term = getNodeById(termId);
-  if (!term) return null;
-
-  for (const edge of state.allEdges) {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-
-    if (sourceId === termId && isConceptNode(targetNode)) return targetId;
-    if (targetId === termId && isConceptNode(sourceNode)) return sourceId;
-  }
-
-  const parentKeys = [
-    term.parent_concept,
-    term.parentConcept,
-    term.concept_id,
-    term.conceptId,
-    term.level2_concept,
-  ].filter(Boolean).map((item) => String(item).trim());
-
-  if (parentKeys.length === 0) return null;
-
-  const parent = state.allNodes.find((node) => {
-    if (!isConceptNode(node)) return false;
-    const keys = [node.id, node.label, node.canonical_term, node.level2_concept]
-      .filter(Boolean)
-      .map((item) => String(item).trim());
-    return keys.some((key) => parentKeys.includes(key));
-  });
-
-  return parent ? parent.id : null;
-}
-
-function getDirectTermNeighborIds(termId) {
-  const ids = new Set();
-
-  state.allEdges.forEach((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-
-    if (sourceId === termId && isTermNode(getNodeById(targetId))) ids.add(targetId);
-    if (targetId === termId && isTermNode(getNodeById(sourceId))) ids.add(sourceId);
-  });
-
-  return ids;
-}
-
 
 /* ================================
    Graph Rendering
@@ -1507,6 +1258,11 @@ function updateGraph() {
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
+  if (state.simulationStopTimer) {
+    window.clearTimeout(state.simulationStopTimer);
+    state.simulationStopTimer = null;
+  }
+
   if (state.simulation) {
     state.simulation.stop();
   }
@@ -1565,11 +1321,26 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
-          handleNodeClick(node.id);
+
+          // JS-9B：手機點同一節點第二次才聚焦；桌機維持單擊選取。
+          if (isMobileLayout()) {
+            if (state.selectedNodeId === node.id && state.lastMobileTapNodeId === node.id) {
+              focusNode(node.id);
+            } else {
+              selectNode(node.id);
+              state.lastMobileTapNodeId = node.id;
+            }
+            return;
+          }
+
+          selectNode(node.id);
         });
 
-        g.on("dblclick", (event) => {
+        g.on("dblclick", (event, node) => {
           event.stopPropagation();
+          if (!isMobileLayout()) {
+            focusNode(node.id);
+          }
         });
 
         return g;
@@ -1593,23 +1364,17 @@ function updateGraph() {
       (exit) => exit.remove()
     );
 
-  state.svg.on("click", (event) => {
-    if (event.target !== state.svg.node()) return;
-
+  state.svg.on("click", () => {
     // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
     if (!isMobileLayout()) {
       clearSelection();
     }
   });
 
-  state.svg.on("dblclick", (event) => {
-    if (event.target !== state.svg.node()) return;
-    event.preventDefault();
-    resetZoom();
-  });
-
   state.simulation = d3
     .forceSimulation(nodes)
+    .alphaDecay(0.08)
+    .velocityDecay(0.45)
     .force(
       "link",
       d3
@@ -1620,7 +1385,7 @@ function updateGraph() {
     )
     .force("charge", d3.forceManyBody().strength((node) => getCharge(node)))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 32))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (isMobileLayout() ? 34 : 38)))
     .force("x", d3.forceX(width / 2).strength(0.035))
     .force("y", d3.forceY(height / 2).strength(0.035))
     .on("tick", () => {
@@ -1634,6 +1399,13 @@ function updateGraph() {
       nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
     });
 
+  state.simulationStopTimer = window.setTimeout(() => {
+    if (state.simulation) {
+      state.simulation.stop();
+    }
+    state.simulationStopTimer = null;
+  }, 2500);
+
   highlightSelection();
 }
 
@@ -1646,20 +1418,11 @@ function renderNodeLabel(textSelection, node) {
   textSelection.selectAll("*").remove();
 
   const label = shortenLabel(node.label, node.type);
-  const count = Number(node.count || 0);
 
   textSelection
     .append("tspan")
     .attr("class", "label-name")
     .text(label);
-
-  if (count > 0) {
-    textSelection
-      .append("tspan")
-      .attr("class", "label-count")
-      .attr("dx", 5)
-      .text(formatCount(count));
-  }
 }
 
 function formatCount(count) {
@@ -1678,21 +1441,25 @@ function formatCount(count) {
 
 function getNodeRadius(node) {
   const size = Number(node.size || 20);
+  const isMobile = isMobileLayout();
+  const adjustedSize = isMobile ? size : size * 1.08;
 
-  if (node.type === "topic") return Math.max(22, Math.min(36, size));
-  if (node.type === "concept") return Math.max(20, Math.min(42, size));
-  if (node.type === "term") return Math.max(12, Math.min(27, size));
-  if (node.type === "phrase") return Math.max(10, Math.min(24, size));
+  if (node.type === "topic") return Math.max(22, Math.min(isMobile ? 36 : 40, adjustedSize));
+  if (node.type === "concept") return Math.max(20, Math.min(isMobile ? 42 : 46, adjustedSize));
+  if (node.type === "term") return Math.max(12, Math.min(isMobile ? 27 : 30, adjustedSize));
+  if (node.type === "phrase") return Math.max(10, Math.min(isMobile ? 24 : 26, adjustedSize));
 
-  return 16;
+  return isMobile ? 16 : 18;
 }
 
 function getLabelSize(node) {
-  if (node.type === "topic") return 13;
-  if (node.type === "concept") return 13;
-  if (node.type === "term") return 11;
-  if (node.type === "phrase") return 10;
-  return 11;
+  const isMobile = isMobileLayout();
+
+  if (node.type === "topic") return isMobile ? 15 : 15;
+  if (node.type === "concept") return isMobile ? 15 : 15;
+  if (node.type === "term") return isMobile ? 13 : 13;
+  if (node.type === "phrase") return isMobile ? 12 : 12;
+  return isMobile ? 13 : 13;
 }
 
 function getCharge(node) {
@@ -1724,27 +1491,6 @@ function shortenLabel(label, type) {
    Selection / Highlight
 ================================ */
 
-function handleNodeClick(nodeId) {
-  const node = getNodeById(nodeId);
-
-  if (isConceptNode(node)) {
-    setGraphViewMode("concept_terms", { conceptId: nodeId });
-    updateGraph();
-    window.requestAnimationFrame(() => focusNode(nodeId));
-    return;
-  }
-
-  if (isTermNode(node)) {
-    const parentConceptId = findParentConceptIdForTerm(nodeId);
-    setGraphViewMode("term_context", { conceptId: parentConceptId, termId: nodeId });
-    updateGraph();
-    window.requestAnimationFrame(() => focusNode(nodeId));
-    return;
-  }
-
-  focusNode(nodeId);
-}
-
 function selectNode(nodeId) {
   state.selectedNodeId = nodeId;
   highlightSelection();
@@ -1763,105 +1509,25 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
-  const visibleNodes = state.nodeSelection.selectAll("g").data();
-  const visibleNodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
-  const targetNode = visibleNodeMap.get(nodeId);
+  const visibleNode = state.nodeSelection
+    .selectAll("g")
+    .data()
+    .find((item) => item.id === nodeId);
 
-  if (!targetNode || !Number.isFinite(targetNode.x) || !Number.isFinite(targetNode.y)) return;
+  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
 
-  const neighborIds = getVisibleDirectNeighborIds(nodeId);
-  const focusNodes = [nodeId, ...neighborIds]
-    .map((id) => visibleNodeMap.get(id))
-    .filter((node) => node && Number.isFinite(node.x) && Number.isFinite(node.y));
-
-  if (focusNodes.length <= 1) {
-    focusSingleVisibleNode(targetNode);
-    return;
-  }
-
-  focusVisibleNodeGroup(focusNodes);
-}
-
-function getVisibleDirectNeighborIds(nodeId) {
-  const ids = new Set();
-  const visibleIds = new Set(state.nodeSelection.selectAll("g").data().map((node) => node.id));
-
-  state.linkSelection.selectAll("line").data().forEach((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-
-    if (sourceId === nodeId && visibleIds.has(targetId)) ids.add(targetId);
-    if (targetId === nodeId && visibleIds.has(sourceId)) ids.add(sourceId);
-  });
-
-  return ids;
-}
-
-function focusSingleVisibleNode(node) {
   const graphCard = document.querySelector(".graph-card");
-  if (!graphCard || !state.svg || !state.zoomBehavior) return;
-
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const scale = isMobileLayout() ? 1.08 : 1.38;
-  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -Math.min(90, height * 0.14) : 0;
 
   const transform = d3.zoomIdentity
-    .translate(width / 2, height / 2 + yOffset)
-    .scale(scale)
-    .translate(-node.x, -node.y);
+    .translate(width / 2, height / 2)
+    .scale(1.55)
+    .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
     .duration(650)
-    .ease(d3.easeCubicInOut)
-    .call(state.zoomBehavior.transform, transform);
-}
-
-function focusVisibleNodeGroup(nodes) {
-  const graphCard = document.querySelector(".graph-card");
-  if (!graphCard || !state.svg || !state.zoomBehavior) return;
-
-  const width = graphCard.clientWidth;
-  const height = graphCard.clientHeight;
-  const mobile = isMobileLayout();
-  const padding = mobile ? 82 : 128;
-  const minScale = mobile ? 0.42 : 0.32;
-  const maxScale = mobile ? 1.18 : 1.72;
-  const yOffset = mobile && state.mobileSheetOpen ? -Math.min(90, height * 0.14) : 0;
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  nodes.forEach((node) => {
-    const radius = getNodeRadius(node) + 24;
-    minX = Math.min(minX, node.x - radius);
-    minY = Math.min(minY, node.y - radius);
-    maxX = Math.max(maxX, node.x + radius);
-    maxY = Math.max(maxY, node.y + radius);
-  });
-
-  const boxWidth = Math.max(1, maxX - minX);
-  const boxHeight = Math.max(1, maxY - minY);
-  const scale = clamp(
-    Math.min((width - padding * 2) / boxWidth, (height - padding * 2) / boxHeight),
-    minScale,
-    maxScale
-  );
-  const centerX = (minX + maxX) / 2;
-  const centerY = (minY + maxY) / 2;
-
-  const transform = d3.zoomIdentity
-    .translate(width / 2, height / 2 + yOffset)
-    .scale(scale)
-    .translate(-centerX, -centerY);
-
-  state.svg
-    .transition()
-    .duration(700)
-    .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
 }
 
@@ -2120,11 +1786,9 @@ function searchNode() {
   const input = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(input ? input.value : "");
 
-  if (!keyword) {
-    setGraphViewMode("main");
-    updateGraph();
-    return;
-  }
+  updateGraph();
+
+  if (!keyword) return;
 
   const matchedNodes = state.allNodes.filter((node) => {
     return buildSearchHaystack(node).includes(keyword);
@@ -2136,17 +1800,7 @@ function searchNode() {
   }
 
   const matchedNode = matchedNodes[0];
-
-  if (isTermNode(matchedNode)) {
-    const parentConceptId = findParentConceptIdForTerm(matchedNode.id);
-    setGraphViewMode("term_context", { conceptId: parentConceptId, termId: matchedNode.id });
-  } else if (isConceptNode(matchedNode)) {
-    setGraphViewMode("concept_terms", { conceptId: matchedNode.id });
-  } else {
-    setGraphViewMode("main");
-  }
-
-  updateGraph();
+  setVisibleTypes(["topic", "concept", "term", "phrase"]);
 
   // JS-6C：手機搜尋後自動收合 Sidebar，桌機維持原狀。
   if (isMobileLayout()) {
@@ -2156,7 +1810,6 @@ function searchNode() {
     if (panel) panel.classList.add("search-collapsed");
     localStorage.setItem("searchPanelOpen", "0");
     updateFloatingLayoutVars();
-    updateMobileToolbarPosition();
   }
 
   setTimeout(() => {
@@ -2252,7 +1905,6 @@ function dragEnded(event, node) {
 window.addEventListener("resize", () => {
   updateFloatingLayoutVars();
   syncMobileOnlyResizeHandles();
-  updateMobileToolbarPosition();
 
   if (isMobileLayout()) {
     if (state.mobileSheetOpen) {
