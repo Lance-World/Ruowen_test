@@ -1356,8 +1356,12 @@ function getEdgeTargetId(edge) {
 
 function getDirectTermIdsForConcept(conceptId) {
   const ids = new Set();
+  const conceptNode = getNodeById(conceptId);
+  const conceptLabel = conceptNode ? String(conceptNode.label || conceptNode.canonical_term || conceptNode.id || "") : "";
 
-  (state.currentEdges && state.currentEdges.length ? state.currentEdges : state.allEdges).forEach((edge) => {
+  // Always use the original full edge list here. In main view, state.currentEdges only contains
+  // Topic/Concept edges, so using it would incorrectly hide all Concept → Term relationships.
+  state.allEdges.forEach((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
     if (sourceId !== conceptId && targetId !== conceptId) return;
@@ -1365,6 +1369,28 @@ function getDirectTermIdsForConcept(conceptId) {
     const otherId = sourceId === conceptId ? targetId : sourceId;
     const otherNode = getNodeById(otherId);
     if (otherNode && otherNode.type === "term") ids.add(otherId);
+  });
+
+  // Field-based fallback for data sets where Term ↔ Concept is stored as node metadata.
+  state.allNodes.forEach((node) => {
+    if (!node || node.type !== "term") return;
+
+    const parentFields = [
+      node.parentId,
+      node.parent_id,
+      node.conceptId,
+      node.concept_id,
+      node.belongs_to,
+      node.topic,
+      node.level2_concept,
+    ].filter((item) => item !== undefined && item !== null).map((item) => String(item));
+
+    if (
+      parentFields.includes(conceptId) ||
+      (conceptLabel && parentFields.includes(conceptLabel))
+    ) {
+      ids.add(node.id);
+    }
   });
 
   return ids;
@@ -1402,8 +1428,24 @@ function findParentConceptIdForTerm(termId) {
 
   if (fallbackConceptId) return fallbackConceptId;
 
-  if (termNode && termNode.level2_concept) {
-    const concept = state.allNodes.find((node) => node.type === "concept" && node.label === termNode.level2_concept);
+  if (termNode) {
+    const parentFields = [
+      termNode.parentId,
+      termNode.parent_id,
+      termNode.conceptId,
+      termNode.concept_id,
+      termNode.belongs_to,
+      termNode.topic,
+      termNode.level2_concept,
+    ].filter((item) => item !== undefined && item !== null).map((item) => String(item));
+
+    const concept = state.allNodes.find((node) => {
+      if (!node || node.type !== "concept") return false;
+      return parentFields.includes(String(node.id)) ||
+        parentFields.includes(String(node.label || "")) ||
+        parentFields.includes(String(node.canonical_term || ""));
+    });
+
     if (concept) return concept.id;
   }
 
