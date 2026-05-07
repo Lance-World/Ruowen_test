@@ -2214,7 +2214,6 @@ function setupLayerToolbar() {
       <path d="M5.5 10.5V20h13v-9.5" />
       <path d="M9.5 20v-5.5h5V20" />
     </svg>
-    <span class="back-main-text">返回主網絡</span>
   `;
   button.addEventListener("click", (event) => {
     event.stopPropagation();
