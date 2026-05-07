@@ -22,9 +22,6 @@ const state = {
   zoomBehavior: null,
   infoCompact: false,
   lastMobileTapNodeId: null,
-  mobileSheetOpen: false,
-  mobileSheetExpanded: false,
-  aboutModalOpen: false,
 };
 
 const nodeColors = {
@@ -52,14 +49,10 @@ async function init() {
     restoreSearchPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
-    syncMobileOnlyResizeHandles();
-    updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
     setupResizablePanels();
     setupInfoCompactToggle();
-    setupMobileBottomSheetGestures();
-    setupAboutModal();
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -157,13 +150,40 @@ function toggleSidebar() {
   }
 
   updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
 
   setTimeout(() => {
     updateFloatingLayoutVars();
-    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 320);
+}
+
+function collapseMobileSidebarOnly() {
+  if (!isMobileLayout()) return;
+
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+  const searchPanel = document.getElementById("sidebarSearchPanel");
+
+  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+  if (searchPanel) {
+    searchPanel.classList.add("search-collapsed");
+    localStorage.setItem("searchPanelOpen", "0");
+  }
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+
+  window.setTimeout(() => {
+    updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
+  }, 120);
 }
 
 function toggleSearchPanel() {
@@ -190,10 +210,8 @@ function toggleSearchPanel() {
   }
 
   updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
 
   setTimeout(() => {
-    updateMobileToolbarPosition();
     resizeGraphAfterPanelChange();
   }, 120);
 }
@@ -230,9 +248,10 @@ function setupCategoryChips() {
     state.selectedCategory = button.dataset.category || "all";
     updateGraph();
 
-    // Mobile: category selection is a completed action, so dismiss the Sidebar
-    // without changing graph zoom/pan or Bottom Sheet state.
-    collapseMobileSidebarOnly();
+    // Mobile: after a category is applied, close the sidebar without resetting zoom/pan.
+    if (isMobileLayout()) {
+      collapseMobileSidebarOnly();
+    }
   });
 }
 
@@ -342,8 +361,6 @@ function setupControls() {
       sidebar.classList.toggle("categories-open");
       const isOpen = sidebar.classList.contains("categories-open");
       categoryToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      updateMobileToolbarPosition();
-      setTimeout(updateMobileToolbarPosition, 220);
     });
   }
 
@@ -403,20 +420,12 @@ function showAll() {
 
   updateGraph();
   renderDefaultInfo();
-
-  if (isMobileLayout()) {
-    closeMobileBottomSheet();
-  }
 }
 
 function clearSelection() {
   state.selectedNodeId = null;
   highlightSelection();
   renderDefaultInfo();
-
-  if (isMobileLayout()) {
-    closeMobileBottomSheet();
-  }
 }
 
 /* ================================
@@ -444,28 +453,10 @@ function setupInfoCompactToggle() {
     }
   });
 
-  if (isMobileLayout()) {
-    closeMobileBottomSheet(false);
-    return;
-  }
-
   applyInfoCompactState();
 }
 
 function toggleInfoCompact() {
-  if (isMobileLayout()) {
-    if (state.svg) {
-      state.svg.on("dblclick.zoom", null);
-    }
-
-    if (state.mobileSheetOpen) {
-      closeMobileBottomSheet();
-    } else {
-      openMobileBottomSheet(60);
-    }
-    return;
-  }
-
   state.infoCompact = !state.infoCompact;
   applyInfoCompactState();
 }
@@ -476,30 +467,6 @@ function applyInfoCompactState() {
 
   if (!infoPanel) return;
 
-  if (isMobileLayout()) {
-    infoPanel.classList.toggle("bottom-sheet-open", Boolean(state.mobileSheetOpen));
-    infoPanel.classList.toggle("bottom-sheet-hidden", !state.mobileSheetOpen);
-    infoPanel.classList.toggle("bottom-sheet-expanded", Boolean(state.mobileSheetExpanded));
-    infoPanel.classList.toggle("info-compact", !state.mobileSheetOpen);
-
-    if (workspace) {
-      workspace.classList.toggle("info-compact-workspace", !state.mobileSheetOpen);
-    }
-
-    requestAnimationFrame(() => {
-      resizeGraphAfterPanelChange();
-    });
-    return;
-  }
-
-  infoPanel.classList.remove(
-    "bottom-sheet-open",
-    "bottom-sheet-hidden",
-    "bottom-sheet-expanded",
-    "bottom-sheet-dragging"
-  );
-  infoPanel.style.transform = "";
-  infoPanel.style.height = "";
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
 
   if (workspace) {
@@ -508,212 +475,6 @@ function applyInfoCompactState() {
 
   requestAnimationFrame(() => {
     resizeGraphAfterPanelChange();
-  });
-}
-
-function openMobileBottomSheet(targetVh = 60) {
-  if (!isMobileLayout()) return;
-
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  state.mobileSheetOpen = true;
-  state.mobileSheetExpanded = targetVh >= 88;
-  state.infoCompact = false;
-
-  infoPanel.classList.remove("bottom-sheet-dragging");
-  infoPanel.style.transform = "";
-  applyInfoCompactState();
-
-  requestAnimationFrame(() => {
-    setMobileBottomSheetHeight(targetVh);
-  });
-}
-
-function closeMobileBottomSheet(animate = true) {
-  if (!isMobileLayout()) return;
-
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  state.mobileSheetOpen = false;
-  state.mobileSheetExpanded = false;
-  state.infoCompact = true;
-
-  infoPanel.classList.remove("bottom-sheet-dragging", "bottom-sheet-expanded");
-  infoPanel.style.transform = "";
-  infoPanel.style.height = "";
-
-  if (!animate) {
-    infoPanel.classList.add("bottom-sheet-hidden");
-  }
-
-  applyInfoCompactState();
-}
-
-function setMobileBottomSheetHeight(targetVh = 60) {
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel || !isMobileLayout() || !state.mobileSheetOpen) return;
-
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
-  const minHeight = 200;
-  const maxHeight = viewportHeight * (targetVh / 100);
-  const naturalHeight = Math.ceil(infoPanel.scrollHeight || minHeight);
-  const nextHeight = clamp(naturalHeight, minHeight, maxHeight);
-
-  infoPanel.style.height = `${nextHeight}px`;
-}
-
-function getMobileSheetScrollContainer(eventTarget, infoPanel) {
-  let current = eventTarget instanceof Element ? eventTarget : null;
-
-  while (current && current !== infoPanel) {
-    const style = window.getComputedStyle(current);
-    const canScrollY = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1;
-
-    if (canScrollY) {
-      return current;
-    }
-
-    current = current.parentElement;
-  }
-
-  return infoPanel;
-}
-
-function setupMobileBottomSheetGestures() {
-  const infoPanel = document.getElementById("infoPanel");
-  if (!infoPanel) return;
-
-  let startY = 0;
-  let startTime = 0;
-  let dragging = false;
-  let tracking = false;
-  let activeScrollContainer = infoPanel;
-
-  function resetDragState() {
-    tracking = false;
-    dragging = false;
-    activeScrollContainer = infoPanel;
-    infoPanel.classList.remove("bottom-sheet-dragging");
-  }
-
-  infoPanel.addEventListener("touchstart", (event) => {
-    if (!isMobileLayout() || !state.mobileSheetOpen || event.touches.length !== 1) return;
-
-    const touch = event.touches[0];
-    startY = touch.clientY;
-    startTime = performance.now();
-    dragging = false;
-    tracking = true;
-    activeScrollContainer = getMobileSheetScrollContainer(event.target, infoPanel);
-  }, { passive: true });
-
-  infoPanel.addEventListener("touchmove", (event) => {
-    if (!tracking || !isMobileLayout() || !state.mobileSheetOpen || event.touches.length !== 1) return;
-
-    const touch = event.touches[0];
-    const deltaY = touch.clientY - startY;
-    const isPullingDown = deltaY > 0;
-    const scrollTop = activeScrollContainer ? activeScrollContainer.scrollTop : infoPanel.scrollTop;
-
-    // 內容仍可向上回捲時，維持原生 scroll，不接管成 sheet drag。
-    if (!dragging && (!isPullingDown || scrollTop > 0)) {
-      return;
-    }
-
-    if (!dragging && deltaY < 6) return;
-
-    dragging = true;
-    infoPanel.classList.add("bottom-sheet-dragging");
-    infoPanel.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
-
-    // 只有在 scrollTop = 0 且向下拉時才阻止原生 scroll，避免兩者互搶。
-    event.preventDefault();
-  }, { passive: false });
-
-  function finishTouchDrag(event) {
-    if (!tracking) return;
-
-    const touch = event.changedTouches && event.changedTouches[0];
-    const endY = touch ? touch.clientY : startY;
-    const deltaY = endY - startY;
-    const elapsed = Math.max(1, performance.now() - startTime);
-    const velocity = deltaY / elapsed;
-
-    if (!dragging) {
-      resetDragState();
-      return;
-    }
-
-    resetDragState();
-
-    if (deltaY > 80 || velocity > 0.62) {
-      closeMobileBottomSheet();
-      return;
-    }
-
-    infoPanel.style.transform = "";
-    applyInfoCompactState();
-    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
-  }
-
-  infoPanel.addEventListener("touchend", finishTouchDrag, { passive: true });
-  infoPanel.addEventListener("touchcancel", () => {
-    resetDragState();
-    infoPanel.style.transform = "";
-    applyInfoCompactState();
-    setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
-  }, { passive: true });
-}
-
-
-function setupAboutModal() {
-  const aboutBtn = document.getElementById("aboutBtn");
-  const modal = document.getElementById("aboutModal");
-  const closeBtn = document.getElementById("aboutCloseBtn");
-
-  if (!aboutBtn || !modal) return;
-
-  function openAboutModal() {
-    state.aboutModalOpen = true;
-    modal.classList.remove("hidden");
-    modal.classList.add("about-modal-open");
-    modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("about-modal-lock");
-
-    if (closeBtn) {
-      setTimeout(() => closeBtn.focus(), 0);
-    }
-  }
-
-  function closeAboutModal() {
-    state.aboutModalOpen = false;
-    modal.classList.remove("about-modal-open");
-    modal.classList.add("hidden");
-    modal.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("about-modal-lock");
-  }
-
-  aboutBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openAboutModal();
-  });
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeAboutModal);
-  }
-
-  modal.addEventListener("click", (event) => {
-    if (event.target && event.target.dataset && event.target.dataset.aboutClose === "true") {
-      closeAboutModal();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.aboutModalOpen) {
-      closeAboutModal();
-    }
   });
 }
 
@@ -779,7 +540,6 @@ function setupMainVerticalResize() {
 
   enablePointerResize(handle, {
     cursor: "row-resize",
-    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = workspace.getBoundingClientRect();
       const infoHeight = rect.bottom - event.clientY;
@@ -811,7 +571,6 @@ function setupInnerHorizontalResize() {
 
   enablePointerResize(handle, {
     cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
-    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = splitArea.getBoundingClientRect();
 
@@ -839,7 +598,6 @@ function setupInfoRightResize() {
 
   enablePointerResize(handle, {
     cursor: () => (isMobileLayout() ? "row-resize" : "col-resize"),
-    canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = workspace.getBoundingClientRect();
 
@@ -870,8 +628,6 @@ function enablePointerResize(handle, options) {
   let isDragging = false;
 
   handle.addEventListener("pointerdown", (event) => {
-    if (typeof options.canStart === "function" && !options.canStart(event)) return;
-
     isDragging = true;
 
     try {
@@ -980,69 +736,6 @@ function updateFloatingLayoutVars() {
   appShell.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
   appShell.style.setProperty("--info-left", `${infoLeft}px`);
   appShell.style.setProperty("--info-right", "20px");
-}
-
-function syncMobileOnlyResizeHandles() {
-  const shouldHide = isMobileLayout();
-  ["mainResizeHandle", "innerResizeHandle", "infoRightResizeHandle"].forEach((id) => {
-    const handle = document.getElementById(id);
-    if (!handle) return;
-
-    if (shouldHide) {
-      handle.setAttribute("hidden", "");
-      handle.setAttribute("aria-hidden", "true");
-    } else {
-      handle.removeAttribute("hidden");
-      handle.removeAttribute("aria-hidden");
-    }
-  });
-}
-
-
-function collapseMobileSidebarOnly() {
-  if (!isMobileLayout()) return;
-
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-
-  if (!appShell) return;
-
-  appShell.classList.add("sidebar-collapsed");
-  localStorage.setItem("sidebarCollapsed", "1");
-
-  if (sidebar) sidebar.classList.remove("categories-open");
-  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-
-  updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
-
-  requestAnimationFrame(() => {
-    updateMobileToolbarPosition();
-    resizeGraphAfterPanelChange();
-  });
-}
-
-function updateMobileToolbarPosition() {
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-
-  if (!appShell) return;
-
-  if (!isMobileLayout()) {
-    appShell.style.removeProperty("--mobile-toolbar-top");
-    return;
-  }
-
-  if (!sidebar || appShell.classList.contains("sidebar-collapsed")) {
-    appShell.style.setProperty("--mobile-toolbar-top", "8px");
-    return;
-  }
-
-  const rect = sidebar.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
-  const nextTop = Math.min(Math.max(8, Math.ceil(rect.bottom + 8)), Math.max(8, viewportHeight - 58));
-  appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
 }
 
 function isMobileLayout() {
@@ -1362,11 +1055,9 @@ function renderGraph() {
 
   svg.call(state.zoomBehavior);
 
-  // Mobile uses double-tap blank space as an intentional reset / escape action.
-  // Disable D3's default double-click zoom only on mobile so it does not fight resetZoom().
-  if (isMobileLayout()) {
-    svg.on("dblclick.zoom", null);
-  }
+  // Blank-canvas double click is handled explicitly below.
+  // Disable d3's built-in dblclick zoom so resetZoom() is predictable.
+  svg.on("dblclick.zoom", null);
 
   updateGraph();
 }
@@ -1441,19 +1132,8 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
-
-          // JS-9B：手機點同一節點第二次才聚焦；桌機維持單擊選取。
-          if (isMobileLayout()) {
-            if (state.selectedNodeId === node.id && state.lastMobileTapNodeId === node.id) {
-              focusNode(node.id);
-            } else {
-              selectNode(node.id);
-              state.lastMobileTapNodeId = node.id;
-            }
-            return;
-          }
-
-          selectNode(node.id);
+          state.lastMobileTapNodeId = node.id;
+          focusNode(node.id);
         });
 
         g.on("dblclick", (event, node) => {
@@ -1485,25 +1165,20 @@ function updateGraph() {
     );
 
   state.svg.on("click", (event) => {
-    // Mobile backdrop dismissal: tapping blank graph space collapses Sidebar only.
-    // It intentionally preserves current zoom/pan and does not reset selection.
+    // Mobile backdrop dismissal: clicking blank graph space closes the sidebar only.
+    // It does not reset zoom/pan and does not affect Bottom Sheet.
     if (isMobileLayout()) {
-      event.preventDefault();
       collapseMobileSidebarOnly();
       return;
     }
 
-    // Desktop keeps existing behavior.
     clearSelection();
   });
 
   state.svg.on("dblclick", (event) => {
-    // Mobile escape hatch: double-tap blank graph space returns to the full view.
-    // Node dblclick/tap handlers already stop propagation, so this is blank-space only.
-    if (!isMobileLayout()) return;
-
+    // Blank canvas double-click is the universal escape hatch back to the full view.
+    // Node double-click stops propagation, so it will not trigger this handler.
     event.preventDefault();
-    collapseMobileSidebarOnly();
     resetZoom();
   });
 
@@ -1631,7 +1306,7 @@ function selectNode(nodeId) {
   if (node) {
     renderInfoPanel(node);
 
-    // JS-7C：手機點節點後開啟 Bottom Sheet；桌機維持目前狀態。
+    // Mobile: selecting a node opens the existing Bottom Sheet. Desktop keeps current panel state.
     if (isMobileLayout()) {
       openMobileBottomSheet(60);
     }
@@ -1641,90 +1316,95 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
-  const visibleNode = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .find((item) => item.id === nodeId);
+  const focusNodes = getFocusNodesForNode(nodeId);
 
-  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
-
-  if (isMobileLayout()) {
-    focusMobileNodeNeighborhood(nodeId, visibleNode);
+  if (focusNodes.length <= 1) {
+    focusSingleNode(nodeId);
     return;
   }
 
-  const graphCard = document.querySelector(".graph-card");
-  const width = graphCard.clientWidth;
-  const height = graphCard.clientHeight;
-
-  const transform = d3.zoomIdentity
-    .translate(width / 2, height / 2)
-    .scale(1.55)
-    .translate(-visibleNode.x, -visibleNode.y);
-
-  state.svg
-    .transition()
-    .duration(650)
-    .call(state.zoomBehavior.transform, transform);
+  fitNodesToView(focusNodes);
 }
 
-function focusMobileNodeNeighborhood(nodeId, fallbackNode) {
+function getVisibleNodeById(nodeId) {
+  if (!state.nodeSelection) return null;
+
+  return state.nodeSelection
+    .selectAll("g")
+    .data()
+    .find((item) => item.id === nodeId);
+}
+
+function getFocusNodesForNode(nodeId) {
+  const connectedIds = getConnectedNodeIds(nodeId);
+  const visibleNodes = state.nodeSelection ? state.nodeSelection.selectAll("g").data() : [];
+
+  return visibleNodes.filter((node) => {
+    return connectedIds.has(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y);
+  });
+}
+
+function focusSingleNode(nodeId) {
+  const visibleNode = getVisibleNodeById(nodeId);
+
+  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
+
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard || !state.svg || !state.zoomBehavior) return;
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const connectedIds = getConnectedNodeIds(nodeId);
-
-  const visibleNeighbors = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .filter((node) => {
-      return (
-        connectedIds.has(node.id) &&
-        Number.isFinite(node.x) &&
-        Number.isFinite(node.y)
-      );
-    });
-
-  const focusNodes = visibleNeighbors.length > 0 ? visibleNeighbors : [fallbackNode];
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  focusNodes.forEach((node) => {
-    const radius = getNodeRadius(node) + 44;
-    minX = Math.min(minX, node.x - radius);
-    minY = Math.min(minY, node.y - radius);
-    maxX = Math.max(maxX, node.x + radius);
-    maxY = Math.max(maxY, node.y + radius);
-  });
-
-  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return;
-
-  const bboxWidth = Math.max(1, maxX - minX);
-  const bboxHeight = Math.max(1, maxY - minY);
-  const centerX = (minX + maxX) / 2;
-  const centerY = (minY + maxY) / 2;
-
-  // Keep the focus above the Bottom Sheet area while still showing direct neighbors.
-  const usableWidth = Math.max(1, width - 44);
-  const usableHeight = Math.max(1, height * 0.58);
-  const rawScale = Math.min(usableWidth / bboxWidth, usableHeight / bboxHeight);
-  const targetScale = clamp(rawScale, 0.72, 1.15);
-  const targetX = width / 2;
-  const targetY = height * 0.36;
+  const scale = isMobileLayout() ? 1.05 : 1.55;
+  const centerY = isMobileLayout() ? height * 0.42 : height / 2;
 
   const transform = d3.zoomIdentity
-    .translate(targetX, targetY)
-    .scale(targetScale)
-    .translate(-centerX, -centerY);
+    .translate(width / 2, centerY)
+    .scale(scale)
+    .translate(-visibleNode.x, -visibleNode.y);
 
   state.svg
     .transition()
-    .duration(680)
+    .duration(650)
+    .ease(d3.easeCubicInOut)
+    .call(state.zoomBehavior.transform, transform);
+}
+
+function fitNodesToView(nodes) {
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.svg || !state.zoomBehavior || nodes.length === 0) return;
+
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const xs = nodes.map((node) => node.x);
+  const ys = nodes.map((node) => node.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const boxWidth = Math.max(1, maxX - minX);
+  const boxHeight = Math.max(1, maxY - minY);
+  const boxCenterX = (minX + maxX) / 2;
+  const boxCenterY = (minY + maxY) / 2;
+
+  const mobile = isMobileLayout();
+  const paddingX = mobile ? 64 : 120;
+  const paddingY = mobile ? 150 : 120;
+  const usableWidth = Math.max(120, width - paddingX);
+  const usableHeight = Math.max(120, height - paddingY);
+  const rawScale = Math.min(usableWidth / boxWidth, usableHeight / boxHeight);
+  const minScale = mobile ? 0.55 : 0.45;
+  const maxScale = mobile ? 1.18 : 1.7;
+  const scale = clamp(rawScale, minScale, maxScale);
+  const centerY = mobile ? height * 0.42 : height / 2;
+
+  const transform = d3.zoomIdentity
+    .translate(width / 2, centerY)
+    .scale(scale)
+    .translate(-boxCenterX, -boxCenterY);
+
+  state.svg
+    .transition()
+    .duration(720)
     .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, transform);
 }
@@ -2008,6 +1688,7 @@ function searchNode() {
     if (panel) panel.classList.add("search-collapsed");
     localStorage.setItem("searchPanelOpen", "0");
     updateFloatingLayoutVars();
+    updateMobileToolbarPosition();
   }
 
   setTimeout(() => {
@@ -2102,22 +1783,5 @@ function dragEnded(event, node) {
 
 window.addEventListener("resize", () => {
   updateFloatingLayoutVars();
-  syncMobileOnlyResizeHandles();
-  updateMobileToolbarPosition();
-
-  if (isMobileLayout()) {
-    if (state.mobileSheetOpen) {
-      setMobileBottomSheetHeight(state.mobileSheetExpanded ? 90 : 60);
-    } else {
-      closeMobileBottomSheet(false);
-    }
-  } else {
-    const infoPanel = document.getElementById("infoPanel");
-    if (infoPanel) {
-      infoPanel.style.transform = "";
-      infoPanel.style.height = "";
-    }
-  }
-
   resizeGraphAfterPanelChange();
 });

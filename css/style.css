@@ -1833,93 +1833,45 @@ button { user-select: none; }
 }
 
 /* =========================================================
-   FINAL MOBILE SIDEBAR COMPACT + GRAPH INTERACTION POLISH
-   Scope: <=768px only. Desktop / Web remains untouched.
+   FINAL MOBILE SIDEBAR + GRAPH FOCUS PATCH
+   Scope notes:
+   - Sidebar category chips only under <=768px.
+   - Icon button sizes are intentionally untouched.
+   - Bottom Sheet selectors are intentionally not modified here.
 ========================================================= */
 @media (max-width: 768px) {
-  /* Hide duplicated section labels in mobile Sidebar. */
   .filter-section .sidebar-label,
   .sidebar-category-section .sidebar-label {
     display: none !important;
   }
 
-  /* Keep mobile Sidebar floating/glass-like while improving readability. */
-  .app-shell:not(.sidebar-collapsed) .sidebar {
-    backdrop-filter: blur(20px) saturate(1.08) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.08) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-  }
-
-  /* Top filter pills: slightly smaller but still easy to tap. */
-  .filter-chip-row {
-    gap: 5px !important;
-  }
-
-  .filter-chip-row .side-item,
-  .filter-chip-row .filter-chip {
-    height: 34px !important;
-    min-height: 34px !important;
-    line-height: 34px !important;
-    padding: 0 6px !important;
-    font-size: 13px !important;
-    border-radius: 999px !important;
-  }
-
-  /* Main category toggle: tighter spacing under the three filter pills. */
-  .category-toggle-btn {
-    height: 40px !important;
-    min-height: 40px !important;
-    line-height: 40px !important;
-    margin: 8px 0 0 !important;
-    padding: 0 14px !important;
-    font-size: 14px !important;
-    border-radius: 999px !important;
-  }
-
-  /* Expanded category panel: keep all 18 items, but reduce display height per item. */
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-section {
-    margin-top: 8px !important;
-    padding: 8px !important;
-    max-height: min(300px, 40vh) !important;
-    overflow: hidden !important;
+    margin-top: 7px !important;
+    padding: 7px 8px !important;
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar.categories-open .sidebar-category-list {
     gap: 4px !important;
-    max-height: min(250px, 34vh) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    padding: 1px 4px 1px 0 !important;
     -webkit-overflow-scrolling: touch;
   }
 
   .app-shell:not(.sidebar-collapsed) .sidebar .category-chip {
+    width: 100% !important;
     min-height: 28px !important;
-    height: auto !important;
     padding: 4px 10px !important;
-    line-height: 1.18 !important;
     font-size: 13px !important;
-    border-radius: 14px !important;
-  }
-
-  /* Mobile selected-node feedback: visual pulse without changing data or layout. */
-  .node.selected circle {
-    animation: mobileNodeSelectedPulse 0.42s ease-out;
+    line-height: 1.18 !important;
+    border-radius: 999px !important;
   }
 }
 
-@keyframes mobileNodeSelectedPulse {
-  0% {
-    stroke-width: 6px;
-    filter: drop-shadow(0 0 0 rgba(92, 166, 168, 0));
-  }
-  45% {
-    stroke-width: 6px;
-    filter: drop-shadow(0 0 10px rgba(92, 166, 168, 0.45));
-  }
-  100% {
-    stroke-width: 4px;
-    filter: drop-shadow(0 11px 20px rgba(23, 60, 67, 0.17));
-  }
+.node.selected circle {
+  animation: nodeSelectedPulse 420ms ease-out;
+}
+
+@keyframes nodeSelectedPulse {
+  0% { stroke-width: 7px; }
+  100% { stroke-width: 4px; }
 }
