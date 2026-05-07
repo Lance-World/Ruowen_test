@@ -25,10 +25,9 @@ const state = {
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
   aboutModalOpen: false,
-  currentLayer: "main",
+  viewMode: "main",
   activeConceptId: null,
-  activeHashtag: null,
-  previousMainTransform: null,
+  activeTermId: null,
 };
 
 const nodeColors = {
@@ -60,9 +59,6 @@ async function init() {
     updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
-    setupLayerToolbar();
-    setupHashtagInteractions();
-    setupMobileSidebarAutoCollapse();
     setupResizablePanels();
     setupInfoCompactToggle();
     setupMobileBottomSheetGestures();
@@ -235,12 +231,7 @@ function setupCategoryChips() {
 
     button.classList.add("active");
     state.selectedCategory = button.dataset.category || "all";
-    state.activeHashtag = null;
     updateGraph();
-
-    if (isMobileLayout()) {
-      collapseMobileSidebar();
-    }
   });
 }
 
@@ -293,6 +284,7 @@ function setupControls() {
   const resetViewBtn = document.getElementById("resetViewBtn");
   const expandAllBtn = document.getElementById("expandAllBtn");
   const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+  const returnMainBtn = document.getElementById("returnMainBtn");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
   const categoryToggleBtn = document.getElementById("categoryToggleBtn");
@@ -367,6 +359,10 @@ function setupControls() {
     clearSelectionBtn.addEventListener("click", clearSelection);
   }
 
+  if (returnMainBtn) {
+    returnMainBtn.addEventListener("click", returnMainNetwork);
+  }
+
   if (sidebarToggleBtn) {
     sidebarToggleBtn.addEventListener("click", toggleSidebar);
   }
@@ -397,6 +393,7 @@ function showAll() {
   state.visibleTypes = new Set(["topic", "concept", "term", "phrase"]);
   state.selectedCategory = "all";
   state.selectedNodeId = null;
+  setGraphViewMode("main");
 
   document.querySelectorAll(".filter-chip").forEach((item) => {
     item.classList.add("active");
@@ -415,6 +412,18 @@ function showAll() {
   if (isMobileLayout()) {
     closeMobileBottomSheet();
   }
+}
+
+function returnMainNetwork() {
+  state.selectedNodeId = null;
+  setGraphViewMode("main");
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.value = "";
+
+  updateGraph();
+  renderDefaultInfo();
+  resetZoom();
 }
 
 function clearSelection() {
@@ -1239,20 +1248,10 @@ function buildSearchHaystack(node) {
 function getFilteredData() {
   const searchInput = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(searchInput ? searchInput.value : "");
-
-  if (state.currentLayer === "detail") {
-    return getDetailLayerData(state.activeConceptId, keyword);
-  }
-
-  return getMainLayerData(keyword);
-}
-
-function getMainLayerData(keyword = "") {
-  const allowedTypes = new Set(["topic", "concept"]);
-  const matchedConceptIdsFromTermSearch = keyword ? getConceptIdsMatchingTermKeyword(keyword) : new Set();
+  const baseVisibleIds = getViewVisibleNodeIds();
 
   let nodes = state.allNodes.filter((node) => {
-    if (!allowedTypes.has(node.type)) return false;
+    if (!baseVisibleIds.has(node.id)) return false;
     if (!state.visibleTypes.has(node.type)) return false;
 
     if (
@@ -1262,104 +1261,68 @@ function getMainLayerData(keyword = "") {
       return false;
     }
 
-    if (keyword) {
-      return buildSearchHaystack(node).includes(keyword) || matchedConceptIdsFromTermSearch.has(node.id);
+    if (keyword && state.viewMode === "main") {
+      return buildSearchHaystack(node).includes(keyword);
     }
 
     return true;
   });
 
   const visibleIds = new Set(nodes.map((node) => node.id));
-  const edges = state.allEdges.filter((edge) => {
+
+  let edges = state.allEdges.filter((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
-    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
-
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-    if (!sourceNode || !targetNode) return false;
-
-    return allowedTypes.has(sourceNode.type) && allowedTypes.has(targetNode.type);
+    return visibleIds.has(sourceId) && visibleIds.has(targetId);
   });
 
-  const connectedIds = new Set();
-  edges.forEach((edge) => {
-    connectedIds.add(getEdgeSourceId(edge));
-    connectedIds.add(getEdgeTargetId(edge));
-  });
+  if (state.viewMode === "term_context" && state.activeTermId) {
+    const directTermIds = getDirectTermNeighborIds(state.activeTermId);
+    edges = edges.filter((edge) => {
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
 
-  if (keyword) {
-    nodes.forEach((node) => connectedIds.add(node.id));
+      if (sourceId === state.activeTermId && directTermIds.has(targetId)) return true;
+      if (targetId === state.activeTermId && directTermIds.has(sourceId)) return true;
+      return visibleIds.has(sourceId) && visibleIds.has(targetId) && edge.type === "contains";
+    });
   }
-
-  nodes = nodes.filter((node) => {
-    if (node.type === "topic") return true;
-    if (keyword) return true;
-    return connectedIds.has(node.id);
-  });
 
   return { nodes, edges };
 }
 
-function getDetailLayerData(conceptId, keyword = "") {
-  const conceptNode = getNodeById(conceptId);
-  if (!conceptNode || conceptNode.type !== "concept") {
-    return { nodes: [], edges: [] };
-  }
-
-  const allowedIds = new Set([conceptId]);
-  const conceptTermEdges = [];
-
-  state.allEdges.forEach((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-    if (!sourceNode || !targetNode) return;
-
-    const isConceptTerm =
-      (sourceId === conceptId && targetNode.type === "term") ||
-      (targetId === conceptId && sourceNode.type === "term");
-
-    if (!isConceptTerm) return;
-
-    const termNode = sourceId === conceptId ? targetNode : sourceNode;
-    allowedIds.add(termNode.id);
-    conceptTermEdges.push(edge);
-  });
-
-  let nodes = state.allNodes.filter((node) => allowedIds.has(node.id));
-
-  if (keyword) {
-    const matchedIds = new Set(
-      nodes
-        .filter((node) => node.id === conceptId || buildSearchHaystack(node).includes(keyword))
-        .map((node) => node.id)
-    );
-    matchedIds.add(conceptId);
-    nodes = nodes.filter((node) => matchedIds.has(node.id));
-  }
-
-  const visibleIds = new Set(nodes.map((node) => node.id));
-
-  const termTermEdges = state.allEdges.filter((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-    return sourceNode?.type === "term" && targetNode?.type === "term";
-  });
-
-  const edges = [...conceptTermEdges, ...termTermEdges].filter((edge) => {
-    return visibleIds.has(getEdgeSourceId(edge)) && visibleIds.has(getEdgeTargetId(edge));
-  });
-
-  return { nodes, edges };
+function setGraphViewMode(mode, options = {}) {
+  state.viewMode = mode;
+  state.activeConceptId = options.conceptId || null;
+  state.activeTermId = options.termId || null;
 }
 
-function getNodeById(nodeId) {
-  return state.allNodes.find((node) => node.id === nodeId);
+function getViewVisibleNodeIds() {
+  const ids = new Set();
+
+  state.allNodes.forEach((node) => {
+    if (node.type === "topic" || node.type === "concept") {
+      ids.add(node.id);
+    }
+  });
+
+  if (state.viewMode === "concept_terms" && state.activeConceptId) {
+    getTermsForConcept(state.activeConceptId).forEach((id) => ids.add(id));
+  }
+
+  if (state.viewMode === "term_context" && state.activeTermId) {
+    const parentConceptId = state.activeConceptId || findParentConceptIdForTerm(state.activeTermId);
+
+    if (parentConceptId) {
+      ids.add(parentConceptId);
+      getTermsForConcept(parentConceptId).forEach((id) => ids.add(id));
+    }
+
+    ids.add(state.activeTermId);
+    getDirectTermNeighborIds(state.activeTermId).forEach((id) => ids.add(id));
+  }
+
+  return ids;
 }
 
 function getEdgeSourceId(edge) {
@@ -1370,38 +1333,105 @@ function getEdgeTargetId(edge) {
   return typeof edge.target === "object" ? edge.target.id : edge.target;
 }
 
-function getConceptIdsMatchingTermKeyword(keyword) {
-  const conceptIds = new Set();
-  if (!keyword) return conceptIds;
-
-  state.allNodes
-    .filter((node) => node.type === "term" && buildSearchHaystack(node).includes(keyword))
-    .forEach((termNode) => {
-      const parentId = getParentConceptIdForTerm(termNode.id);
-      if (parentId) conceptIds.add(parentId);
-    });
-
-  return conceptIds;
+function getNodeById(nodeId) {
+  return state.allNodes.find((node) => node.id === nodeId) || null;
 }
 
-function getParentConceptIdForTerm(termId) {
+function isConceptNode(node) {
+  return node && node.type === "concept";
+}
+
+function isTermNode(node) {
+  return node && node.type === "term";
+}
+
+function getTermsForConcept(conceptId) {
+  const concept = getNodeById(conceptId);
+  const conceptKeys = new Set([
+    conceptId,
+    concept && concept.label,
+    concept && concept.canonical_term,
+    concept && concept.level2_concept,
+  ].filter(Boolean).map((item) => String(item).trim()));
+
+  const termIds = new Set();
+
+  state.allEdges.forEach((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+
+    if (sourceId === conceptId && isTermNode(getNodeById(targetId))) termIds.add(targetId);
+    if (targetId === conceptId && isTermNode(getNodeById(sourceId))) termIds.add(sourceId);
+  });
+
+  state.allNodes.forEach((node) => {
+    if (!isTermNode(node)) return;
+
+    const possibleParents = [
+      node.parent_concept,
+      node.parentConcept,
+      node.concept_id,
+      node.conceptId,
+      node.level2_concept,
+    ].filter(Boolean).map((item) => String(item).trim());
+
+    if (possibleParents.some((item) => conceptKeys.has(item))) {
+      termIds.add(node.id);
+    }
+  });
+
+  return termIds;
+}
+
+function findParentConceptIdForTerm(termId) {
+  const term = getNodeById(termId);
+  if (!term) return null;
+
   for (const edge of state.allEdges) {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
     const sourceNode = getNodeById(sourceId);
     const targetNode = getNodeById(targetId);
-    if (!sourceNode || !targetNode) continue;
 
-    if (sourceId === termId && targetNode.type === "concept") return targetId;
-    if (targetId === termId && sourceNode.type === "concept") return sourceId;
+    if (sourceId === termId && isConceptNode(targetNode)) return targetId;
+    if (targetId === termId && isConceptNode(sourceNode)) return sourceId;
   }
 
-  return null;
+  const parentKeys = [
+    term.parent_concept,
+    term.parentConcept,
+    term.concept_id,
+    term.conceptId,
+    term.level2_concept,
+  ].filter(Boolean).map((item) => String(item).trim());
+
+  if (parentKeys.length === 0) return null;
+
+  const parent = state.allNodes.find((node) => {
+    if (!isConceptNode(node)) return false;
+    const keys = [node.id, node.label, node.canonical_term, node.level2_concept]
+      .filter(Boolean)
+      .map((item) => String(item).trim());
+    return keys.some((key) => parentKeys.includes(key));
+  });
+
+  return parent ? parent.id : null;
 }
 
-function getCurrentVisibleGraphData() {
-  return getFilteredData();
+function getDirectTermNeighborIds(termId) {
+  const ids = new Set();
+
+  state.allEdges.forEach((edge) => {
+    const sourceId = getEdgeSourceId(edge);
+    const targetId = getEdgeTargetId(edge);
+
+    if (sourceId === termId && isTermNode(getNodeById(targetId))) ids.add(targetId);
+    if (targetId === termId && isTermNode(getNodeById(sourceId))) ids.add(sourceId);
+  });
+
+  return ids;
 }
+
 
 /* ================================
    Graph Rendering
@@ -1468,8 +1498,6 @@ function renderGraph() {
 function updateGraph() {
   const { nodes, edges } = getFilteredData();
 
-  updateLayerToolbarState();
-
   const emptyState = document.getElementById("emptyState");
   if (emptyState) {
     emptyState.classList.toggle("hidden", nodes.length > 0);
@@ -1486,12 +1514,12 @@ function updateGraph() {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
   const preparedEdges = edges
-    .filter((edge) => nodeMap.has(getEdgeSourceId(edge)) && nodeMap.has(getEdgeTargetId(edge)))
+    .filter((edge) => nodeMap.has(edge.source) && nodeMap.has(edge.target))
     .map((edge) => ({ ...edge }));
 
   state.linkSelection
     .selectAll("line")
-    .data(preparedEdges, (edge) => edge.id || `${getEdgeSourceId(edge)}__${getEdgeTargetId(edge)}__${edge.type || "edge"}`)
+    .data(preparedEdges, (edge) => edge.id)
     .join(
       (enter) =>
         enter
@@ -1537,20 +1565,11 @@ function updateGraph() {
 
         g.on("click", (event, node) => {
           event.stopPropagation();
-          selectNode(node.id);
-          pulseSelectedNode(node.id);
-          focusNode(node.id);
+          handleNodeClick(node.id);
         });
 
-        g.on("dblclick", (event, node) => {
+        g.on("dblclick", (event) => {
           event.stopPropagation();
-
-          if (state.currentLayer === "main" && node.type === "concept") {
-            enterConceptDetailLayer(node.id);
-            return;
-          }
-
-          focusNode(node.id);
         });
 
         return g;
@@ -1575,18 +1594,16 @@ function updateGraph() {
     );
 
   state.svg.on("click", (event) => {
-    if (!isBlankGraphEvent(event)) return;
+    if (event.target !== state.svg.node()) return;
 
-    if (isMobileLayout()) {
-      collapseMobileSidebar();
-      return;
+    // JS-8C：桌機點空白清除選取；手機避免誤觸，不清除。
+    if (!isMobileLayout()) {
+      clearSelection();
     }
-
-    clearSelection();
   });
 
   state.svg.on("dblclick", (event) => {
-    if (!isBlankGraphEvent(event)) return;
+    if (event.target !== state.svg.node()) return;
     event.preventDefault();
     resetZoom();
   });
@@ -1603,11 +1620,9 @@ function updateGraph() {
     )
     .force("charge", d3.forceManyBody().strength((node) => getCharge(node)))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 34))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 32))
     .force("x", d3.forceX(width / 2).strength(0.035))
     .force("y", d3.forceY(height / 2).strength(0.035))
-    .alphaDecay(0.08)
-    .velocityDecay(0.45)
     .on("tick", () => {
       state.linkSelection
         .selectAll("line")
@@ -1618,10 +1633,6 @@ function updateGraph() {
 
       nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
     });
-
-  setTimeout(() => {
-    if (state.simulation) state.simulation.stop();
-  }, 2500);
 
   highlightSelection();
 }
@@ -1635,11 +1646,20 @@ function renderNodeLabel(textSelection, node) {
   textSelection.selectAll("*").remove();
 
   const label = shortenLabel(node.label, node.type);
+  const count = Number(node.count || 0);
 
   textSelection
     .append("tspan")
     .attr("class", "label-name")
     .text(label);
+
+  if (count > 0) {
+    textSelection
+      .append("tspan")
+      .attr("class", "label-count")
+      .attr("dx", 5)
+      .text(formatCount(count));
+  }
 }
 
 function formatCount(count) {
@@ -1704,14 +1724,36 @@ function shortenLabel(label, type) {
    Selection / Highlight
 ================================ */
 
+function handleNodeClick(nodeId) {
+  const node = getNodeById(nodeId);
+
+  if (isConceptNode(node)) {
+    setGraphViewMode("concept_terms", { conceptId: nodeId });
+    updateGraph();
+    window.requestAnimationFrame(() => focusNode(nodeId));
+    return;
+  }
+
+  if (isTermNode(node)) {
+    const parentConceptId = findParentConceptIdForTerm(nodeId);
+    setGraphViewMode("term_context", { conceptId: parentConceptId, termId: nodeId });
+    updateGraph();
+    window.requestAnimationFrame(() => focusNode(nodeId));
+    return;
+  }
+
+  focusNode(nodeId);
+}
+
 function selectNode(nodeId) {
   state.selectedNodeId = nodeId;
   highlightSelection();
 
-  const node = getNodeById(nodeId);
+  const node = state.allNodes.find((item) => item.id === nodeId);
   if (node) {
     renderInfoPanel(node);
 
+    // JS-7C：手機點節點後開啟 Bottom Sheet；桌機維持目前狀態。
     if (isMobileLayout()) {
       openMobileBottomSheet(60);
     }
@@ -1721,52 +1763,53 @@ function selectNode(nodeId) {
 function focusNode(nodeId) {
   selectNode(nodeId);
 
-  const directIds = getDirectNeighborIds(nodeId);
-  const nodeIds = new Set([nodeId, ...directIds]);
-  const visibleIds = new Set(state.nodeSelection.selectAll("g").data().map((node) => node.id));
-  const visibleNodeIds = Array.from(nodeIds).filter((id) => visibleIds.has(id));
+  const visibleNodes = state.nodeSelection.selectAll("g").data();
+  const visibleNodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
+  const targetNode = visibleNodeMap.get(nodeId);
 
-  if (visibleNodeIds.length <= 1) {
-    focusSingleNode(nodeId);
+  if (!targetNode || !Number.isFinite(targetNode.x) || !Number.isFinite(targetNode.y)) return;
+
+  const neighborIds = getVisibleDirectNeighborIds(nodeId);
+  const focusNodes = [nodeId, ...neighborIds]
+    .map((id) => visibleNodeMap.get(id))
+    .filter((node) => node && Number.isFinite(node.x) && Number.isFinite(node.y));
+
+  if (focusNodes.length <= 1) {
+    focusSingleVisibleNode(targetNode);
     return;
   }
 
-  focusNodeGroup(visibleNodeIds);
+  focusVisibleNodeGroup(focusNodes);
 }
 
-function getDirectNeighborIds(nodeId) {
-  const neighbors = new Set();
+function getVisibleDirectNeighborIds(nodeId) {
+  const ids = new Set();
   const visibleIds = new Set(state.nodeSelection.selectAll("g").data().map((node) => node.id));
 
   state.linkSelection.selectAll("line").data().forEach((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
 
-    if (sourceId === nodeId && visibleIds.has(targetId)) neighbors.add(targetId);
-    if (targetId === nodeId && visibleIds.has(sourceId)) neighbors.add(sourceId);
+    if (sourceId === nodeId && visibleIds.has(targetId)) ids.add(targetId);
+    if (targetId === nodeId && visibleIds.has(sourceId)) ids.add(sourceId);
   });
 
-  return neighbors;
+  return ids;
 }
 
-function focusSingleNode(nodeId) {
-  const visibleNode = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .find((item) => item.id === nodeId);
-
-  if (!visibleNode || visibleNode.x === undefined || visibleNode.y === undefined) return;
-
+function focusSingleVisibleNode(node) {
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.svg || !state.zoomBehavior) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const scale = isMobileLayout() ? 1.08 : 1.35;
-  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -height * 0.12 : 0;
+  const scale = isMobileLayout() ? 1.08 : 1.38;
+  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -Math.min(90, height * 0.14) : 0;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, height / 2 + yOffset)
     .scale(scale)
-    .translate(-visibleNode.x, -visibleNode.y);
+    .translate(-node.x, -node.y);
 
   state.svg
     .transition()
@@ -1775,38 +1818,40 @@ function focusSingleNode(nodeId) {
     .call(state.zoomBehavior.transform, transform);
 }
 
-function focusNodeGroup(nodeIds) {
-  const visibleNodes = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .filter((node) => nodeIds.includes(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y));
-
-  if (visibleNodes.length === 0) return;
-  if (visibleNodes.length === 1) {
-    focusSingleNode(visibleNodes[0].id);
-    return;
-  }
-
+function focusVisibleNodeGroup(nodes) {
   const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.svg || !state.zoomBehavior) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
+  const mobile = isMobileLayout();
+  const padding = mobile ? 82 : 128;
+  const minScale = mobile ? 0.42 : 0.32;
+  const maxScale = mobile ? 1.18 : 1.72;
+  const yOffset = mobile && state.mobileSheetOpen ? -Math.min(90, height * 0.14) : 0;
 
-  const minX = d3.min(visibleNodes, (node) => node.x - getNodeRadius(node));
-  const maxX = d3.max(visibleNodes, (node) => node.x + getNodeRadius(node));
-  const minY = d3.min(visibleNodes, (node) => node.y - getNodeRadius(node));
-  const maxY = d3.max(visibleNodes, (node) => node.y + getNodeRadius(node));
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  nodes.forEach((node) => {
+    const radius = getNodeRadius(node) + 24;
+    minX = Math.min(minX, node.x - radius);
+    minY = Math.min(minY, node.y - radius);
+    maxX = Math.max(maxX, node.x + radius);
+    maxY = Math.max(maxY, node.y + radius);
+  });
 
   const boxWidth = Math.max(1, maxX - minX);
   const boxHeight = Math.max(1, maxY - minY);
-  const padding = isMobileLayout() ? 92 : 160;
-  const availableWidth = Math.max(1, width - padding);
-  const availableHeight = Math.max(1, height - padding - (isMobileLayout() && state.mobileSheetOpen ? height * 0.18 : 0));
-  const minScale = isMobileLayout() ? 0.42 : 0.36;
-  const maxScale = isMobileLayout() ? 1.45 : 1.9;
-  const scale = clamp(Math.min(availableWidth / boxWidth, availableHeight / boxHeight), minScale, maxScale);
+  const scale = clamp(
+    Math.min((width - padding * 2) / boxWidth, (height - padding * 2) / boxHeight),
+    minScale,
+    maxScale
+  );
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
-  const yOffset = isMobileLayout() && state.mobileSheetOpen ? -height * 0.10 : 0;
 
   const transform = d3.zoomIdentity
     .translate(width / 2, height / 2 + yOffset)
@@ -1820,23 +1865,12 @@ function focusNodeGroup(nodeIds) {
     .call(state.zoomBehavior.transform, transform);
 }
 
-function pulseSelectedNode(nodeId) {
-  if (!state.nodeSelection) return;
-
-  const selection = state.nodeSelection
-    .selectAll("g")
-    .filter((node) => node.id === nodeId);
-
-  selection.classed("tap-feedback", true);
-  window.setTimeout(() => selection.classed("tap-feedback", false), 220);
-}
-
 function getConnectedNodeIds(selectedId) {
   const connected = new Set([selectedId]);
 
   state.allEdges.forEach((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
+    const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
+    const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
     if (sourceId === selectedId) connected.add(targetId);
     if (targetId === selectedId) connected.add(sourceId);
@@ -1847,41 +1881,42 @@ function getConnectedNodeIds(selectedId) {
 
 function highlightSelection() {
   const selectedId = state.selectedNodeId;
-  const activeHashtag = state.activeHashtag;
-  const connectedIds = selectedId ? getConnectedNodeIds(selectedId) : new Set();
+
+  if (!selectedId) {
+    state.nodeSelection
+      .selectAll("g")
+      .classed("selected", false)
+      .classed("related", false)
+      .classed("dimmed", false);
+
+    state.linkSelection
+      .selectAll("line")
+      .classed("highlight", false)
+      .classed("dimmed", false);
+
+    return;
+  }
+
+  const connectedIds = getConnectedNodeIds(selectedId);
 
   state.nodeSelection
     .selectAll("g")
     .classed("selected", (node) => node.id === selectedId)
-    .classed("related", (node) => Boolean(selectedId) && connectedIds.has(node.id))
-    .classed("dimmed", (node) => {
-      if (activeHashtag) return !nodeHasHashtag(node, activeHashtag);
-      if (!selectedId) return false;
-      return !connectedIds.has(node.id);
-    })
-    .classed("hashtag-active", (node) => Boolean(activeHashtag) && nodeHasHashtag(node, activeHashtag));
+    .classed("related", (node) => connectedIds.has(node.id))
+    .classed("dimmed", (node) => !connectedIds.has(node.id));
 
   state.linkSelection
     .selectAll("line")
     .classed("highlight", (edge) => {
-      const sourceId = getEdgeSourceId(edge);
-      const targetId = getEdgeTargetId(edge);
-
-      if (activeHashtag) {
-        return nodeHasHashtag(getNodeById(sourceId), activeHashtag) || nodeHasHashtag(getNodeById(targetId), activeHashtag);
-      }
+      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
+      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
       return sourceId === selectedId || targetId === selectedId;
     })
     .classed("dimmed", (edge) => {
-      const sourceId = getEdgeSourceId(edge);
-      const targetId = getEdgeTargetId(edge);
+      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
+      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
 
-      if (activeHashtag) {
-        return !nodeHasHashtag(getNodeById(sourceId), activeHashtag) && !nodeHasHashtag(getNodeById(targetId), activeHashtag);
-      }
-
-      if (!selectedId) return false;
       return sourceId !== selectedId && targetId !== selectedId;
     });
 }
@@ -1909,13 +1944,12 @@ function renderInfoPanel(node) {
   ].filter(Boolean);
 
   document.getElementById("infoTags").innerHTML = tags
-    .map((tag) => renderClickableHashtag(tag))
+    .map((tag) => `<span>${escapeHtml(tag)}</span>`)
     .join("");
 
   renderRelatedTerms(node);
   renderRelatedPhrases(node);
   renderSources(node);
-  renderInfoTagActiveState();
 }
 
 function renderRelatedTerms(node) {
@@ -1989,10 +2023,7 @@ function renderRelatedPhrases(node) {
   }
 
   box.innerHTML = uniqueTexts
-    .map((text) => {
-      const displayText = truncateText(text, 160);
-      return `<div class="quote-item" data-full-text="${escapeAttribute(text)}">「${escapeHtml(displayText)}」</div>`;
-    })
+    .map((text) => `<div class="quote-item">「${escapeHtml(text)}」</div>`)
     .join("");
 }
 
@@ -2026,7 +2057,7 @@ function renderSources(node) {
         <div class="source-item">
           <div class="source-title">${escapeHtml(title)}</div>
           <div>${linkHtml}</div>
-          <div class="source-text" data-full-text="${escapeAttribute(text)}">${escapeHtml(truncateText(text, 160))}</div>
+          <div class="source-text">${escapeHtml(shortenText(text, 100))}</div>
         </div>
       `;
     })
@@ -2081,211 +2112,6 @@ function getNeighborNodes(nodeId) {
   return state.allNodes.filter((node) => neighborIds.has(node.id));
 }
 
-function getNodeHashtags(node) {
-  if (!node) return [];
-
-  const rawValues = [
-    node.tags,
-    node.hashtags,
-    node.level1_category,
-    node.level2_concept,
-  ];
-
-  const tags = [];
-  rawValues.forEach((value) => {
-    if (!value) return;
-    if (Array.isArray(value)) {
-      value.forEach((item) => tags.push(String(item).trim()));
-      return;
-    }
-
-    String(value)
-      .split(/[、,#，|/]/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .forEach((item) => tags.push(item));
-  });
-
-  return Array.from(new Set(tags.filter(Boolean)));
-}
-
-function nodeHasHashtag(node, hashtag) {
-  if (!node || !hashtag) return false;
-  return getNodeHashtags(node).some((tag) => normalizeHashtag(tag) === normalizeHashtag(hashtag));
-}
-
-function normalizeHashtag(tag) {
-  return String(tag || "").replace(/^#/, "").trim().toLowerCase();
-}
-
-function renderClickableHashtag(tag) {
-  const safeTag = escapeHtml(tag);
-  const activeClass = state.activeHashtag && normalizeHashtag(state.activeHashtag) === normalizeHashtag(tag) ? " active" : "";
-  return `<button type="button" class="hashtag-chip clickable${activeClass}" data-hashtag="${escapeAttribute(tag)}">${safeTag}</button>`;
-}
-
-function setupHashtagInteractions() {
-  document.addEventListener("click", (event) => {
-    const chip = event.target.closest(".hashtag-chip[data-hashtag]");
-    if (!chip) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    toggleHashtag(chip.dataset.hashtag || "");
-  });
-}
-
-function toggleHashtag(hashtag) {
-  if (!hashtag) return;
-
-  if (state.activeHashtag && normalizeHashtag(state.activeHashtag) === normalizeHashtag(hashtag)) {
-    state.activeHashtag = null;
-  } else {
-    state.activeHashtag = hashtag;
-  }
-
-  renderInfoTagActiveState();
-  highlightSelection();
-}
-
-function renderInfoTagActiveState() {
-  document.querySelectorAll(".hashtag-chip[data-hashtag]").forEach((chip) => {
-    chip.classList.toggle(
-      "active",
-      Boolean(state.activeHashtag) && normalizeHashtag(state.activeHashtag) === normalizeHashtag(chip.dataset.hashtag)
-    );
-  });
-}
-
-function enterConceptDetailLayer(conceptId) {
-  const node = getNodeById(conceptId);
-  if (!node || node.type !== "concept") return;
-
-  if (state.svg) {
-    state.previousMainTransform = d3.zoomTransform(state.svg.node());
-  }
-
-  state.currentLayer = "detail";
-  state.activeConceptId = conceptId;
-  state.activeHashtag = null;
-  state.selectedNodeId = conceptId;
-
-  updateGraph();
-  renderInfoPanel(node);
-  updateLayerToolbarState();
-
-  requestAnimationFrame(() => {
-    resetZoom();
-    setTimeout(() => focusNode(conceptId), 260);
-  });
-}
-
-function returnToMainLayer() {
-  state.currentLayer = "main";
-  state.activeConceptId = null;
-  state.activeHashtag = null;
-  updateGraph();
-  updateLayerToolbarState();
-
-  if (state.previousMainTransform && state.svg && state.zoomBehavior) {
-    state.svg
-      .transition()
-      .duration(650)
-      .ease(d3.easeCubicInOut)
-      .call(state.zoomBehavior.transform, state.previousMainTransform);
-  } else {
-    resetZoom();
-  }
-}
-
-function setupLayerToolbar() {
-  const toolbar = document.querySelector(".floating-actions");
-  if (!toolbar || document.getElementById("backToMainBtn")) return;
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.id = "backToMainBtn";
-  button.className = "back-main-btn hidden";
-  button.title = "返回主網絡";
-  button.setAttribute("aria-label", "返回主網絡");
-  button.innerHTML = `
-    <svg class="back-main-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M3 11.5L12 4l9 7.5" />
-      <path d="M5.5 10.5V20h13v-9.5" />
-      <path d="M9.5 20v-5.5h5V20" />
-    </svg>
-  `;
-  button.addEventListener("click", (event) => {
-    event.stopPropagation();
-    returnToMainLayer();
-  });
-
-  toolbar.prepend(button);
-  updateLayerToolbarState();
-}
-
-function updateLayerToolbarState() {
-  const button = document.getElementById("backToMainBtn");
-  if (!button) return;
-
-  const isDetail = state.currentLayer === "detail";
-  button.classList.toggle("hidden", !isDetail);
-  button.disabled = !isDetail;
-}
-
-function collapseMobileSidebar() {
-  if (!isMobileLayout()) return;
-
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.getElementById("sidebar");
-  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
-  if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-  appShell.classList.add("sidebar-collapsed");
-  localStorage.setItem("sidebarCollapsed", "1");
-  if (sidebar) sidebar.classList.remove("categories-open");
-  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
-  updateFloatingLayoutVars();
-  updateMobileToolbarPosition();
-}
-
-function setupMobileSidebarAutoCollapse() {
-  document.addEventListener("pointerdown", (event) => {
-    if (!isMobileLayout()) return;
-
-    const appShell = document.querySelector(".app-shell");
-    if (!appShell || appShell.classList.contains("sidebar-collapsed")) return;
-
-    const target = event.target;
-    if (!target) return;
-
-    if (
-      target.closest("#sidebar") ||
-      target.closest(".floating-actions") ||
-      target.closest("button") ||
-      target.closest("input") ||
-      target.closest("#infoPanel") ||
-      target.closest(".about-modal") ||
-      target.closest(".node")
-    ) {
-      return;
-    }
-
-    collapseMobileSidebar();
-  }, { capture: true });
-}
-
-function isEventFromNode(event) {
-  return Boolean(event && event.target && event.target.closest && event.target.closest(".node"));
-}
-
-function isBlankGraphEvent(event) {
-  if (!event || !event.target) return false;
-  if (isEventFromNode(event)) return false;
-  if (event.target.closest && event.target.closest("#sidebar, .floating-actions, #infoPanel, .about-modal")) return false;
-  return event.target === state.svg.node() || event.target.id === "graphSvg";
-}
-
 /* ================================
    Search / Zoom
 ================================ */
@@ -2294,30 +2120,35 @@ function searchNode() {
   const input = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(input ? input.value : "");
 
-  updateGraph();
-
-  if (!keyword) return;
-
-  const visibleData = getFilteredData();
-  let matchedNodes = visibleData.nodes.filter((node) => buildSearchHaystack(node).includes(keyword));
-  let matchedNode = matchedNodes[0];
-
-  if (!matchedNode && state.currentLayer === "main") {
-    const termMatch = state.allNodes.find((node) => node.type === "term" && buildSearchHaystack(node).includes(keyword));
-    const parentConceptId = termMatch ? getParentConceptIdForTerm(termMatch.id) : null;
-    if (parentConceptId) {
-      matchedNode = getNodeById(parentConceptId);
-      matchedNodes = [matchedNode];
-    }
+  if (!keyword) {
+    setGraphViewMode("main");
+    updateGraph();
+    return;
   }
 
-  if (!matchedNode) {
+  const matchedNodes = state.allNodes.filter((node) => {
+    return buildSearchHaystack(node).includes(keyword);
+  });
+
+  if (matchedNodes.length === 0) {
     appendSearchFeedback(0);
     return;
   }
 
-  setVisibleTypes(["topic", "concept", "term", "phrase"]);
+  const matchedNode = matchedNodes[0];
 
+  if (isTermNode(matchedNode)) {
+    const parentConceptId = findParentConceptIdForTerm(matchedNode.id);
+    setGraphViewMode("term_context", { conceptId: parentConceptId, termId: matchedNode.id });
+  } else if (isConceptNode(matchedNode)) {
+    setGraphViewMode("concept_terms", { conceptId: matchedNode.id });
+  } else {
+    setGraphViewMode("main");
+  }
+
+  updateGraph();
+
+  // JS-6C：手機搜尋後自動收合 Sidebar，桌機維持原狀。
   if (isMobileLayout()) {
     const appShell = document.querySelector(".app-shell");
     const panel = document.getElementById("sidebarSearchPanel");
@@ -2351,20 +2182,9 @@ function appendSearchFeedback(count) {
 function resetZoom() {
   if (!state.svg || !state.zoomBehavior) return;
 
-  const visibleNodes = state.nodeSelection
-    .selectAll("g")
-    .data()
-    .filter((node) => Number.isFinite(node.x) && Number.isFinite(node.y));
-
-  if (visibleNodes.length >= 2) {
-    focusNodeGroup(visibleNodes.map((node) => node.id));
-    return;
-  }
-
   state.svg
     .transition()
     .duration(550)
-    .ease(d3.easeCubicInOut)
     .call(state.zoomBehavior.transform, d3.zoomIdentity);
 }
 
@@ -2381,20 +2201,6 @@ function typeLabel(type) {
   };
 
   return map[type] || type;
-}
-
-function truncateText(text, maxTokens = 160) {
-  const value = String(text || "").trim();
-  if (!value) return "";
-
-  const tokenPattern = /[\p{Script=Han}]|[A-Za-z0-9]+(?:[-_'][A-Za-z0-9]+)*|[^\s]/gu;
-  const matches = Array.from(value.matchAll(tokenPattern));
-
-  if (matches.length <= maxTokens) return value;
-
-  const lastToken = matches[maxTokens - 1];
-  const endIndex = lastToken.index + lastToken[0].length;
-  return value.slice(0, endIndex).trimEnd() + "…";
 }
 
 function shortenText(text, maxLen) {
