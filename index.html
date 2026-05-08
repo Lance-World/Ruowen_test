@@ -50,6 +50,13 @@
 
       <div id="sidebarSeedPanel" class="sidebar-seed-panel seed-collapsed">
         <div class="sidebar-seed-wrap">
+          <button
+            type="button"
+            id="seedSubmitBtn"
+            class="sidebar-seed-submit-btn"
+            title="Seed Idea"
+            aria-label="Seed Idea"
+          >🌱</button>
           <input
             id="seedInput"
             class="sidebar-seed-input"
@@ -57,10 +64,13 @@
             placeholder="一起探索吧！"
             autocomplete="off"
           />
-          <div class="seed-action-row">
-            <button type="button" id="seedSubmitBtn" class="seed-submit-btn">產生想法</button>
-            <button type="button" id="seedRandomBtn" class="seed-random-btn">隨機</button>
-          </div>
+          <button
+            type="button"
+            id="clearSeedBtn"
+            class="sidebar-seed-clear-btn hidden"
+            title="清除 Seed"
+            aria-label="清除 Seed"
+          >×</button>
           <div id="seedResult" class="seed-result" aria-live="polite"></div>
         </div>
       </div>

@@ -366,28 +366,53 @@ function setupSeedPanel() {
 
   const input = document.getElementById("seedInput");
   const submitBtn = document.getElementById("seedSubmitBtn");
-  const randomBtn = document.getElementById("seedRandomBtn");
+  const clearBtn = document.getElementById("clearSeedBtn");
   const resultBox = document.getElementById("seedResult");
+  const seedWrap = document.querySelector(".sidebar-seed-wrap");
 
-  function runSeed(randomOnly = false) {
-    const raw = input ? input.value.trim() : "";
-    const idea = generateSeedIdea(randomOnly ? "" : raw);
-    if (resultBox) resultBox.textContent = idea;
-    if (raw && !randomOnly) addHistoryItem("seed", raw);
+  function updateSeedClearState() {
+    if (!input || !clearBtn || !seedWrap) return;
+    const hasText = input.value.trim().length > 0;
+    seedWrap.classList.toggle("has-text", hasText);
+    clearBtn.classList.toggle("hidden", !hasText);
   }
 
-  if (submitBtn) submitBtn.addEventListener("click", () => runSeed(false));
-  if (randomBtn) randomBtn.addEventListener("click", () => runSeed(true));
+  function runSeed() {
+    const raw = input ? input.value.trim() : "";
+    const idea = generateSeedIdea(raw);
+    if (resultBox) resultBox.textContent = idea;
+    if (raw) addHistoryItem("seed", raw);
+  }
+
+  if (submitBtn) submitBtn.addEventListener("click", runSeed);
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (input) input.value = "";
+      if (resultBox) resultBox.textContent = "";
+      updateSeedClearState();
+      if (input) input.focus();
+    });
+  }
+
   if (input) {
+    input.addEventListener("input", updateSeedClearState);
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") runSeed(false);
+      if (event.key === "Enter") runSeed();
       if (event.key === "Escape") {
+        if (input.value) {
+          input.value = "";
+          if (resultBox) resultBox.textContent = "";
+          updateSeedClearState();
+          return;
+        }
         const panel = document.getElementById("sidebarSeedPanel");
         if (panel) panel.classList.add("seed-collapsed");
         localStorage.setItem("seedPanelOpen", "0");
       }
     });
   }
+
+  updateSeedClearState();
 }
 
 function generateSeedIdea(userText = "") {
