@@ -804,3 +804,15 @@ body.about-modal-lock { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms; animation-iteration-count: 1; scroll-behavior: auto; transition-duration: 0.01ms; }
 }
+
+/* Seed 2.0 modes: Context / Contrast / Path / AI */
+.seed-mode-chip {
+  min-width: 0;
+  padding-inline: 10px;
+  white-space: nowrap;
+}
+.seed-mode-chip[title*="脈絡"],
+.seed-mode-chip[title*="對照"],
+.seed-mode-chip[title*="路徑"] {
+  letter-spacing: 0.01em;
+}

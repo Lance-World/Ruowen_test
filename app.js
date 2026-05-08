@@ -44,7 +44,7 @@ const state = {
   activeTag: null,
   searchHistory: [],
   seedHistory: [],
-  seedMode: "tag_bridge",
+  seedMode: "context",
   viewMode: "main",
   activeConceptId: null,
   activeTermId: null,
@@ -103,29 +103,41 @@ const DESKTOP_INFO_MAX_VH = 0.8;
 // 2) Optional backend/proxy endpoint. Never put cloud API keys in public frontend files.
 // 3) Rule-based local fallback, so Seed never breaks the site.
 const SEED_MODES = {
-  tag_bridge: {
-    id: "tag_bridge",
-    label: "Link｜Tag 橫向橋接",
-    shortLabel: "Link",
-    sourceLabel: "Seed Mode 1｜Tag 橫向橋接",
+  context: {
+    id: "context",
+    label: "脈絡｜Context",
+    labelZh: "脈絡",
+    labelEn: "Context",
+    shortLabel: "Context",
+    description: "找出這個問題背後的相關概念群",
+    sourceLabel: "Seed｜脈絡 Context",
   },
-  concept_neighbors: {
-    id: "concept_neighbors",
-    label: "Extend｜鄰近概念",
-    shortLabel: "Extend",
-    sourceLabel: "Seed Mode 2｜鄰近概念",
+  contrast: {
+    id: "contrast",
+    label: "對照｜Contrast",
+    labelZh: "對照",
+    labelEn: "Contrast",
+    shortLabel: "Contrast",
+    description: "找出概念之間的張力與矛盾",
+    sourceLabel: "Seed｜對照 Contrast",
   },
-  term_association: {
-    id: "term_association",
-    label: "Associate｜詞彙聯想",
-    shortLabel: "Associate",
-    sourceLabel: "Seed Mode 3｜詞彙聯想",
+  path: {
+    id: "path",
+    label: "路徑｜Path",
+    labelZh: "路徑",
+    labelEn: "Path",
+    shortLabel: "Path",
+    description: "建立從問題到核心概念的推理鏈",
+    sourceLabel: "Seed｜路徑 Path",
   },
-  ai_question: {
-    id: "ai_question",
-    label: "AI｜腦洞提問",
+  ai: {
+    id: "ai",
+    label: "AI｜AI",
+    labelZh: "AI",
+    labelEn: "AI",
     shortLabel: "AI",
-    sourceLabel: "Seed Mode 4｜AI 腦洞提問",
+    description: "產生可討論的新問題，未來可接 AI",
+    sourceLabel: "Seed｜AI 腦洞提問",
   },
 };
 
@@ -435,7 +447,7 @@ function setupSeedPanel() {
   }
 
   function setSeedMode(mode) {
-    const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
+    const nextMode = SEED_MODES[mode] ? mode : "context";
     state.seedMode = nextMode;
     modeButtons.forEach((button) => {
       button.classList.toggle("active", button.dataset.seedMode === nextMode);
@@ -444,7 +456,7 @@ function setupSeedPanel() {
 
   async function runSeed(mode = state.seedMode) {
     const raw = input ? input.value.trim() : "";
-    const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
+    const nextMode = SEED_MODES[mode] ? mode : "context";
     setSeedMode(nextMode);
 
     if (submitBtn) {
@@ -503,23 +515,298 @@ function setupSeedPanel() {
   setSeedMode(state.seedMode);
 }
 
-async function generateSeedIdea(userText = "", mode = "tag_bridge") {
-  const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
+async function generateSeedIdea(userText = "", mode = "context") {
+  const seedQuestion = parseSeedQuestion(userText);
+  const resolvedMode = resolveSeedMode(seedQuestion, mode);
 
-  if (nextMode === "tag_bridge") return generateTagBridgeSeed(userText);
-  if (nextMode === "concept_neighbors") return generateConceptNeighborSeed(userText);
-  if (nextMode === "term_association") return generateTermAssociationSeed(userText);
-  return generateAiQuestionSeed(userText);
+  if (resolvedMode === "ai") return generateAiQuestionSeed(seedQuestion.rawText);
+
+  const seedConcept = findSeedConcept(seedQuestion);
+  const cards = collectSeedCards(seedQuestion, seedConcept, resolvedMode, 7);
+  const reasoning = buildSeedReasoning(seedQuestion, seedConcept, cards, resolvedMode);
+  const questions = generateSeedQuestions(seedQuestion, seedConcept, cards, resolvedMode);
+
+  return buildSeedResultFromStructure({
+    mode: resolvedMode,
+    seedQuestion,
+    seedConcept,
+    cards,
+    reasoning,
+    questions,
+  });
+}
+
+function parseSeedQuestion(userText = "") {
+  const rawText = String(userText || "").trim();
+  const normalized = rawText
+    .replace(/[？?]+$/g, "")
+    .replace(/^(idea|seed)[:：]/i, "")
+    .trim();
+
+  const tokens = Array.from(new Set(
+    normalized
+      .split(/[\s、,，。！？?；;：「」『』《》()（）\[\]\/|]+/)
+      .map((item) => cleanTopicLabel(item).trim())
+      .filter((item) => item && hasSearchableMeaning(item))
+  ));
+
+  const questionType = /為什麼|原因|怎麼|如何|路徑|步驟|到|變成/.test(normalized)
+    ? "path"
+    : /矛盾|對照|差異|張力|衝突|可是|但是|自由|控制|信任/.test(normalized)
+      ? "contrast"
+      : "context";
+
+  return {
+    rawText,
+    normalizedText: normalized,
+    tokens,
+    questionType,
+  };
+}
+
+function resolveSeedMode(seedQuestion, requestedMode = "context") {
+  if (SEED_MODES[requestedMode]) return requestedMode;
+  return seedQuestion && SEED_MODES[seedQuestion.questionType] ? seedQuestion.questionType : "context";
+}
+
+function findSeedConcept(seedQuestion) {
+  const selectedNode = state.selectedNodeId ? getNodeById(state.selectedNodeId) : null;
+  if (selectedNode && getGraphNodeTypesForSeed().has(selectedNode.type)) return selectedNode;
+
+  const query = String(seedQuestion.normalizedText || seedQuestion.rawText || "").toLowerCase();
+  if (!query) return null;
+
+  const candidates = state.allNodes
+    .filter((node) => getGraphNodeTypesForSeed().has(node.type))
+    .map((node) => ({ node, score: scoreNodeForSeedQuestion(node, seedQuestion) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || getNodeTypeRank(a.node) - getNodeTypeRank(b.node));
+
+  return candidates[0] ? candidates[0].node : null;
+}
+
+function scoreNodeForSeedQuestion(node, seedQuestion) {
+  const haystack = buildSearchHaystack(node);
+  const label = cleanTopicLabel(node.label || node.canonical_term || node.id || "").toLowerCase();
+  const query = String(seedQuestion.normalizedText || seedQuestion.rawText || "").toLowerCase();
+  let score = 0;
+
+  if (query && label === query) score += 12;
+  if (query && label.includes(query)) score += 8;
+  if (query && haystack.includes(query)) score += 5;
+
+  (seedQuestion.tokens || []).forEach((token) => {
+    const lower = token.toLowerCase();
+    if (!lower) return;
+    if (label.includes(lower)) score += 4;
+    if (haystack.includes(lower)) score += 2;
+  });
+
+  if (node.type === "concept") score += 2;
+  if (node.concept_role === "core") score += 1;
+  return score;
+}
+
+function getNodeTypeRank(node) {
+  if (!node) return 9;
+  if (node.type === "concept") return 1;
+  if (node.type === "term") return 2;
+  if (node.type === "topic") return 3;
+  return 9;
+}
+
+function collectSeedCards(seedQuestion, seedConcept, mode = "context", limit = 7) {
+  if (mode === "contrast") return collectContrastSeedCards(seedQuestion, seedConcept, limit);
+  if (mode === "path") return collectPathSeedCards(seedQuestion, seedConcept, limit);
+  return collectContextSeedCards(seedQuestion, seedConcept, limit);
+}
+
+function collectContextSeedCards(seedQuestion, seedConcept, limit = 7) {
+  const pool = new Map();
+  const addNode = (node, score = 1) => {
+    if (!node || !getGraphNodeTypesForSeed().has(node.type)) return;
+    const current = pool.get(node.id);
+    if (!current || score > current.score) pool.set(node.id, { node, score });
+  };
+
+  if (seedConcept) {
+    addNode(seedConcept, 20);
+    getNeighborNodes(seedConcept.id).forEach((node) => addNode(node, node.type === "concept" ? 12 : 8));
+    findSeedNodesByTags(getNodeSeedTags(seedConcept), seedConcept.id).slice(0, limit * 2).forEach((node, index) => addNode(node, 7 - index * 0.2));
+  }
+
+  state.allNodes
+    .filter((node) => getGraphNodeTypesForSeed().has(node.type))
+    .map((node) => ({ node, score: scoreNodeForSeedQuestion(node, seedQuestion) }))
+    .filter((item) => item.score > 0)
+    .forEach((item) => addNode(item.node, item.score));
+
+  if (pool.size === 0) {
+    state.allNodes.filter((node) => node.type === "concept").slice(0, limit).forEach((node, index) => addNode(node, 3 - index * 0.1));
+  }
+
+  return Array.from(pool.values())
+    .sort((a, b) => b.score - a.score || getNodeTypeRank(a.node) - getNodeTypeRank(b.node))
+    .map((item) => item.node)
+    .slice(0, limit);
+}
+
+function collectContrastSeedCards(seedQuestion, seedConcept, limit = 7) {
+  const contextCards = collectContextSeedCards(seedQuestion, seedConcept, limit * 2);
+  const seedTags = new Set(getNodeSeedTags(seedConcept));
+
+  const scored = contextCards.map((node) => {
+    const tags = getNodeSeedTags(node);
+    const tagOverlap = tags.reduce((sum, tag) => sum + (seedTags.has(tag) ? 1 : 0), 0);
+    const isBridge = node.concept_role === "bridge" ? 2 : 0;
+    const crossTopic = seedConcept && node.level1_category && seedConcept.level1_category && node.level1_category !== seedConcept.level1_category ? 3 : 0;
+    return { node, score: crossTopic + isBridge + Math.max(0, 4 - tagOverlap) };
+  });
+
+  const extras = state.allNodes
+    .filter((node) => node.type === "concept" && (!seedConcept || node.id !== seedConcept.id))
+    .map((node) => ({ node, score: scoreNodeForSeedQuestion(node, seedQuestion) + (node.concept_role === "bridge" ? 3 : 0) }))
+    .filter((item) => item.score > 0);
+
+  return dedupeNodes([...scored, ...extras]
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.node))
+    .slice(0, limit);
+}
+
+function collectPathSeedCards(seedQuestion, seedConcept, limit = 7) {
+  const path = [];
+  const push = (node) => {
+    if (node && getGraphNodeTypesForSeed().has(node.type) && !path.some((item) => item.id === node.id)) path.push(node);
+  };
+
+  if (seedConcept) {
+    const parentTopic = findNearestTopicForNode(seedConcept);
+    push(seedConcept.type === "topic" ? seedConcept : parentTopic);
+    push(seedConcept);
+    getNeighborNodes(seedConcept.id)
+      .filter((node) => node.type === "concept")
+      .slice(0, 2)
+      .forEach(push);
+    getNeighborNodes(seedConcept.id)
+      .filter((node) => node.type === "term")
+      .slice(0, 3)
+      .forEach(push);
+  }
+
+  collectContextSeedCards(seedQuestion, seedConcept, limit).forEach(push);
+  return path.slice(0, limit);
+}
+
+function findNearestTopicForNode(node) {
+  if (!node) return null;
+  if (node.type === "topic") return node;
+
+  const neighbors = getNeighborNodes(node.id);
+  const topic = neighbors.find((item) => item.type === "topic");
+  if (topic) return topic;
+
+  const category = node.level1_category;
+  if (category) {
+    return state.allNodes.find((item) => item.type === "topic" && cleanTopicLabel(item.label || "") === cleanTopicLabel(category)) || null;
+  }
+
+  return null;
+}
+
+function dedupeNodes(nodes = []) {
+  const seen = new Set();
+  const result = [];
+  nodes.forEach((node) => {
+    if (!node || seen.has(node.id)) return;
+    seen.add(node.id);
+    result.push(node);
+  });
+  return result;
+}
+
+function buildSeedReasoning(seedQuestion, seedConcept, cards, mode = "context") {
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || "這個問題";
+  const seedLabel = seedConcept ? getSeedNodeLabel(seedConcept) : input;
+  const labels = cards.map(getSeedNodeLabel).filter(Boolean);
+  const secondary = labels.filter((label) => label !== seedLabel).slice(0, 4);
+
+  if (mode === "contrast") {
+    return secondary.length
+      ? `「${seedLabel}」可以和「${secondary.join("、")}」形成對照，先看見概念之間的張力，再決定要往哪一端探索。`
+      : `「${seedLabel}」目前缺少明確對照卡片，可以先把問題拆成兩個相反方向來看。`;
+  }
+
+  if (mode === "path") {
+    return labels.length
+      ? `可以先把「${input}」視為入口，沿著「${labels.slice(0, 5).join(" → ")}」建立一條由問題走向核心概念的路徑。`
+      : `可以先從「${input}」找出一個核心詞，再往 Topic、Concept、Term 逐步展開。`;
+  }
+
+  return labels.length
+    ? `「${input}」可能不是孤立的問題，而是和「${labels.slice(0, 5).join("、")}」共同形成一組脈絡。`
+    : `「${input}」目前沒有明確命中的卡片，可先把它當成一個探索入口。`;
+}
+
+function generateSeedQuestions(seedQuestion, seedConcept, cards, mode = "context") {
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || getSeedNodeLabel(seedConcept) || "這個問題";
+  const labels = cards.map(getSeedNodeLabel).filter(Boolean);
+  const a = labels[0] || input;
+  const b = labels[1] || "身體訊號";
+  const c = labels[2] || "覺知";
+
+  if (mode === "contrast") {
+    return [
+      `「${a}」和「${b}」之間最大的張力是什麼？`,
+      `如果兩個概念都成立，它們各自在提醒什麼？`,
+      `你現在比較靠近哪一端，又想練習哪一端？`,
+    ];
+  }
+
+  if (mode === "path") {
+    return [
+      `從「${input}」走到「${a}」中間，第一個可觀察的身體或情緒訊號是什麼？`,
+      `這條路徑中哪一張卡片最像目前的入口？`,
+      `如果只走下一小步，你會先回到哪個概念？`,
+    ];
+  }
+
+  return [
+    `「${input}」如何和「${b}」互相影響？`,
+    `當「${input}」出現時，「${c}」可能在提醒什麼？`,
+    `如果把「${input}」當作入口，下一張值得看的卡片是哪一張？`,
+  ];
+}
+
+function buildSeedResultFromStructure({ mode, seedQuestion, seedConcept, cards, reasoning, questions }) {
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || "隨機探索";
+  const cardLabels = cards.map(getSeedNodeLabel).filter(Boolean);
+  const sourceConcepts = cardLabels.slice(0, 5).join("、") || "目前可見卡片";
+
+  return {
+    mode,
+    title: `Idea｜${input}`,
+    tags: ["Seed", modeConfig.labelZh, modeConfig.labelEn].filter(Boolean),
+    relatedTerms: cardLabels,
+    phrases: [
+      `模式：${modeConfig.labelZh} ${modeConfig.labelEn}`,
+      cardLabels.length ? `找到的卡片：${cardLabels.join("、")}` : "找到的卡片：尚未命中明確卡片",
+      `推理：${reasoning}`,
+      "可以討論：",
+      ...questions.map((question, index) => `${index + 1}. ${question}`),
+    ],
+    highlightIds: cards.map((node) => node.id),
+    sourceTitle: `相關概念｜${sourceConcepts}`,
+  };
+}
+
+function getSeedNodeLabel(node) {
+  return node ? cleanTopicLabel(node.label || node.canonical_term || node.id || "") : "";
 }
 
 function getSeedContextNode(userText = "") {
-  const selectedNode = state.selectedNodeId ? getNodeById(state.selectedNodeId) : null;
-  if (selectedNode) return selectedNode;
-
-  const keyword = String(userText || "").trim().toLowerCase();
-  if (!keyword) return null;
-
-  return state.allNodes.find((node) => buildSearchHaystack(node).includes(keyword)) || null;
+  return findSeedConcept(parseSeedQuestion(userText));
 }
 
 function normalizeSeedTagValue(value) {
@@ -568,134 +855,59 @@ function findSeedNodesByTags(tags, baseNodeId = null) {
     .map((item) => item.node);
 }
 
-function buildSeedResult({ mode, userText = "", title, tags = [], relatedTerms = [], phrases = [], highlightIds = [] }) {
+function buildSeedResult({ mode = "context", userText = "", title, tags = [], relatedTerms = [], phrases = [], highlightIds = [] }) {
   const seed = String(userText || "").trim();
-  const modeConfig = SEED_MODES[mode] || SEED_MODES.tag_bridge;
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
   return {
     mode,
-    title: title || (seed ? `Seed：${seed}` : modeConfig.label),
-    tags: ["Seed", modeConfig.label, ...tags].filter(Boolean),
+    title: title || (seed ? `Idea｜${seed}` : modeConfig.label),
+    tags: ["Seed", modeConfig.labelZh, modeConfig.labelEn, ...tags].filter(Boolean),
     relatedTerms: Array.from(new Set(relatedTerms.filter(Boolean))).slice(0, 18),
-    phrases: phrases.filter(Boolean).slice(0, 6),
+    phrases: phrases.filter(Boolean).slice(0, 8),
     highlightIds: Array.from(new Set(highlightIds.filter(Boolean))),
     sourceTitle: modeConfig.sourceLabel,
   };
 }
 
-function generateTagBridgeSeed(userText = "") {
-  const contextNode = getSeedContextNode(userText);
-  const seed = String(userText || "").trim();
-  const baseLabel = contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : seed || "目前主題";
-  const tags = contextNode ? getNodeSeedTags(contextNode) : [seed].filter(Boolean);
-  const matchedNodes = findSeedNodesByTags(tags, contextNode ? contextNode.id : null).slice(0, 8);
-  const relatedLabels = matchedNodes.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
-  const tagText = tags.slice(0, 4).map((tag) => `#${tag}`).join("、") || "#橫向探索";
-
-  return buildSeedResult({
-    mode: "tag_bridge",
-    userText,
-    title: `Seed｜Tag 橫向橋接`,
-    tags: tags.slice(0, 5).map((tag) => `#${tag}`),
-    relatedTerms: relatedLabels.length ? relatedLabels : tags,
-    highlightIds: matchedNodes.map((node) => node.id),
-    phrases: [
-      `可以從「${baseLabel}」沿著 ${tagText} 橫向看看，哪些概念其實在不同主題裡互相呼應。`,
-      relatedLabels.length
-        ? `目前可先觀察：${relatedLabels.slice(0, 5).join("、")}。`
-        : `目前沒有明確命中的橫向節點，可先換一個關鍵詞或選取 Concept 後再試。`,
-    ],
-  });
-}
-
-function generateConceptNeighborSeed(userText = "") {
-  const contextNode = getSeedContextNode(userText);
-  const seed = String(userText || "").trim();
-  const baseNode = contextNode || state.allNodes.find((node) => node.type === "concept") || null;
-  const baseLabel = baseNode ? cleanTopicLabel(baseNode.label || baseNode.canonical_term || baseNode.id) : seed || "目前概念";
-  const neighbors = baseNode
-    ? getNeighborNodes(baseNode.id).filter((node) => node.type === "concept" || node.type === "topic").slice(0, 10)
-    : state.allNodes.filter((node) => node.type === "concept").slice(0, 8);
-  const relatedLabels = neighbors.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
-
-  return buildSeedResult({
-    mode: "concept_neighbors",
-    userText,
-    title: `Seed｜鄰近概念`,
-    tags: getNodeSeedTags(baseNode).slice(0, 4).map((tag) => `#${tag}`),
-    relatedTerms: relatedLabels,
-    highlightIds: neighbors.map((node) => node.id),
-    phrases: [
-      `從「${baseLabel}」往外延伸，可以先看它附近的概念，而不是立刻跳到全網。`,
-      relatedLabels.length
-        ? `建議下一步看：${relatedLabels.slice(0, 5).join("、")}。`
-        : `目前鄰近概念不足，可先用 Search 找到一個 Concept 後再 Seed。`,
-    ],
-  });
-}
-
-function generateTermAssociationSeed(userText = "") {
-  const contextNode = getSeedContextNode(userText);
-  const seed = String(userText || "").trim();
-  const baseLabel = contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : seed || "目前想法";
-  const directTerms = contextNode
-    ? getNeighborNodes(contextNode.id).filter((node) => node.type === "term")
-    : [];
-  const fallbackTerms = state.allNodes.filter((node) => node.type === "term").slice(0, 12);
-  const terms = (directTerms.length ? directTerms : fallbackTerms).slice(0, 12);
-  const labels = terms.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
-
-  return buildSeedResult({
-    mode: "term_association",
-    userText,
-    title: `Seed｜詞彙聯想`,
-    tags: getNodeSeedTags(contextNode).slice(0, 4).map((tag) => `#${tag}`),
-    relatedTerms: labels,
-    highlightIds: terms.map((node) => node.id),
-    phrases: [
-      `把「${baseLabel}」拆成詞彙入口，可以更容易找到下一張卡片。`,
-      labels.length
-        ? `你可以從這些詞切入：${labels.slice(0, 8).join("、")}。`
-        : `目前沒有足夠詞彙可聯想，可先選取一個 Concept。`,
-    ],
-  });
-}
-
 async function generateAiQuestionSeed(userText = "") {
   const inputText = String(userText || "").trim();
+  const contextNode = getSeedContextNode(inputText);
+  const contextCards = collectContextSeedCards(parseSeedQuestion(inputText), contextNode, 6);
   let idea = "";
 
   if (SEED_AI_CONFIG.localOllamaEnabled) {
     try {
-      idea = await generateSeedIdeaWithLocalOllama(inputText, "ai_question");
+      idea = await generateSeedIdeaWithLocalOllama(inputText, "ai");
     } catch (error) {
       console.warn("Local Ollama unavailable; fallback to conservative Seed template:", error);
     }
   }
 
-  if (!reviewSeedResult(idea)) {
-    if (SEED_AI_CONFIG.backendEnabled) {
-      try {
-        idea = await generateSeedIdeaWithBackend(inputText, "ai_question");
-      } catch (error) {
-        console.warn("Seed backend unavailable; fallback to local rule-based idea:", error);
-      }
+  if (!reviewSeedResult(idea) && SEED_AI_CONFIG.backendEnabled) {
+    try {
+      idea = await generateSeedIdeaWithBackend(inputText, "ai");
+    } catch (error) {
+      console.warn("Seed backend unavailable; fallback to local rule-based idea:", error);
     }
   }
 
   if (!reviewSeedResult(idea)) idea = generateLocalAiQuestionSeed(inputText);
 
-  return buildSeedResult({
-    mode: "ai_question",
-    userText,
-    title: inputText ? `Seed AI｜${inputText}` : "Seed AI｜腦洞提問",
-    tags: ["#探索性推演", "#AI潤飾"],
-    relatedTerms: inputText ? [inputText] : ["自我提問", "靈感探索"],
-    phrases: [idea],
-    highlightIds: state.selectedNodeId ? [state.selectedNodeId] : [],
+  return buildSeedResultFromStructure({
+    mode: "ai",
+    seedQuestion: parseSeedQuestion(inputText || idea),
+    seedConcept: contextNode,
+    cards: contextCards,
+    reasoning: idea,
+    questions: [
+      `這個問題還可以往哪個更深的概念展開？`,
+      `如果它不是答案，而是一個入口，它會帶你看見什麼？`,
+      `哪一張卡片最適合接續這個討論？`,
+    ],
   });
 }
 
-async function generateSeedIdeaWithLocalOllama(userText = "", mode = "ai_question") {
+async function generateSeedIdeaWithLocalOllama(userText = "", mode = "ai") {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), SEED_AI_CONFIG.timeoutMs);
 
@@ -728,7 +940,7 @@ async function generateSeedIdeaWithLocalOllama(userText = "", mode = "ai_questio
   }
 }
 
-async function generateSeedIdeaWithBackend(userText = "", mode = "ai_question") {
+async function generateSeedIdeaWithBackend(userText = "", mode = "ai") {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), SEED_AI_CONFIG.timeoutMs);
 
@@ -785,7 +997,7 @@ function cleanSeedIdeaText(text) {
     .slice(0, 220);
 }
 
-function buildSeedAiPayload(userText = "", mode = "ai_question") {
+function buildSeedAiPayload(userText = "", mode = "ai") {
   const contextNode = getSeedContextNode(userText);
   const selectedTags = getNodeSeedTags(contextNode).slice(0, 8);
   const topics = state.allNodes
@@ -808,7 +1020,7 @@ function buildSeedAiPayload(userText = "", mode = "ai_question") {
 
   return {
     mode,
-    mode_label: (SEED_MODES[mode] || SEED_MODES.ai_question).label,
+    mode_label: (SEED_MODES[mode] || SEED_MODES.ai).label,
     input: String(userText || "").trim(),
     selected_node: contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : "",
     tags: selectedTags,
@@ -845,11 +1057,11 @@ function generateLocalAiQuestionSeed(userText = "") {
   return `如果把「${label}」當成一個入口${termText}，你會想問自己：這件事真正想帶我看見什麼？`;
 }
 
-function renderSeedLoadingInfoPanel(userText = "", mode = "tag_bridge") {
+function renderSeedLoadingInfoPanel(userText = "", mode = "context") {
   const seed = String(userText || "").trim();
-  const modeConfig = SEED_MODES[mode] || SEED_MODES.tag_bridge;
-  setInfoTitle(seed ? `Seed：${seed}` : modeConfig.label);
-  renderInfoTags(["Seed", modeConfig.label, mode === "ai_question" ? "#AI生成中" : "#本地推演"].filter(Boolean));
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
+  setInfoTitle(seed ? `Idea｜${seed}` : modeConfig.label);
+  renderInfoTags(["Seed", modeConfig.labelZh, modeConfig.labelEn, mode === "ai" ? "#AI生成中" : "#本地推演"].filter(Boolean));
 
   const relatedTerms = document.getElementById("relatedTerms");
   const relatedPhrases = document.getElementById("relatedPhrases");
@@ -869,7 +1081,7 @@ function renderSeedLoadingInfoPanel(userText = "", mode = "tag_bridge") {
   openSeedInfoPanel();
 }
 
-function renderSeedInfoPanel(result, userText = "", mode = "tag_bridge") {
+function renderSeedInfoPanel(result, userText = "", mode = "context") {
   const safeResult = result && typeof result === "object" ? result : buildSeedResult({
     mode,
     userText,
@@ -901,8 +1113,8 @@ function renderSeedInfoPanel(result, userText = "", mode = "tag_bridge") {
   openSeedInfoPanel();
 }
 
-function renderSeedSourceWarning(sourceTitle = "Seed", mode = "tag_bridge") {
-  const isAiMode = mode === "ai_question";
+function renderSeedSourceWarning(sourceTitle = "Seed", mode = "context") {
+  const isAiMode = mode === "ai";
   return `<div class="source-item seed-source-warning">
       <div class="source-title">${escapeHtml(sourceTitle || "Seed")}</div>
       <div class="source-text">提示：</div>
