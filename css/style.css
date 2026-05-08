@@ -96,7 +96,10 @@ body.graph-intro-finished #graphSvg {
 }
 body:not(.graph-interaction-enabled) #graphSvg { pointer-events: none; }
 body.graph-interaction-enabled #graphSvg { pointer-events: auto; }
-body:not(.graph-topic-visible) .node-topic { opacity: 0; }
+
+/* Graph start sequence: Overlay first, then star map appears from a center point. */
+body.graph-entering .node { transition: opacity 0.42s ease; }
+body.graph-entering:not(.graph-topic-visible) .node-topic { opacity: 0; }
 body.graph-topic-visible .node-topic {
   opacity: 1;
   transition: opacity 0.38s ease;
@@ -106,7 +109,7 @@ body.graph-topic-visible .node-topic circle {
   transform-origin: center;
   animation: topicBurstReveal 0.72s cubic-bezier(0.18, 0.9, 0.22, 1.12) both;
 }
-body:not(.intro-concepts-visible) .node-concept { opacity: 0; }
+body.graph-entering:not(.intro-concepts-visible) .node-concept { opacity: 0; }
 body.intro-concepts-visible .node-concept { opacity: 1; transition: opacity 0.56s ease; }
 body.intro-concepts-visible .node-concept circle {
   transform-box: fill-box;
@@ -114,8 +117,8 @@ body.intro-concepts-visible .node-concept circle {
   animation: conceptBurstReveal 0.82s cubic-bezier(0.18, 0.9, 0.22, 1.08) both;
 }
 @keyframes topicBurstReveal {
-  0% { transform: scale(0.26); opacity: 0; }
-  58% { transform: scale(1.18); opacity: 1; }
+  0% { transform: scale(0.24); opacity: 0; }
+  54% { transform: scale(1.17); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 @keyframes conceptBurstReveal {
@@ -241,17 +244,18 @@ body.intro-concepts-visible .node-concept circle {
 ========================================================= */
 .sidebar-search-panel, .sidebar-seed-panel {
   margin: 0 0 12px;
-  padding: 10px;
-  max-height: 240px;
-  overflow: hidden;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(199, 220, 222, 0.72);
+  padding: 0;
+  max-height: 180px;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
   transition: opacity 0.18s ease, max-height 0.22s ease, margin 0.18s ease, padding 0.18s ease;
 }
 .sidebar-search-panel.search-collapsed, .sidebar-seed-panel.seed-collapsed {
   opacity: 0;
   max-height: 0;
+  overflow: hidden;
   padding-top: 0;
   padding-bottom: 0;
   margin-top: 0;
@@ -262,22 +266,25 @@ body.intro-concepts-visible .node-concept circle {
 .sidebar-search-wrap, .sidebar-seed-wrap { position: relative; width: 100%; }
 .seed-mode-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin: 0 0 9px;
+  grid-template-columns: repeat(4, minmax(62px, 1fr));
+  gap: 5px;
+  margin: 0 0 8px;
+  width: 100%;
 }
 .seed-mode-chip {
   min-width: 0;
-  height: 30px;
-  padding: 0 6px;
+  height: 32px;
+  padding: 0 5px;
   border-radius: 999px;
   border: 1px solid rgba(199, 220, 222, 0.72);
   background: rgba(255, 255, 255, 0.42);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 750;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .seed-mode-chip.active {
   background: rgba(215, 238, 233, 0.62);
@@ -701,7 +708,7 @@ body.about-modal-lock { overflow: hidden; }
   }
 
   .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar {
-    max-height: min(236px, calc(100dvh - 16px));
+    max-height: min(260px, calc(100dvh - 16px));
     overflow: hidden;
   }
 
@@ -720,6 +727,10 @@ body.about-modal-lock { overflow: hidden; }
     height: 32px;
     font-size: 11px;
     padding: 0 4px;
+  }
+
+  .sidebar-search-panel, .sidebar-seed-panel {
+    margin-bottom: 10px;
   }
   .filter-section .sidebar-label, .sidebar-category-section .sidebar-label { display: none; }
   .filter-chip-row { gap: 5px; }
@@ -806,15 +817,25 @@ body.about-modal-lock { overflow: hidden; }
 }
 
 /* Seed 2.0 modes: Context / Contrast / Path / AI */
-.seed-mode-chip {
-  min-width: 0;
-  padding-inline: 10px;
-  white-space: nowrap;
-}
 .seed-mode-chip[title*="脈絡"],
 .seed-mode-chip[title*="對照"],
 .seed-mode-chip[title*="路徑"] {
   letter-spacing: 0.01em;
+}
+
+.seed-info-mode-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(215, 238, 233, 0.52);
+  color: var(--teal-deep);
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 760;
+  border: 1px solid rgba(241, 223, 172, 0.42);
+  flex-shrink: 0;
+  pointer-events: none;
+  cursor: default;
 }
 
 /* =========================================================
@@ -884,19 +905,6 @@ body.graph-intro-finished .link {
   opacity: 0;
 }
 
-body.graph-entering:not(.graph-topic-visible) .node-topic,
-body.graph-entering:not(.intro-concepts-visible) .node-concept {
-  opacity: 0;
-}
-
-body.graph-topic-visible .node-topic {
-  opacity: 1;
-}
-
-body.intro-concepts-visible .node-concept {
-  opacity: 1;
-}
-
 body.graph-entering .node text {
   opacity: 0;
   transition: opacity 0.52s ease 0.42s;
@@ -910,5 +918,78 @@ body.graph-intro-finished .node text {
 @media (max-width: 768px) {
   .node-expanded-term text {
     font-size: 10px;
+  }
+}
+
+
+/* =========================================================
+   A7-13 Seed Mode Visibility Fix
+   Web/Desktop: Seed 開啟時，四個 mode chips 必須完整顯示。
+   只調整 Seed panel 高度/overflow，不改 Graph 與 Sidebar 結構。
+========================================================= */
+.sidebar-seed-panel:not(.seed-collapsed) {
+  display: block;
+  opacity: 1;
+  max-height: none;
+  overflow: visible;
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.sidebar-seed-panel:not(.seed-collapsed) .seed-mode-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0 0 8px;
+  overflow: visible;
+}
+
+.sidebar-seed-panel:not(.seed-collapsed) .seed-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 6px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 769px) {
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar {
+    overflow: visible;
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar-seed-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .seed-mode-chip {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar {
+    max-height: min(320px, calc(100dvh - 16px));
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar-seed-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .seed-mode-row {
+    min-height: 34px;
+    overflow: visible;
   }
 }
