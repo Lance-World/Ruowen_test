@@ -60,7 +60,7 @@ const state = {
 const nodeColors = {
   topic: "#E8D7F1",      // 主題：淺粉紫羅蘭
   concept: "#BFE7E2",    // 概念：蒂芬妮藍綠
-  term: "#DCD9EA",       // 詞彙：低飽和灰紫
+  term: "#F6E7B8",       // 詞彙：淺粉黃
   phrase: "#F6F1E8",     // 句子：只進 Info Panel，不進主網絡
   unknown: "#E8F3F1",
 };
