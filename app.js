@@ -4557,3 +4557,350 @@ window.addEventListener("resize", () => {
 
   resizeGraphAfterPanelChange();
 });
+
+/* =========================================================
+[可改] Seed 3.0｜Two Combinations + One Inquiry
+- UI 不再選 mode。
+- 每次 Seed 固定輸出 2 組不同概念組合 + 1 條整合提問。
+- 內部仍使用 Context / Contrast / Path / Tag 四種素材池，但不讓使用者手動切換。
+========================================================= */
+const SEED_COMBINATION_POOL_CONFIG = {
+  context: {
+    id: "context",
+    labelZh: "脈絡",
+    labelEn: "Context",
+    weight: 0.34,
+    description: "找出這個問題背後的相關概念群",
+  },
+  contrast: {
+    id: "contrast",
+    labelZh: "對照",
+    labelEn: "Contrast",
+    weight: 0.22,
+    description: "找出概念之間的張力與矛盾",
+  },
+  path: {
+    id: "path",
+    labelZh: "路徑",
+    labelEn: "Path",
+    weight: 0.24,
+    description: "建立從問題到核心概念的推理鏈",
+  },
+  tag: {
+    id: "tag",
+    labelZh: "橫向 Tag",
+    labelEn: "Tag",
+    weight: 0.20,
+    description: "從標籤橫向連到其他概念",
+  },
+};
+
+function setupSeedPanel() {
+  restoreSeedPanelState();
+
+  const input = document.getElementById("seedInput");
+  const submitBtn = document.getElementById("seedSubmitBtn");
+  const clearBtn = document.getElementById("clearSeedBtn");
+  const wrap = document.querySelector(".sidebar-seed-wrap");
+
+  function updateSeedClearState() {
+    if (!input || !wrap || !clearBtn) return;
+    const hasText = String(input.value || "").trim().length > 0;
+    wrap.classList.toggle("has-text", hasText);
+    clearBtn.classList.toggle("hidden", !hasText);
+  }
+
+  async function runSeed() {
+    const raw = input ? input.value.trim() : "";
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add("seed-loading");
+      submitBtn.setAttribute("aria-busy", "true");
+    }
+
+    renderSeedLoadingInfoPanel(raw);
+
+    try {
+      const result = await generateSeedIdea(raw);
+      renderSeedInfoPanel(result, raw);
+      if (raw) addHistoryItem("seed", raw);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("seed-loading");
+        submitBtn.removeAttribute("aria-busy");
+      }
+    }
+  }
+
+  if (submitBtn) submitBtn.addEventListener("click", runSeed);
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (input) input.value = "";
+      updateSeedClearState();
+      if (input) input.focus();
+    });
+  }
+
+  if (input) {
+    input.addEventListener("input", updateSeedClearState);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") runSeed();
+      if (event.key === "Escape") {
+        if (input.value) {
+          input.value = "";
+          updateSeedClearState();
+          return;
+        }
+        const panel = document.getElementById("sidebarSeedPanel");
+        if (panel) panel.classList.add("seed-collapsed");
+        localStorage.setItem("seedPanelOpen", "0");
+        syncSeedPanelOpenState();
+      }
+    });
+    updateSeedClearState();
+  }
+}
+
+async function generateSeedIdea(userText = "") {
+  const seedQuestion = parseSeedQuestion(userText);
+  const selectedNode = state.selectedNodeId ? getNodeById(state.selectedNodeId) : null;
+  const activeTag = state.activeTag || "";
+  const seedConcept = findSeedConcept(seedQuestion) || selectedNode;
+
+  const poolIds = chooseSeedCombinationPools({ seedQuestion, seedConcept, activeTag });
+  const combinations = poolIds.map((poolId, index) => {
+    return buildSeedCombination({
+      index: index + 1,
+      poolId,
+      seedQuestion,
+      seedConcept,
+      activeTag,
+    });
+  });
+
+  const inquiry = await buildUnifiedSeedInquiry({
+    seedQuestion,
+    seedConcept,
+    activeTag,
+    combinations,
+  });
+
+  const relatedTerms = Array.from(new Set(
+    combinations.flatMap((combo) => combo.cards.map(getSeedNodeLabel)).filter(Boolean)
+  )).slice(0, 18);
+
+  const highlightIds = Array.from(new Set(
+    combinations.flatMap((combo) => combo.cards.map((node) => node.id)).filter(Boolean)
+  ));
+
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || getSeedNodeLabel(seedConcept) || "隨機探索";
+
+  return {
+    mode: "seed-combinations",
+    title: `Idea｜${input}`,
+    tags: ["Seed", "2 Combinations", "1 Inquiry"],
+    relatedTerms,
+    combinations,
+    phrases: [
+      ...combinations.map((combo) => formatSeedCombinationLine(combo)),
+      `整合提問：${inquiry}`,
+    ],
+    inquiry,
+    highlightIds,
+    sourceTitle: `Seed｜${combinations.map((combo) => combo.labelEn).join(" + ")}`,
+  };
+}
+
+function chooseSeedCombinationPools({ seedQuestion, seedConcept, activeTag }) {
+  const weights = { ...Object.fromEntries(Object.entries(SEED_COMBINATION_POOL_CONFIG).map(([key, cfg]) => [key, cfg.weight])) };
+
+  if (activeTag) weights.tag += 0.28;
+  if (seedConcept && getNodeSeedTags(seedConcept).length > 0) weights.tag += 0.10;
+  if (seedQuestion && seedQuestion.questionType === "contrast") weights.contrast += 0.24;
+  if (seedQuestion && seedQuestion.questionType === "path") weights.path += 0.24;
+  if (!seedQuestion || !(seedQuestion.rawText || seedQuestion.normalizedText)) weights.context += 0.12;
+
+  const first = weightedPick(weights);
+  const secondWeights = { ...weights };
+  delete secondWeights[first];
+
+  // 避免每次都是 context + tag，讓組合更有變化。
+  if (first === "context") secondWeights.contrast += 0.08;
+  if (first === "tag") secondWeights.path += 0.08;
+
+  const second = weightedPick(secondWeights);
+  return [first || "context", second || "tag"].filter(Boolean).slice(0, 2);
+}
+
+function weightedPick(weights) {
+  const entries = Object.entries(weights).filter(([, value]) => Number(value) > 0);
+  const total = entries.reduce((sum, [, value]) => sum + Number(value || 0), 0);
+  if (entries.length === 0 || total <= 0) return null;
+
+  let cursor = Math.random() * total;
+  for (const [key, value] of entries) {
+    cursor -= Number(value || 0);
+    if (cursor <= 0) return key;
+  }
+
+  return entries[entries.length - 1][0];
+}
+
+function buildSeedCombination({ index, poolId, seedQuestion, seedConcept, activeTag }) {
+  const config = SEED_COMBINATION_POOL_CONFIG[poolId] || SEED_COMBINATION_POOL_CONFIG.context;
+  const cards = collectCardsFromSeedPool(poolId, seedQuestion, seedConcept, activeTag, 7);
+
+  return {
+    index,
+    poolId,
+    labelZh: config.labelZh,
+    labelEn: config.labelEn,
+    cards,
+    cardLabels: cards.map(getSeedNodeLabel).filter(Boolean),
+  };
+}
+
+function collectCardsFromSeedPool(poolId, seedQuestion, seedConcept, activeTag, limit = 7) {
+  if (poolId === "contrast") return collectContrastSeedCards(seedQuestion, seedConcept, limit);
+  if (poolId === "path") return collectPathSeedCards(seedQuestion, seedConcept, limit);
+  if (poolId === "tag") return collectTagSeedCards(seedQuestion, seedConcept, activeTag, limit);
+  return collectContextSeedCards(seedQuestion, seedConcept, limit);
+}
+
+function collectTagSeedCards(seedQuestion, seedConcept, activeTag, limit = 7) {
+  const tags = new Set();
+  const pushTag = (value) => {
+    const normalized = normalizeSeedTagValue(value);
+    if (normalized) tags.add(normalized);
+  };
+
+  pushTag(activeTag);
+  getNodeSeedTags(seedConcept).forEach(pushTag);
+
+  (seedQuestion.tokens || []).forEach((token) => {
+    if (token.length <= 8) pushTag(token);
+  });
+
+  const byTag = findSeedNodesByTags(Array.from(tags), seedConcept ? seedConcept.id : null);
+  const byContext = collectContextSeedCards(seedQuestion, seedConcept, limit * 2);
+
+  return dedupeNodes([
+    ...(seedConcept ? [seedConcept] : []),
+    ...byTag,
+    ...byContext,
+  ]).slice(0, limit);
+}
+
+function formatSeedCombinationLine(combo) {
+  const labels = combo.cardLabels && combo.cardLabels.length
+    ? combo.cardLabels.slice(0, 7).join("、")
+    : "尚未命中明確卡片";
+  const indexText = String(combo.index).padStart(2, "0");
+  return `組合 ${indexText}｜${combo.labelZh} ${combo.labelEn}：${labels}`;
+}
+
+async function buildUnifiedSeedInquiry({ seedQuestion, seedConcept, activeTag, combinations }) {
+  const localInquiry = buildLocalUnifiedSeedInquiry({ seedQuestion, seedConcept, activeTag, combinations });
+
+  // 目前預設使用本機模板，確保 GitHub Pages / 離線測試也穩定。
+  // 若之後要接 Gemini，請走後端 proxy，不要把 API key 放在前端。
+  // 若要接 Ollama，可在這裡把 combinations 壓成短 payload 再送本機端。
+  return localInquiry;
+}
+
+function buildLocalUnifiedSeedInquiry({ seedQuestion, seedConcept, activeTag, combinations }) {
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || getSeedNodeLabel(seedConcept) || "這個問題";
+  const comboA = combinations[0] || { labelZh: "脈絡", labelEn: "Context", cardLabels: [] };
+  const comboB = combinations[1] || { labelZh: "橫向 Tag", labelEn: "Tag", cardLabels: [] };
+  const a = (comboA.cardLabels || []).find(Boolean) || input;
+  const b = (comboB.cardLabels || []).find((label) => label !== a) || activeTag || "另一個方向";
+
+  return `如果把「${input}」同時放進「${comboA.labelZh}」與「${comboB.labelZh}」兩個方向來看，「${a}」和「${b}」之間，最值得繼續追問的是什麼？`;
+}
+
+function renderSeedLoadingInfoPanel(userText = "") {
+  applyInfoPanelTheme("none");
+  const seed = String(userText || "").trim();
+  setInfoTitle(seed ? `Idea｜${seed}` : "Seed｜隨機探索");
+
+  const tagsBox = document.getElementById("infoTags");
+  const relatedTerms = document.getElementById("relatedTerms");
+  const relatedPhrases = document.getElementById("relatedPhrases");
+  const sourceList = document.getElementById("sourceList");
+
+  if (tagsBox) {
+    tagsBox.innerHTML = `<span class="seed-info-mode-label">Seed</span><span class="seed-info-mode-label">2 Combinations</span><span class="seed-info-mode-label">1 Inquiry</span>`;
+  }
+
+  if (relatedTerms) {
+    relatedTerms.innerHTML = seed
+      ? `<button type="button" class="related-term-chip" data-term="${escapeAttribute(seed)}">${escapeHtml(seed)}</button>`
+      : '<span class="muted">正在從現有知識網絡抽樣</span>';
+  }
+
+  if (relatedPhrases) {
+    relatedPhrases.innerHTML = '<div class="quote-item seed-idea-item">正在產生兩組方向與一條整合提問…</div>';
+  }
+
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning("Seed｜2 Combinations + 1 Inquiry", "seed-combinations");
+  openSeedInfoPanel();
+}
+
+function renderSeedInfoPanel(result, userText = "") {
+  applyInfoPanelTheme("none");
+  const safeResult = result && typeof result === "object" ? result : {
+    title: userText ? `Idea｜${userText}` : "Seed Idea",
+    tags: ["Seed", "2 Combinations", "1 Inquiry"],
+    relatedTerms: [],
+    phrases: [String(result || "")],
+    highlightIds: [],
+    sourceTitle: "Seed",
+  };
+
+  setInfoTitle(safeResult.title || "Seed Idea");
+
+  const tagsBox = document.getElementById("infoTags");
+  const relatedTerms = document.getElementById("relatedTerms");
+  const relatedPhrases = document.getElementById("relatedPhrases");
+  const sourceList = document.getElementById("sourceList");
+
+  if (tagsBox) {
+    tagsBox.innerHTML = (safeResult.tags || ["Seed"])
+      .map((tag) => `<span class="seed-info-mode-label">${escapeHtml(tag)}</span>`)
+      .join("");
+  }
+
+  if (relatedTerms) {
+    relatedTerms.innerHTML = (safeResult.relatedTerms || []).length
+      ? safeResult.relatedTerms.map((term) => `<button type="button" class="related-term-chip" data-term="${escapeAttribute(term)}">${escapeHtml(term)}</button>`).join("")
+      : '<span class="muted">尚無相關詞彙</span>';
+  }
+
+  if (relatedPhrases) {
+    relatedPhrases.innerHTML = (safeResult.phrases || []).length
+      ? safeResult.phrases.map((text) => {
+          const className = String(text).startsWith("整合提問：")
+            ? "quote-item seed-idea-item seed-inquiry-item"
+            : "quote-item seed-idea-item seed-combination-item";
+          return `<div class="${className}">${escapeHtml(text)}</div>`;
+        }).join("")
+      : '<span class="muted">尚無 Seed 結果</span>';
+  }
+
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(safeResult.sourceTitle, "seed-combinations");
+
+  highlightSeedResultNodes(safeResult.highlightIds || []);
+  openSeedInfoPanel();
+}
+
+function renderSeedSourceWarning(sourceTitle = "Seed", mode = "seed-combinations") {
+  return `<div class="source-item seed-source-warning">
+      <div class="source-title">${escapeHtml(sourceTitle || "Seed")}</div>
+      <div class="source-text">提示：</div>
+      <div class="source-text">以下為探索性推演，不代表原始書籍或影音的直接結論。</div>
+      <div class="source-text">Seed 只會產生兩個探索方向與一條整合提問；不新增主圖節點，也不改 graph 資料。</div>
+    </div>`;
+}
