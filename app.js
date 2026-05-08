@@ -109,6 +109,11 @@ const INITIAL_CONCEPT_LIMIT = 250;
 const EXPANDED_TERM_LIMIT = 20;
 const TERM_ORBIT_INNER_RADIUS = 78;
 const TERM_ORBIT_OUTER_RADIUS = 122;
+const GRAPH_ENTRY_TOPIC_DELAY_MS = 120;
+const GRAPH_ENTRY_CONCEPT_DELAY_MS = 560;
+const GRAPH_ENTRY_EDGES_DELAY_MS = 1880;
+const GRAPH_ENTRY_TOPIC_SIM_STOP_MS = 980;
+const GRAPH_ENTRY_CONCEPT_SIM_STOP_MS = 1550;
 
 // Seed AI priority:
 // 1) Local Ollama on the user's machine. No cloud API key.
@@ -799,10 +804,9 @@ function buildSeedResultFromStructure({ mode, seedQuestion, seedConcept, cards, 
   return {
     mode,
     title: `Idea｜${input}`,
-    tags: ["Seed", modeConfig.labelZh, modeConfig.labelEn].filter(Boolean),
+    tags: [modeConfig.labelEn].filter(Boolean),
     relatedTerms: cardLabels,
     phrases: [
-      `模式：${modeConfig.labelZh} ${modeConfig.labelEn}`,
       cardLabels.length ? `找到的卡片：${cardLabels.join("、")}` : "找到的卡片：尚未命中明確卡片",
       `推理：${reasoning}`,
       "可以討論：",
@@ -873,11 +877,11 @@ function buildSeedResult({ mode = "context", userText = "", title, tags = [], re
   return {
     mode,
     title: title || (seed ? `Idea｜${seed}` : modeConfig.label),
-    tags: ["Seed", modeConfig.labelZh, modeConfig.labelEn, ...tags].filter(Boolean),
+    tags: [modeConfig.labelEn, ...tags].filter(Boolean),
     relatedTerms: Array.from(new Set(relatedTerms.filter(Boolean))).slice(0, 18),
     phrases: phrases.filter(Boolean).slice(0, 8),
     highlightIds: Array.from(new Set(highlightIds.filter(Boolean))),
-    sourceTitle: modeConfig.sourceLabel,
+    sourceTitle: `Seed｜${modeConfig.labelEn || "Context"}`,
   };
 }
 
@@ -1032,7 +1036,7 @@ function buildSeedAiPayload(userText = "", mode = "ai") {
 
   return {
     mode,
-    mode_label: (SEED_MODES[mode] || SEED_MODES.ai).label,
+    mode_label: (SEED_MODES[mode] || SEED_MODES.ai).labelEn,
     input: String(userText || "").trim(),
     selected_node: contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : "",
     tags: selectedTags,
@@ -1069,11 +1073,18 @@ function generateLocalAiQuestionSeed(userText = "") {
   return `如果把「${label}」當成一個入口${termText}，你會想問自己：這件事真正想帶我看見什麼？`;
 }
 
+function renderSeedModeLabel(mode = "context") {
+  const box = document.getElementById("infoTags");
+  if (!box) return;
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
+  box.innerHTML = `<span class="seed-info-mode-label">${escapeHtml(modeConfig.labelEn || "Context")}</span>`;
+}
+
 function renderSeedLoadingInfoPanel(userText = "", mode = "context") {
   const seed = String(userText || "").trim();
   const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
-  setInfoTitle(seed ? `Idea｜${seed}` : modeConfig.label);
-  renderInfoTags(["Seed", modeConfig.labelZh, modeConfig.labelEn, mode === "ai" ? "#AI生成中" : "#本地推演"].filter(Boolean));
+  setInfoTitle(seed ? `Idea｜${seed}` : `Seed｜${modeConfig.labelEn || "Context"}`);
+  renderSeedModeLabel(mode);
 
   const relatedTerms = document.getElementById("relatedTerms");
   const relatedPhrases = document.getElementById("relatedPhrases");
@@ -1089,7 +1100,7 @@ function renderSeedLoadingInfoPanel(userText = "", mode = "context") {
     relatedPhrases.innerHTML = '<div class="quote-item seed-idea-item">正在產生 Seed 結果…</div>';
   }
 
-  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(modeConfig.sourceLabel, mode);
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(`Seed｜${modeConfig.labelEn || "Context"}`, mode);
   openSeedInfoPanel();
 }
 
@@ -1101,7 +1112,7 @@ function renderSeedInfoPanel(result, userText = "", mode = "context") {
   });
 
   setInfoTitle(safeResult.title || "Seed Idea");
-  renderInfoTags(safeResult.tags || ["Seed"]);
+  renderSeedModeLabel(safeResult.mode || mode);
 
   const relatedTerms = document.getElementById("relatedTerms");
   const relatedPhrases = document.getElementById("relatedPhrases");
@@ -2103,8 +2114,8 @@ function finishIntroGraphReveal() {
   state.hasEnteredUniverse = true;
   state.currentFocus = { type: "universe", value: null };
 
-  // Star Map entry sequence:
-  // Overlay fades out first -> board appears -> center stardust expands into Topic anchors -> Concepts surface -> edges fade in.
+  // Graph start is intentionally delayed until the overlay has faded.
+  // Reference behavior: keep the board quiet first, then let visible nodes expand organically from the center.
   document.body.classList.remove("graph-intro-active");
   document.body.classList.add("graph-board-visible", "graph-entering");
 
@@ -2866,68 +2877,106 @@ function startUniverseEntryAnimation() {
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard || !state.nodeSelection || !state.linkSelection) return;
 
+  stopActiveSimulation();
   state.initialAnimationDone = false;
-  document.body.classList.add("graph-entering");
-  document.body.classList.remove("graph-topic-visible", "intro-concepts-visible", "graph-edges-visible", "graph-interaction-enabled");
+  state.manualMainPositions.clear();
+
+  document.body.classList.add("graph-entering", "graph-board-visible");
+  document.body.classList.remove(
+    "graph-topic-visible",
+    "intro-concepts-visible",
+    "graph-edges-visible",
+    "graph-interaction-enabled",
+    "graph-intro-finished"
+  );
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
+
+  // Step A: all initial visible nodes start as quiet stardust near the center.
+  // This mirrors the older force-graph feel, but is now gated until Intro Overlay ends.
   applyCenterStardustLayout(state.currentNodes, width, height);
+  state.currentNodes.forEach((node) => {
+    node.vx = 0;
+    node.vy = 0;
+  });
   updateStaticGraphPositions();
 
   window.setTimeout(() => {
     document.body.classList.add("graph-topic-visible");
     runTopicAnchorSimulation();
-  }, 120);
+  }, GRAPH_ENTRY_TOPIC_DELAY_MS);
 
   window.setTimeout(() => {
     document.body.classList.add("intro-concepts-visible");
     runConceptSurfaceSimulation();
-  }, 620);
+  }, GRAPH_ENTRY_CONCEPT_DELAY_MS);
 
   window.setTimeout(() => {
     state.initialAnimationDone = true;
     state.currentFocus = { type: "universe", value: null };
     document.body.classList.add("graph-edges-visible", "graph-interaction-enabled", "graph-intro-finished");
     document.body.classList.remove("graph-entering");
-    updateGraph();
+    freezeCurrentUniversePositions();
+    updateStaticGraphPositions();
     fitVisibleNodes();
-  }, 1900);
+  }, GRAPH_ENTRY_EDGES_DELAY_MS);
 }
 
 function runTopicAnchorSimulation() {
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
   const topics = (state.currentNodes || []).filter((node) => node.type === "topic");
   if (!topics.length) return;
 
   stopActiveSimulation();
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radius = Math.min(width, height) * (isMobileLayout() ? 0.30 : 0.36);
+  const targetMap = buildSpreadTargetMap(topics, width, height, {
+    marginRatioX: isMobileLayout() ? 0.16 : 0.14,
+    marginRatioY: isMobileLayout() ? 0.16 : 0.14,
+    salt: 131,
+  });
+
+  topics.forEach((node, index) => {
+    if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+      const center = getGraphCenter(width, height);
+      node.x = center.x + Math.cos(index * GOLDEN_ANGLE) * 8;
+      node.y = center.y + Math.sin(index * GOLDEN_ANGLE) * 8;
+    }
+    node.fx = null;
+    node.fy = null;
+  });
 
   state.simulation = d3.forceSimulation(topics)
-    .alpha(0.95)
-    .alphaDecay(0.055)
-    .velocityDecay(0.42)
-    .force("charge", d3.forceManyBody().strength(-1800))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 42).strength(0.95))
-    .force("x", d3.forceX((node, index) => {
-      const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topics.length);
-      return centerX + Math.cos(angle) * radius;
-    }).strength(0.16))
-    .force("y", d3.forceY((node, index) => {
-      const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topics.length);
-      return centerY + Math.sin(angle) * radius;
-    }).strength(0.16))
+    .alpha(1)
+    .alphaDecay(0.04)
+    .velocityDecay(0.34)
+    .force("charge", d3.forceManyBody().strength(-980))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 58).strength(1))
+    .force("x", d3.forceX((node) => targetMap.get(node.id)?.x || width / 2).strength(0.22))
+    .force("y", d3.forceY((node) => targetMap.get(node.id)?.y || height / 2).strength(0.22))
     .on("tick", updateStaticGraphPositions);
+
+  state.simulationStopTimer = window.setTimeout(() => {
+    stopActiveSimulation(false);
+    topics.forEach((node) => {
+      const target = targetMap.get(node.id) || { x: node.x || width / 2, y: node.y || height / 2 };
+      node.x = Number.isFinite(node.x) ? node.x : target.x;
+      node.y = Number.isFinite(node.y) ? node.y : target.y;
+      node.fx = node.x;
+      node.fy = node.y;
+      state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
+    });
+    updateStaticGraphPositions();
+  }, GRAPH_ENTRY_TOPIC_SIM_STOP_MS);
 }
 
 function runConceptSurfaceSimulation() {
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard) return;
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
   const nodes = (state.currentNodes || []).filter((node) => node.type === "topic" || node.type === "concept");
@@ -2938,41 +2987,133 @@ function runConceptSurfaceSimulation() {
   stopActiveSimulation();
   const topicByConcept = buildTopicByConceptMap(concepts, topics, state.currentEdges || []);
   const topicMap = new Map(topics.map((topic) => [topic.id, topic]));
+  const conceptTargetMap = buildConceptTargetMap(concepts, topicByConcept, topicMap, width, height);
 
   topics.forEach((topic) => {
+    if (!Number.isFinite(topic.x) || !Number.isFinite(topic.y)) {
+      const saved = state.manualMainPositions.get(topic.id);
+      topic.x = saved?.x || width / 2;
+      topic.y = saved?.y || height / 2;
+    }
     topic.fx = topic.x;
     topic.fy = topic.y;
-    state.manualMainPositions.set(topic.id, { x: topic.x || width / 2, y: topic.y || height / 2 });
+    state.manualMainPositions.set(topic.id, { x: topic.x, y: topic.y });
   });
 
+  concepts.forEach((concept, index) => {
+    if (!Number.isFinite(concept.x) || !Number.isFinite(concept.y) || !state.initialAnimationDone) {
+      const parentTopic = topicMap.get(topicByConcept.get(concept.id));
+      const baseX = parentTopic?.x || width / 2;
+      const baseY = parentTopic?.y || height / 2;
+      concept.x = baseX + Math.cos(index * GOLDEN_ANGLE) * 10;
+      concept.y = baseY + Math.sin(index * GOLDEN_ANGLE) * 10;
+    }
+    concept.fx = null;
+    concept.fy = null;
+  });
+
+  const preparedEdges = (state.currentEdges || []).map((edge) => ({ ...edge }));
+
   state.simulation = d3.forceSimulation(nodes)
-    .alpha(0.9)
-    .alphaDecay(0.05)
-    .velocityDecay(0.48)
-    .force("link", d3.forceLink(state.currentEdges || []).id((node) => node.id).distance(getLinkDistance).strength(0.18))
-    .force("charge", d3.forceManyBody().strength((node) => node.type === "topic" ? -180 : -70))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (node.type === "topic" ? 42 : 30)).strength(0.95))
+    .alpha(1)
+    .alphaDecay(0.045)
+    .velocityDecay(0.40)
+    .force("link", d3.forceLink(preparedEdges)
+      .id((node) => node.id)
+      .distance((edge) => getLinkDistance(edge))
+      .strength(0.20))
+    .force("charge", d3.forceManyBody().strength((node) => node.type === "topic" ? -240 : -560))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (node.type === "topic" ? 46 : 30)).strength(0.98))
     .force("x", d3.forceX((node) => {
       if (node.type === "topic") return node.x || width / 2;
-      const topic = topicMap.get(topicByConcept.get(node.id));
-      return topic ? topic.x : width / 2;
-    }).strength((node) => node.type === "topic" ? 0.18 : 0.07))
+      return conceptTargetMap.get(node.id)?.x || width / 2;
+    }).strength((node) => node.type === "topic" ? 0.24 : 0.16))
     .force("y", d3.forceY((node) => {
       if (node.type === "topic") return node.y || height / 2;
-      const topic = topicMap.get(topicByConcept.get(node.id));
-      return topic ? topic.y : height / 2;
-    }).strength((node) => node.type === "topic" ? 0.18 : 0.07))
+      return conceptTargetMap.get(node.id)?.y || height / 2;
+    }).strength((node) => node.type === "topic" ? 0.24 : 0.16))
     .on("tick", updateStaticGraphPositions);
 
   state.simulationStopTimer = window.setTimeout(() => {
     stopActiveSimulation(false);
-    nodes.forEach((node) => {
-      state.manualMainPositions.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
+    freezeCurrentUniversePositions();
+    updateStaticGraphPositions();
+  }, GRAPH_ENTRY_CONCEPT_SIM_STOP_MS);
+}
+
+function freezeCurrentUniversePositions() {
+  (state.currentNodes || []).forEach((node) => {
+    if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+    if (node.type === "topic" || node.type === "concept") {
       node.fx = node.x;
       node.fy = node.y;
+      state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
+    }
+  });
+}
+
+function getGraphCenter(width, height) {
+  return { x: width / 2, y: height / 2 };
+}
+
+function buildSpreadTargetMap(nodes, width, height, options = {}) {
+  const marginX = clamp(width * (options.marginRatioX || 0.14), 54, 150);
+  const marginY = clamp(height * (options.marginRatioY || 0.14), 54, 150);
+  const usableWidth = Math.max(220, width - marginX * 2);
+  const usableHeight = Math.max(220, height - marginY * 2);
+  const sorted = [...nodes].sort((a, b) => seededUnitFromText(a.id, options.salt || 0) - seededUnitFromText(b.id, options.salt || 0));
+  const columns = Math.max(1, Math.ceil(Math.sqrt(sorted.length * (usableWidth / Math.max(1, usableHeight)))));
+  const rows = Math.max(1, Math.ceil(sorted.length / columns));
+  const cellWidth = usableWidth / columns;
+  const cellHeight = usableHeight / rows;
+  const map = new Map();
+
+  sorted.forEach((node, index) => {
+    const col = index % columns;
+    const row = Math.floor(index / columns);
+    const jitterX = (seededUnitFromText(node.id, (options.salt || 0) + 1) - 0.5) * cellWidth * 0.62;
+    const jitterY = (seededUnitFromText(node.id, (options.salt || 0) + 2) - 0.5) * cellHeight * 0.62;
+    map.set(node.id, {
+      x: clamp(marginX + cellWidth * (col + 0.5) + jitterX, marginX, width - marginX),
+      y: clamp(marginY + cellHeight * (row + 0.5) + jitterY, marginY, height - marginY),
     });
-    updateStaticGraphPositions();
-  }, 1700);
+  });
+
+  return map;
+}
+
+function buildConceptTargetMap(concepts, topicByConcept, topicMap, width, height) {
+  const map = new Map();
+  const groupMap = new Map();
+
+  concepts.forEach((concept) => {
+    const topicId = topicByConcept.get(concept.id) || "__ungrouped__";
+    if (!groupMap.has(topicId)) groupMap.set(topicId, []);
+    groupMap.get(topicId).push(concept);
+  });
+
+  groupMap.forEach((group, topicId) => {
+    const topic = topicMap.get(topicId);
+    const baseX = topic?.x || width / 2;
+    const baseY = topic?.y || height / 2;
+    const sorted = [...group].sort((a, b) => seededUnitFromText(a.id, 271) - seededUnitFromText(b.id, 271));
+    const baseRadius = isMobileLayout() ? 96 : 132;
+    const ringGap = isMobileLayout() ? 42 : 58;
+
+    sorted.forEach((concept, index) => {
+      const ring = Math.floor(index / 10);
+      const ringIndex = index % 10;
+      const ringCount = Math.min(10, sorted.length - ring * 10);
+      const angle = (Math.PI * 2 * ringIndex) / Math.max(1, ringCount) + seededUnitFromText(concept.id, 272) * 0.42;
+      const radius = baseRadius + ring * ringGap + seededUnitFromText(concept.id, 273) * 22;
+      map.set(concept.id, {
+        x: clamp(baseX + Math.cos(angle) * radius, 34, width - 34),
+        y: clamp(baseY + Math.sin(angle) * radius, 40, height - 40),
+      });
+    });
+  });
+
+  return map;
 }
 
 // Compatibility wrapper for older calls.
