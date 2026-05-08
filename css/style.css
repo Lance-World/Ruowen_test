@@ -107,9 +107,19 @@ body.graph-topic-visible .node-topic circle {
 }
 body:not(.intro-concepts-visible) .node-concept { opacity: 0; }
 body.intro-concepts-visible .node-concept { opacity: 1; transition: opacity 0.56s ease; }
+body.intro-concepts-visible .node-concept circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: conceptBurstReveal 0.82s cubic-bezier(0.18, 0.9, 0.22, 1.08) both;
+}
 @keyframes topicBurstReveal {
   0% { transform: scale(0.26); opacity: 0; }
   58% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes conceptBurstReveal {
+  0% { transform: scale(0.18); opacity: 0; }
+  62% { transform: scale(1.12); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 

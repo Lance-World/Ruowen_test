@@ -1332,28 +1332,29 @@ function finishIntroGraphReveal() {
   state.isInitialLoading = false;
   state.introFinished = true;
 
-  // Sequence:
-  // 1. Overlay fades out first.
+  // Page-load sequence:
+  // 1. Intro overlay fades out first.
   // 2. Whiteboard fades in.
-  // 3. Topic nodes appear with a burst-like reveal.
-  // 4. Core Concept nodes fade in 0.3s later.
-  // 5. Normal interaction is enabled after the staged reveal begins.
+  // 3. Topic nodes run the first burst simulation.
+  // 4. Core Concept nodes appear and run the second burst simulation.
+  // 5. Interaction is enabled after the two-stage reveal starts.
   document.body.classList.remove("graph-intro-active");
   document.body.classList.add("graph-board-visible");
 
   requestAnimationFrame(() => {
     document.body.classList.add("graph-topic-visible");
+    startMainViewBurstSimulation("topic");
 
     window.setTimeout(() => {
-      document.body.classList.add("intro-concepts-visible", "graph-interaction-enabled", "graph-intro-finished");
+      document.body.classList.add("intro-concepts-visible");
+      startMainViewBurstSimulation("concept");
 
-      // After the board is visible, run a short controlled main-view simulation.
-      // Page load itself still does not run force simulation behind the overlay.
-      startMainViewForceSimulation();
+      window.setTimeout(() => {
+        document.body.classList.add("graph-interaction-enabled", "graph-intro-finished");
+        fitVisibleNodes();
+      }, 920);
     }, INITIAL_CONCEPT_DELAY_MS);
   });
-
-  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS + INITIAL_CONCEPT_DELAY_MS + 420);
 }
 
 async function pickIntroMessage() {
@@ -1918,12 +1919,6 @@ function updateGraph() {
 
     nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
 
-    // During Intro, keep the main graph static. After Intro, run a short
-    // controlled force simulation so Concepts spread out without adding Terms.
-    if (state.introFinished) {
-      startMainViewForceSimulation();
-    }
-
     requestAnimationFrame(() => focusNodeGroup(nodes.map((node) => node.id)));
     highlightSelection();
     updateBackToMainButton();
@@ -1971,7 +1966,7 @@ function updateGraph() {
 }
 
 
-function startMainViewForceSimulation() {
+function startMainViewBurstSimulation(phase = "concept") {
   if (state.viewMode !== "main" || !state.introFinished) return;
   if (!state.currentNodes || state.currentNodes.length === 0) return;
 
@@ -1980,106 +1975,158 @@ function startMainViewForceSimulation() {
 
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const nodes = state.currentNodes;
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  const edges = (state.currentEdges || [])
-    .filter((edge) => nodeIds.has(getEdgeSourceId(edge)) && nodeIds.has(getEdgeTargetId(edge)))
+  const allMainNodes = state.currentNodes;
+  const topics = allMainNodes.filter((node) => node.type === "topic");
+  const concepts = allMainNodes.filter((node) => node.type === "concept");
+
+  const simNodes = phase === "topic" ? topics : allMainNodes;
+  if (simNodes.length === 0) return;
+
+  const simNodeIds = new Set(simNodes.map((node) => node.id));
+  const allNodeIds = new Set(allMainNodes.map((node) => node.id));
+  const simEdges = (state.currentEdges || [])
+    .filter((edge) => allNodeIds.has(getEdgeSourceId(edge)) && allNodeIds.has(getEdgeTargetId(edge)))
     .map((edge) => ({ ...edge }));
 
-  if (state.simulationStopTimer) {
+  stopActiveSimulation();
+
+  const topicAnchors = new Map();
+  topics.forEach((node) => {
+    const saved = state.manualMainPositions.get(node.id);
+    if (saved) {
+      node.x = saved.x;
+      node.y = saved.y;
+    }
+
+    if (phase === "topic") {
+      node.fx = null;
+      node.fy = null;
+    } else {
+      node.fx = node.x;
+      node.fy = node.y;
+    }
+
+    topicAnchors.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
+  });
+
+  concepts.forEach((node) => {
+    const saved = state.manualMainPositions.get(node.id);
+    if (saved) {
+      node.x = saved.x;
+      node.y = saved.y;
+    }
+
+    if (phase === "topic") {
+      node.fx = node.x;
+      node.fy = node.y;
+    } else {
+      node.fx = null;
+      node.fy = null;
+    }
+  });
+
+  const topicByConcept = buildTopicByConceptMap(concepts, topics, simEdges);
+  const conceptBurstRadius = isMobileLayout() ? 165 : 235;
+
+  if (phase === "concept") {
+    concepts.forEach((node, index) => {
+      if (state.manualMainPositions.has(node.id)) return;
+
+      const topicId = topicByConcept.get(node.id);
+      const anchor = topicId ? topicAnchors.get(topicId) : null;
+      const baseX = anchor ? anchor.x : width / 2;
+      const baseY = anchor ? anchor.y : height / 2;
+      const angle = index * GOLDEN_ANGLE + seededUnitFromText(node.id, 12) * Math.PI * 2;
+      const radius = conceptBurstRadius * (0.42 + seededUnitFromText(node.id, 13) * 0.72);
+      node.x = clamp(baseX + Math.cos(angle) * radius, 48, width - 48);
+      node.y = clamp(baseY + Math.sin(angle) * radius, 54, height - 54);
+    });
+  }
+
+  state.forceStarted = true;
+  state.simulation = d3
+    .forceSimulation(simNodes)
+    .alpha(phase === "topic" ? 1 : 0.92)
+    .alphaMin(0.035)
+    .alphaDecay(phase === "topic" ? 0.048 : 0.052)
+    .velocityDecay(phase === "topic" ? 0.42 : 0.50)
+    .force("charge", d3.forceManyBody().strength((node) => {
+      if (node.type === "topic") return phase === "topic" ? -2800 : -900;
+      return -820;
+    }))
+    .force("collision", d3.forceCollide().radius((node) => {
+      const base = getNodeRadius(node);
+      if (node.type === "topic") return base + (phase === "topic" ? 86 : 58);
+      return base + 56;
+    }).strength(0.96))
+    .force("center", d3.forceCenter(width / 2, height / 2).strength(phase === "topic" ? 0.045 : 0.018))
+    .force("x", d3.forceX((node) => {
+      if (node.type === "topic") return width / 2;
+      const topicId = topicByConcept.get(node.id);
+      const anchor = topicId ? topicAnchors.get(topicId) : null;
+      return anchor ? anchor.x : width / 2;
+    }).strength((node) => node.type === "topic" ? 0.045 : 0.075))
+    .force("y", d3.forceY((node) => {
+      if (node.type === "topic") return height / 2;
+      const topicId = topicByConcept.get(node.id);
+      const anchor = topicId ? topicAnchors.get(topicId) : null;
+      return anchor ? anchor.y : height / 2;
+    }).strength((node) => node.type === "topic" ? 0.045 : 0.075))
+    .on("tick", updateStaticGraphPositions);
+
+  if (phase === "concept") {
+    state.simulation.force(
+      "link",
+      d3.forceLink(simEdges)
+        .id((node) => node.id)
+        .distance((edge) => {
+          const sourceNode = getNodeById(getEdgeSourceId(edge));
+          const targetNode = getNodeById(getEdgeTargetId(edge));
+          if (sourceNode?.type === "topic" || targetNode?.type === "topic") return isMobileLayout() ? 190 : 240;
+          return isMobileLayout() ? 132 : 170;
+        })
+        .strength(0.12)
+    );
+  }
+
+  state.simulationStopTimer = window.setTimeout(() => {
+    stopActiveSimulation(false);
+    allMainNodes.forEach((node) => {
+      state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
+      if (state.viewMode === "main") {
+        node.fx = node.x;
+        node.fy = node.y;
+      }
+    });
+    updateStaticGraphPositions();
+  }, phase === "topic" ? 1150 : 2600);
+}
+
+function buildTopicByConceptMap(concepts, topics, edges) {
+  const topicByConcept = new Map();
+
+  concepts.forEach((concept) => {
+    const topic = findTopicForConcept(concept, topics, edges);
+    if (topic) topicByConcept.set(concept.id, topic.id);
+  });
+
+  return topicByConcept;
+}
+
+function stopActiveSimulation(clearTimer = true) {
+  if (clearTimer && state.simulationStopTimer) {
     window.clearTimeout(state.simulationStopTimer);
     state.simulationStopTimer = null;
   }
 
   if (state.simulation) {
     state.simulation.stop();
+    state.simulation = null;
   }
 
-  const topicAnchors = new Map();
-  nodes.forEach((node) => {
-    if (node.type === "topic") {
-      // Keep Topic nodes as stable anchors. Users can still drag them later.
-      node.fx = node.x;
-      node.fy = node.y;
-      topicAnchors.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
-      return;
-    }
-
-    const manual = state.manualMainPositions.get(node.id);
-    if (manual) {
-      node.fx = manual.x;
-      node.fy = manual.y;
-      node.x = manual.x;
-      node.y = manual.y;
-    } else {
-      // Let Concept nodes breathe. They start from preset positions, then collision/link forces separate them.
-      node.fx = null;
-      node.fy = null;
-    }
-  });
-
-  const topicByConcept = new Map();
-  const topics = nodes.filter((node) => node.type === "topic");
-  nodes.filter((node) => node.type === "concept").forEach((concept) => {
-    const topic = findTopicForConcept(concept, topics, edges);
-    if (topic) topicByConcept.set(concept.id, topic.id);
-  });
-
-  state.forceStarted = true;
-  state.simulation = d3
-    .forceSimulation(nodes)
-    .alpha(0.72)
-    .alphaMin(0.035)
-    .alphaDecay(0.055)
-    .velocityDecay(0.56)
-    .force(
-      "link",
-      d3
-        .forceLink(edges)
-        .id((node) => node.id)
-        .distance((edge) => {
-          const sourceNode = getNodeById(getEdgeSourceId(edge));
-          const targetNode = getNodeById(getEdgeTargetId(edge));
-          if (sourceNode?.type === "topic" || targetNode?.type === "topic") return isMobileLayout() ? 150 : 185;
-          return isMobileLayout() ? 118 : 142;
-        })
-        .strength(0.24)
-    )
-    .force("charge", d3.forceManyBody().strength((node) => node.type === "topic" ? -1500 : -560))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (node.type === "topic" ? 56 : 46)).strength(0.92))
-    .force("center", d3.forceCenter(width / 2, height / 2).strength(0.012))
-    .force("topicX", d3.forceX((node) => {
-      if (node.type === "topic") return node.x || width / 2;
-      const topicId = topicByConcept.get(node.id);
-      const anchor = topicId ? topicAnchors.get(topicId) : null;
-      return anchor ? anchor.x : width / 2;
-    }).strength((node) => node.type === "concept" ? 0.085 : 0.02))
-    .force("topicY", d3.forceY((node) => {
-      if (node.type === "topic") return node.y || height / 2;
-      const topicId = topicByConcept.get(node.id);
-      const anchor = topicId ? topicAnchors.get(topicId) : null;
-      return anchor ? anchor.y : height / 2;
-    }).strength((node) => node.type === "concept" ? 0.085 : 0.02))
-    .on("tick", updateStaticGraphPositions);
-
-  state.simulationStopTimer = window.setTimeout(() => {
-    if (state.simulation && state.viewMode === "main") {
-      state.simulation.stop();
-      nodes.forEach((node) => {
-        if (node.type === "topic" || state.manualMainPositions.has(node.id)) {
-          state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
-          node.fx = node.x;
-          node.fy = node.y;
-        } else {
-          node.fx = null;
-          node.fy = null;
-        }
-      });
-      updateStaticGraphPositions();
-    }
-    state.simulationStopTimer = null;
-  }, 3600);
+  state.forceStarted = false;
 }
+
 
 function applyPresetMainLayout(nodes, edges, width, height) {
   const centerX = width / 2;
@@ -2226,23 +2273,26 @@ function formatCount(count) {
 }
 
 function getNodeRadius(node) {
-  const size = Number(node.size || 20);
+  // 階層視覺規則：Topic 最大 → Concept 中等 → Term 小 → Sentence 最小。
+  // 不直接吃 node.size 當主尺寸，避免資料 count/size 讓 Concept 比 Topic 還大。
   const isMobile = isMobileLayout();
-  const adjustedSize = isMobile ? size : size * 1.08;
+  const count = Math.max(0, Number(node.count || node.frequency || 0));
+  const countBoost = Math.min(6, Math.log(count + 1) * 1.2);
 
-  if (node.type === "topic") return Math.max(22, Math.min(isMobile ? 36 : 40, adjustedSize));
-  if (node.type === "concept") return Math.max(20, Math.min(isMobile ? 42 : 46, adjustedSize));
-  if (node.type === "term") return Math.max(12, Math.min(isMobile ? 27 : 30, adjustedSize));
-  if (node.type === "phrase") return Math.max(10, Math.min(isMobile ? 24 : 26, adjustedSize));
+  if (node.type === "topic") return (isMobile ? 34 : 42) + countBoost;
+  if (node.type === "concept") return (isMobile ? 25 : 31) + countBoost * 0.65;
+  if (node.type === "term") return (isMobile ? 15 : 18) + countBoost * 0.38;
+  if (node.type === "phrase" || node.type === "sentence") return isMobile ? 11 : 13;
 
-  return isMobile ? 16 : 18;
+  return isMobile ? 15 : 17;
 }
 
 function getLabelSize(node) {
-  if (node.type === "topic") return 15;
-  if (node.type === "concept") return 15;
-  if (node.type === "term") return 13;
-  if (node.type === "phrase") return 12;
+  // 字體也跟著層級遞減，但差距不要太大，避免可讀性下降。
+  if (node.type === "topic") return isMobileLayout() ? 16 : 18;
+  if (node.type === "concept") return isMobileLayout() ? 14 : 16;
+  if (node.type === "term") return isMobileLayout() ? 12 : 13;
+  if (node.type === "phrase" || node.type === "sentence") return 12;
   return 13;
 }
 
