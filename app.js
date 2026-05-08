@@ -4701,12 +4701,12 @@ async function generateSeedIdea(userText = "") {
   return {
     mode: "seed-combinations",
     title: `Idea｜${input}`,
-    tags: ["Seed", "2 Combinations", "1 Inquiry"],
+    tags: ["Seed"],
     relatedTerms,
     combinations,
     phrases: [
       ...combinations.map((combo) => formatSeedCombinationLine(combo)),
-      `整合提問：${inquiry}`,
+      `隨機整合提問：${inquiry}`,
     ],
     inquiry,
     highlightIds,
@@ -4753,14 +4753,39 @@ function buildSeedCombination({ index, poolId, seedQuestion, seedConcept, active
   const config = SEED_COMBINATION_POOL_CONFIG[poolId] || SEED_COMBINATION_POOL_CONFIG.context;
   const cards = collectCardsFromSeedPool(poolId, seedQuestion, seedConcept, activeTag, 7);
 
+  const cardLabels = cards.map(getSeedNodeLabel).filter(Boolean);
+
   return {
     index,
     poolId,
     labelZh: config.labelZh,
     labelEn: config.labelEn,
     cards,
-    cardLabels: cards.map(getSeedNodeLabel).filter(Boolean),
+    cardLabels,
+    idea: buildSeedCombinationIdea({ poolId, seedQuestion, seedConcept, activeTag, cardLabels }),
   };
+}
+
+function buildSeedCombinationIdea({ poolId, seedQuestion, seedConcept, activeTag, cardLabels }) {
+  const input = seedQuestion.normalizedText || seedQuestion.rawText || getSeedNodeLabel(seedConcept) || "這個問題";
+  const labels = (cardLabels || []).filter(Boolean);
+  const a = labels[0] || input;
+  const b = labels.find((label) => label !== a) || activeTag || labels[1] || "另一個角度";
+  const c = labels.find((label) => label !== a && label !== b) || "目前的感受";
+
+  if (poolId === "contrast") {
+    return `把「${input}」放在「${a}」與「${b}」的張力中，看見它們各自在提醒什麼。`;
+  }
+
+  if (poolId === "path") {
+    return `從「${input}」出發，沿著「${[a, b, c].filter(Boolean).join(" → ")}」整理一條可被追問的路徑。`;
+  }
+
+  if (poolId === "tag") {
+    return `讓「${input}」透過「${a}、${b}」橫向連到其他卡片，觀察它在不同主題中的共鳴。`;
+  }
+
+  return `把「${input}」放回「${a}、${b}、${c}」的脈絡中，先看見它不是孤立的問題。`;
 }
 
 function collectCardsFromSeedPool(poolId, seedQuestion, seedConcept, activeTag, limit = 7) {
@@ -4795,11 +4820,9 @@ function collectTagSeedCards(seedQuestion, seedConcept, activeTag, limit = 7) {
 }
 
 function formatSeedCombinationLine(combo) {
-  const labels = combo.cardLabels && combo.cardLabels.length
-    ? combo.cardLabels.slice(0, 7).join("、")
-    : "尚未命中明確卡片";
   const indexText = String(combo.index).padStart(2, "0");
-  return `組合 ${indexText}｜${combo.labelZh} ${combo.labelEn}：${labels}`;
+  const idea = String(combo.idea || "先從目前可見卡片整理一個探索方向。").trim();
+  return `組合 ${indexText}｜${idea}`;
 }
 
 async function buildUnifiedSeedInquiry({ seedQuestion, seedConcept, activeTag, combinations }) {
@@ -4832,7 +4855,7 @@ function renderSeedLoadingInfoPanel(userText = "") {
   const sourceList = document.getElementById("sourceList");
 
   if (tagsBox) {
-    tagsBox.innerHTML = `<span class="seed-info-mode-label">Seed</span><span class="seed-info-mode-label">2 Combinations</span><span class="seed-info-mode-label">1 Inquiry</span>`;
+    tagsBox.innerHTML = "";
   }
 
   if (relatedTerms) {
@@ -4842,10 +4865,10 @@ function renderSeedLoadingInfoPanel(userText = "") {
   }
 
   if (relatedPhrases) {
-    relatedPhrases.innerHTML = '<div class="quote-item seed-idea-item">正在產生兩組方向與一條整合提問…</div>';
+    relatedPhrases.innerHTML = '<div class="quote-item seed-idea-item">正在產生兩組想法與一條隨機整合提問…</div>';
   }
 
-  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning("Seed｜2 Combinations + 1 Inquiry", "seed-combinations");
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning("Seed", "seed-combinations");
   openSeedInfoPanel();
 }
 
@@ -4853,7 +4876,7 @@ function renderSeedInfoPanel(result, userText = "") {
   applyInfoPanelTheme("none");
   const safeResult = result && typeof result === "object" ? result : {
     title: userText ? `Idea｜${userText}` : "Seed Idea",
-    tags: ["Seed", "2 Combinations", "1 Inquiry"],
+    tags: ["Seed"],
     relatedTerms: [],
     phrases: [String(result || "")],
     highlightIds: [],
@@ -4868,9 +4891,7 @@ function renderSeedInfoPanel(result, userText = "") {
   const sourceList = document.getElementById("sourceList");
 
   if (tagsBox) {
-    tagsBox.innerHTML = (safeResult.tags || ["Seed"])
-      .map((tag) => `<span class="seed-info-mode-label">${escapeHtml(tag)}</span>`)
-      .join("");
+    tagsBox.innerHTML = "";
   }
 
   if (relatedTerms) {
@@ -4882,7 +4903,7 @@ function renderSeedInfoPanel(result, userText = "") {
   if (relatedPhrases) {
     relatedPhrases.innerHTML = (safeResult.phrases || []).length
       ? safeResult.phrases.map((text) => {
-          const className = String(text).startsWith("整合提問：")
+          const className = String(text).startsWith("隨機整合提問：")
             ? "quote-item seed-idea-item seed-inquiry-item"
             : "quote-item seed-idea-item seed-combination-item";
           return `<div class="${className}">${escapeHtml(text)}</div>`;
@@ -4890,7 +4911,7 @@ function renderSeedInfoPanel(result, userText = "") {
       : '<span class="muted">尚無 Seed 結果</span>';
   }
 
-  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(safeResult.sourceTitle, "seed-combinations");
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning("Seed", "seed-combinations");
 
   highlightSeedResultNodes(safeResult.highlightIds || []);
   openSeedInfoPanel();
@@ -4901,6 +4922,6 @@ function renderSeedSourceWarning(sourceTitle = "Seed", mode = "seed-combinations
       <div class="source-title">${escapeHtml(sourceTitle || "Seed")}</div>
       <div class="source-text">提示：</div>
       <div class="source-text">以下為探索性推演，不代表原始書籍或影音的直接結論。</div>
-      <div class="source-text">Seed 只會產生兩個探索方向與一條整合提問；不新增主圖節點，也不改 graph 資料。</div>
+      <div class="source-text">Seed 只會產生探索性想法；不新增主圖節點，也不改 graph 資料。</div>
     </div>`;
 }

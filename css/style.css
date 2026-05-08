@@ -1022,3 +1022,132 @@ body.graph-intro-finished .node text {
   cursor: default;
   user-select: none;
 }
+
+/* =========================================================
+   A7-13 Seed output + mobile header/icon color fix
+   - Seed no longer shows mode chips.
+   - Mobile title aligns left beside logo.
+   - Search icon = very pale blue; Seed icon = soft warm yellow.
+========================================================= */
+.seed-mode-row,
+.seed-mode-chip {
+  display: none !important;
+}
+
+.search-toggle {
+  background: rgba(231, 246, 255, 0.94) !important;
+  color: #245b62 !important;
+  border-color: rgba(180, 218, 236, 0.62) !important;
+  box-shadow: 0 8px 18px rgba(120, 177, 205, 0.10) !important;
+}
+
+.seed-toggle {
+  background: rgba(255, 245, 212, 0.94) !important;
+  color: #8a6730 !important;
+  border-color: rgba(229, 204, 132, 0.54) !important;
+  box-shadow: 0 8px 18px rgba(186, 145, 54, 0.10) !important;
+}
+
+.search-toggle:hover {
+  background: rgba(220, 242, 255, 0.98) !important;
+}
+
+.seed-toggle:hover {
+  background: rgba(255, 239, 190, 0.98) !important;
+}
+
+@media (max-width: 768px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    left: 64px !important;
+    right: 148px !important;
+    top: 10px !important;
+    width: auto !important;
+    height: 42px !important;
+    transform: none !important;
+    justify-items: start !important;
+    text-align: left !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title strong,
+  .app-shell:not(.sidebar-collapsed) .sidebar-title span {
+    text-align: left !important;
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar {
+    max-height: min(214px, calc(100dvh - 16px)) !important;
+  }
+
+  .app-shell.seed-panel-open:not(.sidebar-collapsed) .sidebar-seed-panel {
+    margin-top: 0 !important;
+  }
+}
+
+
+/* =========================================================
+   A7-13 Seed UI panel label + icon color final fix
+   - Remove visual Seed mode labels in Info Panel via empty #infoTags from JS.
+   - Make top search/seed icons and inline search/seed submit icons visibly colored.
+   - Mobile title starts beside the logo, not centered.
+========================================================= */
+.search-toggle,
+.app-shell:not(.sidebar-collapsed) .search-toggle,
+.app-shell.sidebar-collapsed .search-toggle {
+  background: #edf9ff !important;
+  color: #245b62 !important;
+  border: 1px solid rgba(157, 211, 235, 0.72) !important;
+  box-shadow: 0 8px 18px rgba(120, 177, 205, 0.14) !important;
+}
+
+.seed-toggle,
+.app-shell:not(.sidebar-collapsed) .seed-toggle,
+.app-shell.sidebar-collapsed .seed-toggle {
+  background: #fff3bf !important;
+  color: #8a6730 !important;
+  border: 1px solid rgba(227, 190, 95, 0.68) !important;
+  box-shadow: 0 8px 18px rgba(186, 145, 54, 0.14) !important;
+}
+
+.sidebar-search-submit-btn {
+  background: #edf9ff !important;
+  color: #245b62 !important;
+  border: 1px solid rgba(157, 211, 235, 0.58) !important;
+}
+
+.sidebar-seed-submit-btn {
+  background: #fff3bf !important;
+  color: #8a6730 !important;
+  border: 1px solid rgba(227, 190, 95, 0.56) !important;
+}
+
+.search-toggle:hover,
+.sidebar-search-submit-btn:hover {
+  background: #e3f5ff !important;
+}
+
+.seed-toggle:hover,
+.sidebar-seed-submit-btn:hover {
+  background: #ffeaa0 !important;
+}
+
+#infoTags:empty {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .app-shell:not(.sidebar-collapsed) .sidebar-title {
+    left: 64px !important;
+    right: 148px !important;
+    top: 10px !important;
+    width: auto !important;
+    transform: none !important;
+    justify-items: start !important;
+    align-content: center !important;
+    text-align: left !important;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-title strong,
+  .app-shell:not(.sidebar-collapsed) .sidebar-title span {
+    width: 100% !important;
+    text-align: left !important;
+  }
+}
