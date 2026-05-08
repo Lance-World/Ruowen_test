@@ -1098,3 +1098,21 @@ body.graph-intro-finished .node text {
 #infoPanel::before {
   background: color-mix(in srgb, var(--info-theme-accent) 46%, rgba(83, 113, 118, 0.28));
 }
+
+/* =========================================================
+   Force Drag Interaction
+   - Dragging a node wakes the D3 simulation.
+   - Connected edges move with endpoints; nearby nodes react by force/link tension.
+========================================================= */
+body.graph-dragging .node {
+  transition: opacity 0.12s ease;
+}
+
+body.graph-dragging .link {
+  transition: stroke-opacity 0.12s ease;
+}
+
+body.graph-dragging .node.selected circle,
+body.graph-dragging .node:hover circle {
+  filter: drop-shadow(0 14px 28px rgba(23, 60, 67, 0.22));
+}

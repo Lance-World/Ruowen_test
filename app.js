@@ -142,6 +142,10 @@ const GRAPH_ENTRY_CONCEPT_DELAY_MS = 560;
 const GRAPH_ENTRY_EDGES_DELAY_MS = 1880;
 const GRAPH_ENTRY_TOPIC_SIM_STOP_MS = 980;
 const GRAPH_ENTRY_CONCEPT_SIM_STOP_MS = 1550;
+const INTERACTION_FORCE_ALPHA_IDLE = 0.015;
+const INTERACTION_FORCE_ALPHA_WARM = 0.18;
+const INTERACTION_FORCE_ALPHA_DRAG = 0.32;
+const INTERACTION_FORCE_STOP_MS = 6500;
 
 // Seed AI priority:
 // 1) Local Ollama on the user's machine. No cloud API key.
@@ -2765,6 +2769,13 @@ function updateGraph() {
   updateStaticGraphPositions();
   applyGraphFocusClasses();
   updateBackToMainButton();
+
+  // After the intro entry is done, keep a gentle D3 force graph alive.
+  // This restores the tactile feeling: dragging one node pushes/pulls related nodes,
+  // while edges follow the moving endpoints.
+  if (state.initialAnimationDone && state.hasEnteredUniverse && !state.isInitialLoading) {
+    startInteractiveForceSimulation({ warm: state.currentFocus.type !== "universe" });
+  }
 }
 
 function getNodeClassName(node) {
@@ -2807,8 +2818,8 @@ function applyUniverseLayout(nodes, edges, width, height) {
       node.x = centerX + Math.cos(angle) * radius;
       node.y = centerY + Math.sin(angle) * radius;
     }
-    node.fx = node.x;
-    node.fy = node.y;
+    node.fx = null;
+    node.fy = null;
   });
 
   const topicMap = new Map(topics.map((topic) => [topic.id, topic]));
@@ -2826,8 +2837,8 @@ function applyUniverseLayout(nodes, edges, width, height) {
       node.x = clamp(baseX + Math.cos(angle) * ring, 36, width - 36);
       node.y = clamp(baseY + Math.sin(angle) * ring, 42, height - 42);
     }
-    node.fx = node.x;
-    node.fy = node.y;
+    node.fx = null;
+    node.fy = null;
   });
 }
 
@@ -2852,8 +2863,8 @@ function placeTermsAroundConcept(conceptNode, terms, width, height) {
 
     term.x = clamp((conceptNode.x || width / 2) + Math.cos(angle) * radius, 28, width - 28);
     term.y = clamp((conceptNode.y || height / 2) + Math.sin(angle) * radius, 32, height - 32);
-    term.fx = term.x;
-    term.fy = term.y;
+    term.fx = null;
+    term.fy = null;
   });
 }
 
@@ -2948,7 +2959,9 @@ function startUniverseEntryAnimation() {
     document.body.classList.add("graph-edges-visible", "graph-interaction-enabled", "graph-intro-finished");
     document.body.classList.remove("graph-entering");
     freezeCurrentUniversePositions();
+    releaseVisibleNodeLocks();
     updateStaticGraphPositions();
+    startInteractiveForceSimulation({ warm: true, alpha: 0.10 });
     fitVisibleNodes();
   }, GRAPH_ENTRY_EDGES_DELAY_MS);
 }
@@ -3075,10 +3088,19 @@ function freezeCurrentUniversePositions() {
   (state.currentNodes || []).forEach((node) => {
     if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
     if (node.type === "topic" || node.type === "concept") {
-      node.fx = node.x;
-      node.fy = node.y;
+      // Keep the current position as the next layout seed, but do not pin it.
+      // Released nodes can still react to drag force and link tension.
+      node.fx = null;
+      node.fy = null;
       state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
     }
+  });
+}
+
+function releaseVisibleNodeLocks() {
+  (state.currentNodes || []).forEach((node) => {
+    node.fx = null;
+    node.fy = null;
   });
 }
 
@@ -3289,6 +3311,158 @@ function findTopicForConcept(conceptNode, topicNodes, edges) {
 function getEdgeNode(value, nodeMap) {
   if (value && typeof value === "object") return value;
   return nodeMap.get(value) || { x: 0, y: 0 };
+}
+
+
+function startInteractiveForceSimulation(options = {}) {
+  const nodes = state.currentNodes || [];
+  const edges = state.currentEdges || [];
+  if (!nodes.length || !state.nodeSelection || !state.linkSelection) return;
+
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const preparedEdges = edges
+    .filter((edge) => nodeIds.has(getEdgeSourceId(edge)) && nodeIds.has(getEdgeTargetId(edge)))
+    .map((edge) => ({
+      ...edge,
+      source: getEdgeSourceId(edge),
+      target: getEdgeTargetId(edge),
+    }));
+
+  if (state.simulationStopTimer) {
+    window.clearTimeout(state.simulationStopTimer);
+    state.simulationStopTimer = null;
+  }
+  if (state.simulation) {
+    state.simulation.stop();
+  }
+
+  const alpha = Number.isFinite(options.alpha)
+    ? options.alpha
+    : (options.warm ? INTERACTION_FORCE_ALPHA_WARM : INTERACTION_FORCE_ALPHA_IDLE);
+
+  state.simulation = d3.forceSimulation(nodes)
+    .alpha(alpha)
+    .alphaMin(0.001)
+    .alphaDecay(options.warm ? 0.055 : 0.075)
+    .velocityDecay(0.46)
+    .force("link", d3.forceLink(preparedEdges)
+      .id((node) => node.id)
+      .distance((edge) => getInteractiveLinkDistance(edge))
+      .strength((edge) => getInteractiveLinkStrength(edge)))
+    .force("charge", d3.forceManyBody().strength((node) => getInteractiveCharge(node)))
+    .force("collision", d3.forceCollide().radius((node) => getInteractiveCollisionRadius(node)).strength(0.92))
+    .force("x", d3.forceX(width / 2).strength((node) => getInteractiveCenterStrength(node)))
+    .force("y", d3.forceY(height / 2).strength((node) => getInteractiveCenterStrength(node)))
+    .on("tick", () => {
+      updateStaticGraphPositions();
+    });
+
+  state.forceStarted = true;
+
+  state.simulationStopTimer = window.setTimeout(() => {
+    if (state.simulation) {
+      state.simulation.alphaTarget(0);
+      state.simulation.stop();
+      state.simulation = null;
+    }
+    state.forceStarted = false;
+    state.simulationStopTimer = null;
+    persistCurrentUniversePositions();
+  }, INTERACTION_FORCE_STOP_MS);
+}
+
+function persistCurrentUniversePositions() {
+  (state.currentNodes || []).forEach((node) => {
+    if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+    if (node.type === "topic" || node.type === "concept") {
+      state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
+    }
+  });
+}
+
+function wakeInteractiveForce(alpha = INTERACTION_FORCE_ALPHA_DRAG) {
+  if (state.simulationStopTimer) {
+    window.clearTimeout(state.simulationStopTimer);
+    state.simulationStopTimer = null;
+  }
+
+  if (!state.simulation) {
+    startInteractiveForceSimulation({ warm: true, alpha });
+    return;
+  }
+
+  state.simulation.alphaTarget(alpha).restart();
+}
+
+function coolInteractiveForce() {
+  if (!state.simulation) return;
+  state.simulation.alphaTarget(0);
+
+  if (state.simulationStopTimer) {
+    window.clearTimeout(state.simulationStopTimer);
+  }
+
+  state.simulationStopTimer = window.setTimeout(() => {
+    if (state.simulation) {
+      state.simulation.stop();
+      state.simulation = null;
+    }
+    state.forceStarted = false;
+    state.simulationStopTimer = null;
+    persistCurrentUniversePositions();
+  }, 1800);
+}
+
+function getInteractiveCharge(node) {
+  if (node.type === "topic") return -240;
+  if (node.type === "concept") return -115;
+  if (node.type === "term") return -42;
+  return -70;
+}
+
+function getInteractiveCollisionRadius(node) {
+  if (node.type === "topic") return getNodeRadius(node) + 18;
+  if (node.type === "concept") return getNodeRadius(node) + 13;
+  if (node.type === "term") return getNodeRadius(node) + 8;
+  return getNodeRadius(node) + 10;
+}
+
+function getInteractiveCenterStrength(node) {
+  if (state.currentFocus.type === "node" && node.type === "term") return 0.006;
+  if (node.type === "topic") return 0.018;
+  if (node.type === "concept") return 0.014;
+  return 0.01;
+}
+
+function getInteractiveLinkDistance(edge) {
+  const sourceId = getEdgeSourceId(edge);
+  const targetId = getEdgeTargetId(edge);
+  const sourceNode = getNodeById(sourceId);
+  const targetNode = getNodeById(targetId);
+  const types = new Set([sourceNode?.type, targetNode?.type]);
+
+  if (types.has("term") && types.has("concept")) return isMobileLayout() ? 62 : 78;
+  if (types.has("topic") && types.has("concept")) return isMobileLayout() ? 108 : 128;
+  if (sourceNode?.type === "concept" && targetNode?.type === "concept") return isMobileLayout() ? 78 : 96;
+  return getLinkDistance(edge);
+}
+
+function getInteractiveLinkStrength(edge) {
+  const sourceId = getEdgeSourceId(edge);
+  const targetId = getEdgeTargetId(edge);
+  const sourceNode = getNodeById(sourceId);
+  const targetNode = getNodeById(targetId);
+  const types = new Set([sourceNode?.type, targetNode?.type]);
+
+  if (types.has("term") && types.has("concept")) return 0.34;
+  if (types.has("topic") && types.has("concept")) return 0.18;
+  if (sourceNode?.type === "concept" && targetNode?.type === "concept") return 0.10;
+  return 0.08;
 }
 
 /* ================================
@@ -4323,16 +4497,12 @@ function updateStaticGraphPositions() {
 ================================ */
 
 function dragStarted(event, node) {
+  document.body.classList.add("graph-dragging");
   node.fx = node.x;
   node.fy = node.y;
 
-  if (state.simulation && !event.active) {
-    state.simulation.alphaTarget(state.viewMode === "main" ? 0.16 : 0.3).restart();
-  }
-
-  if (state.viewMode === "main") {
-    state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
-  }
+  // Wake the simulation so nearby nodes feel charge/link tension while dragging.
+  wakeInteractiveForce(INTERACTION_FORCE_ALPHA_DRAG);
 }
 
 function dragged(event, node) {
@@ -4341,26 +4511,25 @@ function dragged(event, node) {
   node.x = event.x;
   node.y = event.y;
 
-  if (state.viewMode === "main") {
+  if (node.type === "topic" || node.type === "concept") {
     state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
-    updateStaticGraphPositions();
   }
+
+  // Give immediate feedback even before the next simulation tick.
+  updateStaticGraphPositions();
 }
 
 function dragEnded(event, node) {
-  if (state.simulation && !event.active) state.simulation.alphaTarget(0);
+  document.body.classList.remove("graph-dragging");
 
-  if (state.viewMode === "main") {
-    // Keep the manually adjusted Topic/Core Concept position in the main board.
-    node.fx = node.x;
-    node.fy = node.y;
+  if (node.type === "topic" || node.type === "concept") {
     state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
-    updateStaticGraphPositions();
-    return;
   }
 
+  // Release the node so it can settle naturally with the graph instead of becoming pinned.
   node.fx = null;
   node.fy = null;
+  coolInteractiveForce();
 }
 
 /* ================================
