@@ -993,3 +993,108 @@ body.graph-intro-finished .node text {
     overflow: visible;
   }
 }
+
+/* =========================================================
+   Info Panel Theme Accent
+   none / body / mind / spirit
+   Theme 只影響 Info Panel，不改主圖節點分類。
+========================================================= */
+.info-panel {
+  --info-theme-accent: #d7b98d;
+  --info-theme-soft: rgba(255, 248, 235, 0.82);
+  --info-theme-glow: rgba(216, 185, 141, 0.16);
+  --info-theme-border: rgba(235, 214, 178, 0.66);
+  --info-theme-chip: rgba(255, 246, 226, 0.72);
+  --info-theme-box: rgba(255, 252, 244, 0.62);
+  background:
+    radial-gradient(circle at 12% 10%, var(--info-theme-glow), transparent 30%),
+    linear-gradient(135deg, var(--info-theme-soft), rgba(255,255,255,0.72));
+  border-color: var(--info-theme-border);
+  box-shadow:
+    0 18px 54px rgba(23, 60, 67, 0.12),
+    0 0 0 1px var(--info-theme-glow);
+}
+
+.info-panel.info-theme-none {
+  --info-theme-accent: #d7b98d;
+  --info-theme-soft: rgba(255, 248, 235, 0.86); /* 柔象牙白 */
+  --info-theme-glow: rgba(216, 185, 141, 0.14);
+  --info-theme-border: rgba(235, 214, 178, 0.68);
+  --info-theme-chip: rgba(255, 246, 226, 0.76);
+  --info-theme-box: rgba(255, 252, 244, 0.66);
+}
+
+.info-panel.info-theme-body {
+  --info-theme-accent: #5ca68f;
+  --info-theme-soft: rgba(221, 246, 236, 0.84); /* 薄荷青綠 */
+  --info-theme-glow: rgba(116, 205, 177, 0.16);
+  --info-theme-border: rgba(148, 219, 196, 0.64);
+  --info-theme-chip: rgba(215, 242, 230, 0.76);
+  --info-theme-box: rgba(235, 251, 245, 0.66);
+}
+
+.info-panel.info-theme-mind {
+  --info-theme-accent: #c98798;
+  --info-theme-soft: rgba(248, 226, 231, 0.86); /* 玫瑰霧粉 */
+  --info-theme-glow: rgba(217, 156, 171, 0.17);
+  --info-theme-border: rgba(230, 184, 196, 0.66);
+  --info-theme-chip: rgba(248, 226, 231, 0.78);
+  --info-theme-box: rgba(255, 243, 246, 0.66);
+}
+
+.info-panel.info-theme-spirit {
+  --info-theme-accent: #9f91ce;
+  --info-theme-soft: rgba(235, 228, 248, 0.86); /* 薰衣草霧紫 */
+  --info-theme-glow: rgba(166, 148, 214, 0.17);
+  --info-theme-border: rgba(198, 184, 232, 0.66);
+  --info-theme-chip: rgba(235, 228, 248, 0.78);
+  --info-theme-box: rgba(248, 244, 255, 0.66);
+}
+
+.info-panel .info-icon {
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,0.92), var(--info-theme-chip) 46%, var(--info-theme-soft) 100%);
+  border: 1px solid var(--info-theme-border);
+  color: var(--teal-deep);
+}
+
+.info-panel #infoTitle,
+.info-panel .info-related-row h3,
+.info-panel .info-box h3 {
+  color: color-mix(in srgb, var(--teal-deep) 72%, var(--info-theme-accent));
+}
+
+.info-panel .info-tags span,
+.info-panel .inline-pill-list span,
+.info-panel .hashtag-chip,
+.info-panel .related-term-chip,
+.info-panel .search-result-pill,
+.info-panel .seed-info-mode-label {
+  background: var(--info-theme-chip);
+  border-color: var(--info-theme-border);
+  color: color-mix(in srgb, var(--teal-deep) 78%, var(--info-theme-accent));
+}
+
+.info-panel .hashtag-chip:hover,
+.info-panel .hashtag-chip.active,
+.info-panel .related-term-chip:hover,
+.info-panel .related-term-chip.active {
+  background: color-mix(in srgb, var(--info-theme-chip) 72%, var(--info-theme-accent));
+  border-color: color-mix(in srgb, var(--info-theme-border) 54%, var(--info-theme-accent));
+}
+
+.info-panel .info-box,
+.info-panel .source-item {
+  background: var(--info-theme-box);
+  border-color: var(--info-theme-border);
+}
+
+.info-panel .quote-item {
+  background: color-mix(in srgb, var(--info-theme-chip) 82%, white);
+  color: var(--text-secondary);
+}
+
+.info-panel .info-drawer-handle::before,
+#infoPanel::before {
+  background: color-mix(in srgb, var(--info-theme-accent) 46%, rgba(83, 113, 118, 0.28));
+}

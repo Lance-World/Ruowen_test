@@ -100,6 +100,34 @@ const UI_TYPES = {
   sentence: "句子",
 };
 
+
+const INFO_THEME_CONFIG = {
+  none: {
+    key: "none",
+    label: "探索與開放",
+    aliases: ["none", "open", "neutral", "生活實踐", "故事訪談", "探索", "開放"],
+    topics: ["生活實踐", "故事訪談"],
+  },
+  body: {
+    key: "body",
+    label: "身體與健康",
+    aliases: ["body", "身體", "身體與健康", "健康", "身體訊號"],
+    topics: ["身體訊號"],
+  },
+  mind: {
+    key: "mind",
+    label: "心理與情緒",
+    aliases: ["mind", "心理", "心靈", "情緒", "心理與情緒", "愛自己", "情緒覺察", "恐懼勇氣", "關係界限", "信念顯化"],
+    topics: ["愛自己", "情緒覺察", "恐懼勇氣", "關係界限", "信念顯化"],
+  },
+  spirit: {
+    key: "spirit",
+    label: "靈性與宇宙觀",
+    aliases: ["spirit", "spiritual", "靈性", "靈魂", "宇宙觀", "靈性與宇宙觀", "靈魂觀", "人生課", "能量場", "死亡輪迴"],
+    topics: ["靈魂觀", "人生課", "能量場", "死亡輪迴"],
+  },
+};
+
 const INTRO_GREETING_TEXT = "Hi ! Guys ~";
 const INTRO_GREETING_TYPE_MS = 700;
 const DESKTOP_INFO_COLLAPSED_HEIGHT = 86;
@@ -1081,6 +1109,7 @@ function renderSeedModeLabel(mode = "context") {
 }
 
 function renderSeedLoadingInfoPanel(userText = "", mode = "context") {
+  applyInfoPanelTheme("none");
   const seed = String(userText || "").trim();
   const modeConfig = SEED_MODES[mode] || SEED_MODES.context;
   setInfoTitle(seed ? `Idea｜${seed}` : `Seed｜${modeConfig.labelEn || "Context"}`);
@@ -1105,6 +1134,7 @@ function renderSeedLoadingInfoPanel(userText = "", mode = "context") {
 }
 
 function renderSeedInfoPanel(result, userText = "", mode = "context") {
+  applyInfoPanelTheme("none");
   const safeResult = result && typeof result === "object" ? result : buildSeedResult({
     mode,
     userText,
@@ -3634,7 +3664,72 @@ function applyGraphFocusClasses() {
 [可改] 13. Info Panel render
 - Sentences / Sources 只放 Info Panel，不進主圖。
 ========================================================= */
+
+function normalizeThemeText(value) {
+  return cleanTopicLabel(String(value || ""))
+    .trim()
+    .replace(/^#/, "")
+    .toLowerCase();
+}
+
+function resolveThemeKeyFromValue(value) {
+  const normalized = normalizeThemeText(value);
+  if (!normalized) return null;
+
+  if (INFO_THEME_CONFIG[normalized]) return normalized;
+
+  for (const [themeKey, config] of Object.entries(INFO_THEME_CONFIG)) {
+    const aliases = [...(config.aliases || []), ...(config.topics || [])]
+      .map(normalizeThemeText)
+      .filter(Boolean);
+
+    if (aliases.includes(normalized)) return themeKey;
+    if (aliases.some((alias) => normalized.includes(alias) || alias.includes(normalized))) return themeKey;
+  }
+
+  return null;
+}
+
+function resolveInfoTheme(node = {}, card = {}) {
+  const candidates = [
+    node.theme,
+    card.theme,
+    node.primary_theme,
+    card.primary_theme,
+    node.primary_axis,
+    card.primary_axis,
+    node.level1_category,
+    card.topic,
+    node.topic,
+    node.level2_concept,
+    card.level2_concept,
+    ...(Array.isArray(node.tags) ? node.tags : splitList(node.tags)),
+    ...(Array.isArray(card.tags) ? card.tags : splitList(card.tags)),
+  ];
+
+  for (const candidate of candidates) {
+    const themeKey = resolveThemeKeyFromValue(candidate);
+    if (themeKey) return themeKey;
+  }
+
+  return "none";
+}
+
+function applyInfoPanelTheme(themeKey = "none") {
+  const infoPanel = document.getElementById("infoPanel");
+  if (!infoPanel) return;
+
+  const safeKey = INFO_THEME_CONFIG[themeKey] ? themeKey : "none";
+  Object.keys(INFO_THEME_CONFIG).forEach((key) => {
+    infoPanel.classList.remove(`info-theme-${key}`);
+  });
+  infoPanel.classList.add(`info-theme-${safeKey}`);
+  infoPanel.dataset.theme = safeKey;
+  infoPanel.dataset.themeLabel = INFO_THEME_CONFIG[safeKey].label || "";
+}
+
 function renderDefaultInfo() {
+  applyInfoPanelTheme("none");
   setInfoTitle("尚未選擇節點");
   document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
   document.getElementById("relatedTerms").innerHTML = '<span class="muted">尚無資料</span>';
@@ -3644,6 +3739,7 @@ function renderDefaultInfo() {
 
 function renderInfoPanel(node) {
   const card = getCardForNode(node);
+  applyInfoPanelTheme(resolveInfoTheme(node, card));
   setInfoTitle(card.display_name || card.title || node.label || node.id);
 
   const tags = collectDisplayTags(node, card);
