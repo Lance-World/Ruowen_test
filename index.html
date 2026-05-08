@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=a7_13_hi_readable_seed_inline_20260508_01" />
+  <link rel="stylesheet" href="./css/style.css?v=a7_13_seed_modes_ai_20260508_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -49,13 +49,19 @@
 
 
       <div id="sidebarSeedPanel" class="sidebar-seed-panel seed-collapsed">
+        <div class="seed-mode-row" role="group" aria-label="Seed 模式選擇">
+          <button type="button" class="seed-mode-chip active" data-seed-mode="tag_bridge" title="Tag 橫向橋接">1 Tag</button>
+          <button type="button" class="seed-mode-chip" data-seed-mode="concept_neighbors" title="鄰近概念">2 概念</button>
+          <button type="button" class="seed-mode-chip" data-seed-mode="term_association" title="詞彙聯想">3 詞彙</button>
+          <button type="button" class="seed-mode-chip seed-mode-ai" data-seed-mode="ai_question" title="AI 腦洞提問">4 AI</button>
+        </div>
         <div class="sidebar-seed-wrap">
           <button
             type="button"
             id="seedSubmitBtn"
             class="sidebar-seed-submit-btn"
-            title="產生 Seed Idea"
-            aria-label="產生 Seed Idea"
+            title="依目前 Seed 模式產生"
+            aria-label="依目前 Seed 模式產生"
           >🌱</button>
           <input
             id="seedInput"
@@ -71,6 +77,13 @@
             title="清除 Seed"
             aria-label="清除 Seed"
           >×</button>
+          <button
+            type="button"
+            id="seedAiBtn"
+            class="sidebar-seed-ai-btn"
+            title="Mode 4｜AI 腦洞提問"
+            aria-label="Mode 4｜AI 腦洞提問"
+          >🤖</button>
         </div>
       </div>
 
@@ -263,6 +276,6 @@
     </section>
   </div>
 
-  <script src="./app.js?v=a7_13_hi_readable_seed_inline_20260508_01"></script>
+  <script src="./app.js?v=a7_13_seed_modes_ai_20260508_01"></script>
 </body>
 </html>

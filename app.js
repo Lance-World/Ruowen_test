@@ -44,6 +44,7 @@ const state = {
   activeTag: null,
   searchHistory: [],
   seedHistory: [],
+  seedMode: "tag_bridge",
   viewMode: "main",
   activeConceptId: null,
   activeTermId: null,
@@ -96,6 +97,47 @@ const INTRO_GREETING_TYPE_MS = 700;
 const DESKTOP_INFO_COLLAPSED_HEIGHT = 86;
 const DESKTOP_INFO_DEFAULT_HEIGHT = 280;
 const DESKTOP_INFO_MAX_VH = 0.8;
+
+// Seed AI priority:
+// 1) Local Ollama on the user's machine. No cloud API key.
+// 2) Optional backend/proxy endpoint. Never put cloud API keys in public frontend files.
+// 3) Rule-based local fallback, so Seed never breaks the site.
+const SEED_MODES = {
+  tag_bridge: {
+    id: "tag_bridge",
+    label: "Tag 橫向橋接",
+    shortLabel: "1 Tag",
+    sourceLabel: "Seed Mode 1｜Tag 橫向橋接",
+  },
+  concept_neighbors: {
+    id: "concept_neighbors",
+    label: "鄰近概念",
+    shortLabel: "2 概念",
+    sourceLabel: "Seed Mode 2｜鄰近概念",
+  },
+  term_association: {
+    id: "term_association",
+    label: "詞彙聯想",
+    shortLabel: "3 詞彙",
+    sourceLabel: "Seed Mode 3｜詞彙聯想",
+  },
+  ai_question: {
+    id: "ai_question",
+    label: "AI 腦洞提問",
+    shortLabel: "4 AI",
+    sourceLabel: "Seed Mode 4｜AI 腦洞提問",
+  },
+};
+
+const SEED_AI_CONFIG = {
+  localOllamaEnabled: true,
+  localOllamaEndpoint: "http://127.0.0.1:11434/api/generate",
+  localOllamaModel: "qwen2.5:3b",
+  backendEnabled: false,
+  backendEndpoint: "./api/seed-idea",
+  timeoutMs: 12000,
+  fallbackToLocal: true,
+};
 
 
 /* =========================================================
@@ -366,8 +408,10 @@ function setupSeedPanel() {
 
   const input = document.getElementById("seedInput");
   const submitBtn = document.getElementById("seedSubmitBtn");
+  const aiBtn = document.getElementById("seedAiBtn");
   const clearBtn = document.getElementById("clearSeedBtn");
   const wrap = document.querySelector(".sidebar-seed-wrap");
+  const modeButtons = Array.from(document.querySelectorAll(".seed-mode-chip"));
 
   function updateSeedClearState() {
     if (!input || !wrap || !clearBtn) return;
@@ -376,14 +420,52 @@ function setupSeedPanel() {
     clearBtn.classList.toggle("hidden", !hasText);
   }
 
-  function runSeed() {
-    const raw = input ? input.value.trim() : "";
-    const idea = generateSeedIdea(raw);
-    renderSeedInfoPanel(idea, raw);
-    if (raw) addHistoryItem("seed", raw);
+  function setSeedMode(mode) {
+    const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
+    state.seedMode = nextMode;
+    modeButtons.forEach((button) => {
+      button.classList.toggle("active", button.dataset.seedMode === nextMode);
+    });
   }
 
-  if (submitBtn) submitBtn.addEventListener("click", runSeed);
+  async function runSeed(mode = state.seedMode) {
+    const raw = input ? input.value.trim() : "";
+    const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
+    setSeedMode(nextMode);
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add("seed-loading");
+      submitBtn.setAttribute("aria-busy", "true");
+    }
+    if (aiBtn) {
+      aiBtn.disabled = true;
+      aiBtn.classList.add("seed-loading");
+      aiBtn.setAttribute("aria-busy", "true");
+    }
+
+    renderSeedLoadingInfoPanel(raw, nextMode);
+
+    try {
+      const result = await generateSeedIdea(raw, nextMode);
+      renderSeedInfoPanel(result, raw, nextMode);
+      if (raw) addHistoryItem("seed", raw);
+    } finally {
+      [submitBtn, aiBtn].forEach((button) => {
+        if (!button) return;
+        button.disabled = false;
+        button.classList.remove("seed-loading");
+        button.removeAttribute("aria-busy");
+      });
+    }
+  }
+
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => setSeedMode(button.dataset.seedMode));
+  });
+
+  if (submitBtn) submitBtn.addEventListener("click", () => runSeed(state.seedMode));
+  if (aiBtn) aiBtn.addEventListener("click", () => runSeed("ai_question"));
 
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
@@ -396,7 +478,7 @@ function setupSeedPanel() {
   if (input) {
     input.addEventListener("input", updateSeedClearState);
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") runSeed();
+      if (event.key === "Enter") runSeed(state.seedMode);
       if (event.key === "Escape") {
         if (input.value) {
           input.value = "";
@@ -410,38 +492,357 @@ function setupSeedPanel() {
     });
     updateSeedClearState();
   }
+
+  setSeedMode(state.seedMode);
 }
 
-function generateSeedIdea(userText = "") {
-  const topicPool = state.allNodes
-    .filter((node) => node.type === "topic" || node.type === "concept")
-    .map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id))
-    .filter(Boolean);
+async function generateSeedIdea(userText = "", mode = "tag_bridge") {
+  const nextMode = SEED_MODES[mode] ? mode : "tag_bridge";
 
-  const termPool = state.allNodes
-    .filter((node) => node.type === "term")
-    .map((node) => node.label || node.canonical_term || node.id)
-    .filter(Boolean);
+  if (nextMode === "tag_bridge") return generateTagBridgeSeed(userText);
+  if (nextMode === "concept_neighbors") return generateConceptNeighborSeed(userText);
+  if (nextMode === "term_association") return generateTermAssociationSeed(userText);
+  return generateAiQuestionSeed(userText);
+}
 
-  const pick = (items, fallback) => items.length ? items[Math.floor(Math.random() * items.length)] : fallback;
-  const topic = pick(topicPool, "內在覺察");
-  const term = pick(termPool, "安全感");
+function getSeedContextNode(userText = "") {
+  const selectedNode = state.selectedNodeId ? getNodeById(state.selectedNodeId) : null;
+  if (selectedNode) return selectedNode;
+
+  const keyword = String(userText || "").trim().toLowerCase();
+  if (!keyword) return null;
+
+  return state.allNodes.find((node) => buildSearchHaystack(node).includes(keyword)) || null;
+}
+
+function normalizeSeedTagValue(value) {
+  return cleanTopicLabel(String(value || "").trim().replace(/^#/, ""));
+}
+
+function getNodeSeedTags(node) {
+  if (!node) return [];
+  const tags = [];
+  const pushValue = (value) => {
+    const normalized = normalizeSeedTagValue(value);
+    if (normalized) tags.push(normalized);
+  };
+
+  [node.level1_category, node.level2_concept, node.playlist_type_tag, node.source_label].forEach(pushValue);
+  if (Array.isArray(node.tags)) node.tags.forEach(pushValue);
+
+  String(node.matched_terms || "")
+    .split(/[、,，|/]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+    .forEach(pushValue);
+
+  return Array.from(new Set(tags)).slice(0, 8);
+}
+
+function getGraphNodeTypesForSeed() {
+  return new Set(["topic", "concept", "term"]);
+}
+
+function findSeedNodesByTags(tags, baseNodeId = null) {
+  const targetTags = new Set((tags || []).map(normalizeSeedTagValue).filter(Boolean));
+  if (targetTags.size === 0) return [];
+
+  return state.allNodes
+    .filter((node) => getGraphNodeTypesForSeed().has(node.type))
+    .filter((node) => node.id !== baseNodeId)
+    .map((node) => {
+      const nodeTags = getNodeSeedTags(node);
+      const score = nodeTags.reduce((sum, tag) => sum + (targetTags.has(tag) ? 1 : 0), 0);
+      return { node, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || String(a.node.label || "").localeCompare(String(b.node.label || "")))
+    .map((item) => item.node);
+}
+
+function buildSeedResult({ mode, userText = "", title, tags = [], relatedTerms = [], phrases = [], highlightIds = [] }) {
+  const seed = String(userText || "").trim();
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.tag_bridge;
+  return {
+    mode,
+    title: title || (seed ? `Seed：${seed}` : modeConfig.label),
+    tags: ["Seed", modeConfig.label, ...tags].filter(Boolean),
+    relatedTerms: Array.from(new Set(relatedTerms.filter(Boolean))).slice(0, 18),
+    phrases: phrases.filter(Boolean).slice(0, 6),
+    highlightIds: Array.from(new Set(highlightIds.filter(Boolean))),
+    sourceTitle: modeConfig.sourceLabel,
+  };
+}
+
+function generateTagBridgeSeed(userText = "") {
+  const contextNode = getSeedContextNode(userText);
+  const seed = String(userText || "").trim();
+  const baseLabel = contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : seed || "目前主題";
+  const tags = contextNode ? getNodeSeedTags(contextNode) : [seed].filter(Boolean);
+  const matchedNodes = findSeedNodesByTags(tags, contextNode ? contextNode.id : null).slice(0, 8);
+  const relatedLabels = matchedNodes.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
+  const tagText = tags.slice(0, 4).map((tag) => `#${tag}`).join("、") || "#橫向探索";
+
+  return buildSeedResult({
+    mode: "tag_bridge",
+    userText,
+    title: `Seed｜Tag 橫向橋接`,
+    tags: tags.slice(0, 5).map((tag) => `#${tag}`),
+    relatedTerms: relatedLabels.length ? relatedLabels : tags,
+    highlightIds: matchedNodes.map((node) => node.id),
+    phrases: [
+      `可以從「${baseLabel}」沿著 ${tagText} 橫向看看，哪些概念其實在不同主題裡互相呼應。`,
+      relatedLabels.length
+        ? `目前可先觀察：${relatedLabels.slice(0, 5).join("、")}。`
+        : `目前沒有明確命中的橫向節點，可先換一個關鍵詞或選取 Concept 後再試。`,
+    ],
+  });
+}
+
+function generateConceptNeighborSeed(userText = "") {
+  const contextNode = getSeedContextNode(userText);
+  const seed = String(userText || "").trim();
+  const baseNode = contextNode || state.allNodes.find((node) => node.type === "concept") || null;
+  const baseLabel = baseNode ? cleanTopicLabel(baseNode.label || baseNode.canonical_term || baseNode.id) : seed || "目前概念";
+  const neighbors = baseNode
+    ? getNeighborNodes(baseNode.id).filter((node) => node.type === "concept" || node.type === "topic").slice(0, 10)
+    : state.allNodes.filter((node) => node.type === "concept").slice(0, 8);
+  const relatedLabels = neighbors.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
+
+  return buildSeedResult({
+    mode: "concept_neighbors",
+    userText,
+    title: `Seed｜鄰近概念`,
+    tags: getNodeSeedTags(baseNode).slice(0, 4).map((tag) => `#${tag}`),
+    relatedTerms: relatedLabels,
+    highlightIds: neighbors.map((node) => node.id),
+    phrases: [
+      `從「${baseLabel}」往外延伸，可以先看它附近的概念，而不是立刻跳到全網。`,
+      relatedLabels.length
+        ? `建議下一步看：${relatedLabels.slice(0, 5).join("、")}。`
+        : `目前鄰近概念不足，可先用 Search 找到一個 Concept 後再 Seed。`,
+    ],
+  });
+}
+
+function generateTermAssociationSeed(userText = "") {
+  const contextNode = getSeedContextNode(userText);
+  const seed = String(userText || "").trim();
+  const baseLabel = contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : seed || "目前想法";
+  const directTerms = contextNode
+    ? getNeighborNodes(contextNode.id).filter((node) => node.type === "term")
+    : [];
+  const fallbackTerms = state.allNodes.filter((node) => node.type === "term").slice(0, 12);
+  const terms = (directTerms.length ? directTerms : fallbackTerms).slice(0, 12);
+  const labels = terms.map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id));
+
+  return buildSeedResult({
+    mode: "term_association",
+    userText,
+    title: `Seed｜詞彙聯想`,
+    tags: getNodeSeedTags(contextNode).slice(0, 4).map((tag) => `#${tag}`),
+    relatedTerms: labels,
+    highlightIds: terms.map((node) => node.id),
+    phrases: [
+      `把「${baseLabel}」拆成詞彙入口，可以更容易找到下一張卡片。`,
+      labels.length
+        ? `你可以從這些詞切入：${labels.slice(0, 8).join("、")}。`
+        : `目前沒有足夠詞彙可聯想，可先選取一個 Concept。`,
+    ],
+  });
+}
+
+async function generateAiQuestionSeed(userText = "") {
   const inputText = String(userText || "").trim();
+  let idea = "";
 
-  if (!inputText) {
-    return `今天可以從「${topic}」靠近「${term}」，問自己：它正在提醒我什麼？`;
+  if (SEED_AI_CONFIG.localOllamaEnabled) {
+    try {
+      idea = await generateSeedIdeaWithLocalOllama(inputText, "ai_question");
+    } catch (error) {
+      console.warn("Local Ollama unavailable; fallback to conservative Seed template:", error);
+    }
   }
 
-  return `把「${inputText}」放進「${topic}」脈絡裡看：它和「${term}」之間，也許有一條新的理解路徑。`;
+  if (!reviewSeedResult(idea)) {
+    if (SEED_AI_CONFIG.backendEnabled) {
+      try {
+        idea = await generateSeedIdeaWithBackend(inputText, "ai_question");
+      } catch (error) {
+        console.warn("Seed backend unavailable; fallback to local rule-based idea:", error);
+      }
+    }
+  }
+
+  if (!reviewSeedResult(idea)) idea = generateLocalAiQuestionSeed(inputText);
+
+  return buildSeedResult({
+    mode: "ai_question",
+    userText,
+    title: inputText ? `Seed AI｜${inputText}` : "Seed AI｜腦洞提問",
+    tags: ["#探索性推演", "#AI潤飾"],
+    relatedTerms: inputText ? [inputText] : ["自我提問", "靈感探索"],
+    phrases: [idea],
+    highlightIds: state.selectedNodeId ? [state.selectedNodeId] : [],
+  });
 }
 
+async function generateSeedIdeaWithLocalOllama(userText = "", mode = "ai_question") {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), SEED_AI_CONFIG.timeoutMs);
 
-function renderSeedInfoPanel(ideaText, userText = "") {
-  const idea = String(ideaText || "").trim();
+  try {
+    const payload = buildSeedAiPayload(userText, mode);
+    const response = await fetch(SEED_AI_CONFIG.localOllamaEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: SEED_AI_CONFIG.localOllamaModel,
+        stream: false,
+        prompt: buildSeedOllamaPrompt(payload),
+        options: {
+          temperature: 0.68,
+          top_p: 0.86,
+          num_predict: 180,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Local Ollama failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return cleanSeedIdeaText(data.response || data.idea || data.text || "");
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+async function generateSeedIdeaWithBackend(userText = "", mode = "ai_question") {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), SEED_AI_CONFIG.timeoutMs);
+
+  try {
+    const response = await fetch(SEED_AI_CONFIG.backendEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildSeedAiPayload(userText, mode)),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Seed backend failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return cleanSeedIdeaText(data.idea || data.text || data.message || "");
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function buildSeedOllamaPrompt(payload) {
+  const input = payload.input || "隨機探索";
+  const topics = (payload.graph_context.topics || []).slice(0, 8).join("、");
+  const concepts = (payload.graph_context.concepts || []).slice(0, 12).join("、");
+  const terms = (payload.graph_context.terms || []).slice(0, 16).join("、");
+
+  return `你是 Ruowen Knowledge Graph 的 Seed idea 助手。
+請用繁體中文，根據本地知識網絡資料，產生一段 60～120 字的探索性自我提問或靈感。
+要求：
+- 不要宣稱這是原始書籍或影音的直接結論。
+- 不要寫「作者認為」「影片說」「原文指出」。
+- 不要新增主圖節點。
+- 語氣清楚、連貫、溫柔，但不要太玄。
+- 不要輸出 JSON，不要列點。
+
+Seed 模式：${payload.mode_label}
+使用者輸入：${input}
+可參考 Topic：${topics}
+可參考 Concept：${concepts}
+可參考 Terms：${terms}
+
+請輸出 Seed idea：`;
+}
+
+function cleanSeedIdeaText(text) {
+  return String(text || "")
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/g, "")
+    .replace(/^Seed idea[:：]?/i, "")
+    .replace(/^(作者認為|影片說|原文指出)[:：]?/g, "")
+    .trim()
+    .slice(0, 220);
+}
+
+function buildSeedAiPayload(userText = "", mode = "ai_question") {
+  const contextNode = getSeedContextNode(userText);
+  const selectedTags = getNodeSeedTags(contextNode).slice(0, 8);
+  const topics = state.allNodes
+    .filter((node) => node.type === "topic")
+    .map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id))
+    .filter(Boolean)
+    .slice(0, 12);
+
+  const concepts = state.allNodes
+    .filter((node) => node.type === "concept")
+    .map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id))
+    .filter(Boolean)
+    .slice(0, 18);
+
+  const terms = state.allNodes
+    .filter((node) => node.type === "term")
+    .map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id))
+    .filter(Boolean)
+    .slice(0, 24);
+
+  return {
+    mode,
+    mode_label: (SEED_MODES[mode] || SEED_MODES.ai_question).label,
+    input: String(userText || "").trim(),
+    selected_node: contextNode ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id) : "",
+    tags: selectedTags,
+    language: "zh-Hant",
+    style: "gentle, reflective, concise, counseling-oriented",
+    constraints: {
+      max_chars: 120,
+      no_new_graph_nodes: true,
+      no_source_claims: true,
+      no_long_quotes: true,
+    },
+    graph_context: { topics, concepts, terms },
+  };
+}
+
+function reviewSeedResult(text) {
+  const value = String(text || "").trim();
+  if (value.length < 18 || value.length > 220) return false;
+  if (/(作者認為|影片說|原文指出|書中明確|逐字稿|直接結論)/.test(value)) return false;
+  if (/(C:\\|D:\\|api[_-]?key|token|cookie)/i.test(value)) return false;
+  if (!hasSearchableMeaning(value)) return false;
+  return true;
+}
+
+function generateLocalAiQuestionSeed(userText = "") {
+  const contextNode = getSeedContextNode(userText);
+  const label = contextNode
+    ? cleanTopicLabel(contextNode.label || contextNode.canonical_term || contextNode.id)
+    : String(userText || "").trim() || "現在的狀態";
+  const terms = contextNode
+    ? getNeighborNodes(contextNode.id).filter((node) => node.type === "term").map((node) => cleanTopicLabel(node.label || node.id)).slice(0, 3)
+    : [];
+  const termText = terms.length ? `，並觀察它和「${terms.join("、")}」的關係` : "";
+  return `如果把「${label}」當成一個入口${termText}，你會想問自己：這件事真正想帶我看見什麼？`;
+}
+
+function renderSeedLoadingInfoPanel(userText = "", mode = "tag_bridge") {
   const seed = String(userText || "").trim();
-
-  setInfoTitle(seed ? `Seed：${seed}` : "Seed Idea");
-  renderInfoTags(["Seed", "靈感探索", seed ? `#${seed}` : "#隨機靈感"].filter(Boolean));
+  const modeConfig = SEED_MODES[mode] || SEED_MODES.tag_bridge;
+  setInfoTitle(seed ? `Seed：${seed}` : modeConfig.label);
+  renderInfoTags(["Seed", modeConfig.label, mode === "ai_question" ? "#AI生成中" : "#本地推演"].filter(Boolean));
 
   const relatedTerms = document.getElementById("relatedTerms");
   const relatedPhrases = document.getElementById("relatedPhrases");
@@ -450,24 +851,89 @@ function renderSeedInfoPanel(ideaText, userText = "") {
   if (relatedTerms) {
     relatedTerms.innerHTML = seed
       ? `<button type="button" class="related-term-chip" data-term="${escapeAttribute(seed)}">${escapeHtml(seed)}</button>`
-      : '<span class="muted">空白 Seed：隨機探索</span>';
+      : '<span class="muted">正在從現有知識網絡抽樣</span>';
   }
 
   if (relatedPhrases) {
-    relatedPhrases.innerHTML = idea
-      ? `<div class="quote-item seed-idea-item">${escapeHtml(idea)}</div>`
+    relatedPhrases.innerHTML = '<div class="quote-item seed-idea-item">正在產生 Seed 結果…</div>';
+  }
+
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(modeConfig.sourceLabel, mode);
+  openSeedInfoPanel();
+}
+
+function renderSeedInfoPanel(result, userText = "", mode = "tag_bridge") {
+  const safeResult = result && typeof result === "object" ? result : buildSeedResult({
+    mode,
+    userText,
+    phrases: [String(result || "")],
+  });
+
+  setInfoTitle(safeResult.title || "Seed Idea");
+  renderInfoTags(safeResult.tags || ["Seed"]);
+
+  const relatedTerms = document.getElementById("relatedTerms");
+  const relatedPhrases = document.getElementById("relatedPhrases");
+  const sourceList = document.getElementById("sourceList");
+
+  if (relatedTerms) {
+    relatedTerms.innerHTML = (safeResult.relatedTerms || []).length
+      ? safeResult.relatedTerms.map((term) => `<button type="button" class="related-term-chip" data-term="${escapeAttribute(term)}">${escapeHtml(term)}</button>`).join("")
+      : '<span class="muted">尚無相關詞彙</span>';
+  }
+
+  if (relatedPhrases) {
+    relatedPhrases.innerHTML = (safeResult.phrases || []).length
+      ? safeResult.phrases.map((text) => `<div class="quote-item seed-idea-item">${escapeHtml(text)}</div>`).join("")
       : '<span class="muted">尚無 Seed 結果</span>';
   }
 
-  if (sourceList) {
-    sourceList.innerHTML = '<span class="muted">Seed 只產生靈感，不新增主圖節點，也不改 graph 資料。</span>';
-  }
+  if (sourceList) sourceList.innerHTML = renderSeedSourceWarning(safeResult.sourceTitle, safeResult.mode);
 
+  highlightSeedResultNodes(safeResult.highlightIds || []);
+  openSeedInfoPanel();
+}
+
+function renderSeedSourceWarning(sourceTitle = "Seed", mode = "tag_bridge") {
+  const isAiMode = mode === "ai_question";
+  return `<div class="source-item seed-source-warning">
+      <div class="source-title">${escapeHtml(sourceTitle || "Seed")}</div>
+      <div class="source-text">提示：</div>
+      <div class="source-text">以下為探索性推演，不代表原始書籍或影音的直接結論。</div>
+      <div class="source-text">${isAiMode ? "Mode 4 可能使用本機 AI 潤飾；不應送出完整逐字稿、私人路徑、API key、cookie 或 token。" : "Mode 1～3 使用本地資料推演，不新增主圖節點，也不改 graph 資料。"}</div>
+    </div>`;
+}
+
+function openSeedInfoPanel() {
   if (isMobileLayout()) {
     openMobileBottomSheet(60);
   } else {
     state.infoCompact = false;
     applyInfoCompactState();
+  }
+}
+
+function highlightSeedResultNodes(nodeIds = []) {
+  if (!state.nodeSelection || !state.linkSelection) return;
+  const visibleIds = new Set((state.currentNodes || []).map((node) => node.id));
+  const targetIds = new Set((nodeIds || []).filter((id) => visibleIds.has(id)));
+
+  state.nodeSelection
+    .selectAll("g")
+    .classed("hashtag-active", (node) => targetIds.has(node.id))
+    .classed("dimmed", (node) => targetIds.size > 0 && !targetIds.has(node.id));
+
+  state.linkSelection
+    .selectAll("line")
+    .classed("dimmed", (edge) => {
+      if (targetIds.size === 0) return false;
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      return !targetIds.has(sourceId) && !targetIds.has(targetId);
+    });
+
+  if (targetIds.size > 0) {
+    requestAnimationFrame(() => focusNodeGroup(Array.from(targetIds)));
   }
 }
 
@@ -2020,6 +2486,8 @@ function updateGraph() {
     return;
   }
 
+  applyFocusedTermOrbitLayout(nodes, width, height);
+
   state.forceStarted = true;
   state.simulation = d3
     .forceSimulation(nodes)
@@ -2035,9 +2503,9 @@ function updateGraph() {
     )
     .force("charge", d3.forceManyBody().strength((node) => getCharge(node)))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (isMobileLayout() ? 34 : 38)))
-    .force("x", d3.forceX(width / 2).strength(0.035))
-    .force("y", d3.forceY(height / 2).strength(0.035))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (isMobileLayout() ? 40 : 48)).strength(0.96))
+    .force("x", d3.forceX((node) => getFocusedForceTarget(node, width, height).x).strength((node) => node.type === "term" ? 0.16 : 0.052))
+    .force("y", d3.forceY((node) => getFocusedForceTarget(node, width, height).y).strength((node) => node.type === "term" ? 0.16 : 0.052))
     .on("tick", () => {
       state.linkSelection
         .selectAll("line")
@@ -2060,6 +2528,51 @@ function updateGraph() {
   updateBackToMainButton();
 }
 
+
+
+function applyFocusedTermOrbitLayout(nodes, width, height) {
+  if (state.viewMode !== "concept_terms" && state.viewMode !== "term_context") return;
+
+  const activeConcept = nodes.find((node) => node.id === state.activeConceptId && node.type === "concept") ||
+    nodes.find((node) => node.type === "concept");
+  if (!activeConcept) return;
+
+  if (!Number.isFinite(activeConcept.x)) activeConcept.x = width / 2;
+  if (!Number.isFinite(activeConcept.y)) activeConcept.y = height / 2;
+
+  const terms = nodes.filter((node) => node.type === "term");
+  const radius = isMobileLayout() ? 124 : 178;
+  const spread = isMobileLayout() ? 38 : 54;
+
+  terms.forEach((term, index) => {
+    const angle = index * GOLDEN_ANGLE + seededUnitFromText(term.id, 31) * Math.PI * 2;
+    const ring = radius + (index % 3) * spread + seededUnitFromText(term.id, 32) * 28;
+    term.x = clamp(activeConcept.x + Math.cos(angle) * ring, 42, width - 42);
+    term.y = clamp(activeConcept.y + Math.sin(angle) * ring, 48, height - 48);
+  });
+}
+
+function getFocusedForceTarget(node, width, height) {
+  if (state.viewMode !== "concept_terms" && state.viewMode !== "term_context") {
+    return { x: width / 2, y: height / 2 };
+  }
+
+  const activeConcept = state.currentNodes.find((item) => item.id === state.activeConceptId && item.type === "concept") ||
+    state.currentNodes.find((item) => item.type === "concept");
+
+  if (!activeConcept) return { x: width / 2, y: height / 2 };
+
+  if (node.type === "term") {
+    const angle = seededUnitFromText(node.id, 41) * Math.PI * 2;
+    const radius = isMobileLayout() ? 130 : 190;
+    return {
+      x: clamp((activeConcept.x || width / 2) + Math.cos(angle) * radius, 48, width - 48),
+      y: clamp((activeConcept.y || height / 2) + Math.sin(angle) * radius, 54, height - 54),
+    };
+  }
+
+  return { x: activeConcept.x || width / 2, y: activeConcept.y || height / 2 };
+}
 
 function startMainViewBurstSimulation(phase = "concept") {
   if (state.viewMode !== "main" || !state.introFinished) return;
