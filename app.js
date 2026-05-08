@@ -367,28 +367,27 @@ function setupSeedPanel() {
   const input = document.getElementById("seedInput");
   const submitBtn = document.getElementById("seedSubmitBtn");
   const clearBtn = document.getElementById("clearSeedBtn");
-  const resultBox = document.getElementById("seedResult");
-  const seedWrap = document.querySelector(".sidebar-seed-wrap");
+  const wrap = document.querySelector(".sidebar-seed-wrap");
 
   function updateSeedClearState() {
-    if (!input || !clearBtn || !seedWrap) return;
-    const hasText = input.value.trim().length > 0;
-    seedWrap.classList.toggle("has-text", hasText);
+    if (!input || !wrap || !clearBtn) return;
+    const hasText = String(input.value || "").trim().length > 0;
+    wrap.classList.toggle("has-text", hasText);
     clearBtn.classList.toggle("hidden", !hasText);
   }
 
   function runSeed() {
     const raw = input ? input.value.trim() : "";
     const idea = generateSeedIdea(raw);
-    if (resultBox) resultBox.textContent = idea;
+    renderSeedInfoPanel(idea, raw);
     if (raw) addHistoryItem("seed", raw);
   }
 
   if (submitBtn) submitBtn.addEventListener("click", runSeed);
+
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       if (input) input.value = "";
-      if (resultBox) resultBox.textContent = "";
       updateSeedClearState();
       if (input) input.focus();
     });
@@ -401,7 +400,6 @@ function setupSeedPanel() {
       if (event.key === "Escape") {
         if (input.value) {
           input.value = "";
-          if (resultBox) resultBox.textContent = "";
           updateSeedClearState();
           return;
         }
@@ -410,9 +408,8 @@ function setupSeedPanel() {
         localStorage.setItem("seedPanelOpen", "0");
       }
     });
+    updateSeedClearState();
   }
-
-  updateSeedClearState();
 }
 
 function generateSeedIdea(userText = "") {
@@ -436,6 +433,42 @@ function generateSeedIdea(userText = "") {
   }
 
   return `把「${inputText}」放進「${topic}」脈絡裡看：它和「${term}」之間，也許有一條新的理解路徑。`;
+}
+
+
+function renderSeedInfoPanel(ideaText, userText = "") {
+  const idea = String(ideaText || "").trim();
+  const seed = String(userText || "").trim();
+
+  setInfoTitle(seed ? `Seed：${seed}` : "Seed Idea");
+  renderInfoTags(["Seed", "靈感探索", seed ? `#${seed}` : "#隨機靈感"].filter(Boolean));
+
+  const relatedTerms = document.getElementById("relatedTerms");
+  const relatedPhrases = document.getElementById("relatedPhrases");
+  const sourceList = document.getElementById("sourceList");
+
+  if (relatedTerms) {
+    relatedTerms.innerHTML = seed
+      ? `<button type="button" class="related-term-chip" data-term="${escapeAttribute(seed)}">${escapeHtml(seed)}</button>`
+      : '<span class="muted">空白 Seed：隨機探索</span>';
+  }
+
+  if (relatedPhrases) {
+    relatedPhrases.innerHTML = idea
+      ? `<div class="quote-item seed-idea-item">${escapeHtml(idea)}</div>`
+      : '<span class="muted">尚無 Seed 結果</span>';
+  }
+
+  if (sourceList) {
+    sourceList.innerHTML = '<span class="muted">Seed 只產生靈感，不新增主圖節點，也不改 graph 資料。</span>';
+  }
+
+  if (isMobileLayout()) {
+    openMobileBottomSheet(60);
+  } else {
+    state.infoCompact = false;
+    applyInfoCompactState();
+  }
 }
 
 /* =========================================================
