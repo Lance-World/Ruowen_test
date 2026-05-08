@@ -81,6 +81,7 @@ const MAX_HISTORY_ITEMS = 12;
 const INITIAL_CONCEPT_DELAY_MS = 300;
 const INITIAL_GRAPH_FADE_MS = 920;
 const MAIN_LAYOUT_RING_START_ANGLE = -Math.PI / 2;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const UI_TYPES = {
   topic: "主題",
   concept: "概念",
@@ -117,7 +118,13 @@ async function init() {
     setupMobileBottomSheetGestures();
     setupAboutModal();
     document.body.classList.add("graph-intro-active");
-    document.body.classList.remove("graph-intro-finished", "intro-concepts-visible");
+    document.body.classList.remove(
+      "graph-intro-finished",
+      "graph-board-visible",
+      "graph-topic-visible",
+      "intro-concepts-visible",
+      "graph-interaction-enabled"
+    );
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -1294,10 +1301,6 @@ async function setupIntroOverlay() {
   const message = await pickIntroMessage();
   textEl.textContent = message;
 
-  window.setTimeout(() => {
-    document.body.classList.add("intro-concepts-visible");
-  }, INITIAL_CONCEPT_DELAY_MS);
-
   let closed = false;
 
   function closeIntroOverlay() {
@@ -1328,9 +1331,25 @@ async function setupIntroOverlay() {
 function finishIntroGraphReveal() {
   state.isInitialLoading = false;
   state.introFinished = true;
+
+  // Sequence:
+  // 1. Overlay fades out first.
+  // 2. Whiteboard fades in.
+  // 3. Topic nodes appear with a burst-like reveal.
+  // 4. Core Concept nodes fade in 0.3s later.
+  // 5. Normal interaction is enabled after the staged reveal begins.
   document.body.classList.remove("graph-intro-active");
-  document.body.classList.add("graph-intro-finished", "intro-concepts-visible");
-  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS);
+  document.body.classList.add("graph-board-visible");
+
+  requestAnimationFrame(() => {
+    document.body.classList.add("graph-topic-visible");
+
+    window.setTimeout(() => {
+      document.body.classList.add("intro-concepts-visible", "graph-interaction-enabled", "graph-intro-finished");
+    }, INITIAL_CONCEPT_DELAY_MS);
+  });
+
+  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS + INITIAL_CONCEPT_DELAY_MS);
 }
 
 async function pickIntroMessage() {
@@ -1946,21 +1965,35 @@ function applyPresetMainLayout(nodes, edges, width, height) {
   const topicNodes = nodes.filter((node) => node.type === "topic");
   const conceptNodes = nodes.filter((node) => node.type === "concept");
 
-  const boardRadiusX = Math.max(150, width * (isMobileLayout() ? 0.34 : 0.36));
-  const boardRadiusY = Math.max(120, height * (isMobileLayout() ? 0.29 : 0.32));
-  const conceptOrbit = Math.max(58, Math.min(width, height) * (isMobileLayout() ? 0.115 : 0.105));
+  const marginX = clamp(width * (isMobileLayout() ? 0.12 : 0.14), 56, 170);
+  const marginY = clamp(height * (isMobileLayout() ? 0.16 : 0.14), 72, 150);
+  const usableWidth = Math.max(220, width - marginX * 2);
+  const usableHeight = Math.max(220, height - marginY * 2);
+  const conceptOrbit = Math.max(62, Math.min(width, height) * (isMobileLayout() ? 0.12 : 0.11));
 
   const topicPositionMap = new Map();
+  const sortedTopics = [...topicNodes].sort((a, b) => seededUnitFromText(a.id, 1) - seededUnitFromText(b.id, 1));
+  const columns = Math.max(1, Math.ceil(Math.sqrt(sortedTopics.length * (usableWidth / Math.max(1, usableHeight)))));
+  const rows = Math.max(1, Math.ceil(sortedTopics.length / columns));
+  const cellWidth = usableWidth / columns;
+  const cellHeight = usableHeight / rows;
 
-  topicNodes.forEach((node, index) => {
-    const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topicNodes.length);
+  sortedTopics.forEach((node, index) => {
     const saved = state.manualMainPositions.get(node.id);
+    const col = index % columns;
+    const row = Math.floor(index / columns);
+    const jitterX = (seededUnitFromText(node.id, 2) - 0.5) * cellWidth * 0.34;
+    const jitterY = (seededUnitFromText(node.id, 3) - 0.5) * cellHeight * 0.34;
+    const x = marginX + cellWidth * (col + 0.5) + jitterX;
+    const y = marginY + cellHeight * (row + 0.5) + jitterY;
 
-    node.x = saved ? saved.x : centerX + Math.cos(angle) * boardRadiusX;
-    node.y = saved ? saved.y : centerY + Math.sin(angle) * boardRadiusY;
+    node.x = saved ? saved.x : clamp(x, marginX, width - marginX);
+    node.y = saved ? saved.y : clamp(y, marginY, height - marginY);
     node.fx = node.x;
     node.fy = node.y;
-    topicPositionMap.set(node.id, { x: node.x, y: node.y, angle, node });
+
+    const angleFromCenter = Math.atan2(node.y - centerY, node.x - centerX);
+    topicPositionMap.set(node.id, { x: node.x, y: node.y, angle: angleFromCenter, node });
   });
 
   const conceptGroups = new Map();
@@ -1973,26 +2006,37 @@ function applyPresetMainLayout(nodes, edges, width, height) {
 
   conceptGroups.forEach((groupNodes, topicId) => {
     const topicPosition = topicPositionMap.get(topicId);
-    const fallbackAngle = MAIN_LAYOUT_RING_START_ANGLE;
     const baseX = topicPosition ? topicPosition.x : centerX;
     const baseY = topicPosition ? topicPosition.y : centerY;
-    const baseAngle = topicPosition ? topicPosition.angle : fallbackAngle;
+    const outwardAngle = topicPosition ? topicPosition.angle : MAIN_LAYOUT_RING_START_ANGLE;
+    const sortedGroup = [...groupNodes].sort((a, b) => seededUnitFromText(a.id, 4) - seededUnitFromText(b.id, 4));
 
-    groupNodes.forEach((node, index) => {
-      const spread = groupNodes.length <= 1 ? 0 : (index - (groupNodes.length - 1) / 2) * 0.42;
-      const angle = baseAngle + Math.PI + spread;
-      const ring = conceptOrbit + (index % 3) * 20;
-
+    sortedGroup.forEach((node, index) => {
       const saved = state.manualMainPositions.get(node.id);
-      node.x = saved ? saved.x : baseX + Math.cos(angle) * ring;
-      node.y = saved ? saved.y : baseY + Math.sin(angle) * ring;
+      const ringLevel = Math.floor(index / 5);
+      const angle = outwardAngle + Math.PI + index * GOLDEN_ANGLE + (seededUnitFromText(node.id, 5) - 0.5) * 0.32;
+      const ring = conceptOrbit + ringLevel * 42 + seededUnitFromText(node.id, 6) * 18;
+      const x = baseX + Math.cos(angle) * ring;
+      const y = baseY + Math.sin(angle) * ring;
 
-      // Keep every initial main-view node fixed. This prevents page-load force explosions,
-      // but nodes are still manually draggable through D3 drag handlers.
+      node.x = saved ? saved.x : clamp(x, marginX * 0.65, width - marginX * 0.65);
+      node.y = saved ? saved.y : clamp(y, marginY * 0.75, height - marginY * 0.75);
       node.fx = node.x;
       node.fy = node.y;
     });
   });
+}
+
+function seededUnitFromText(value, salt = 0) {
+  const text = `${String(value || "")}:${salt}`;
+  let hash = 2166136261;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return ((hash >>> 0) % 100000) / 100000;
 }
 
 function findTopicForConcept(conceptNode, topicNodes, edges) {
