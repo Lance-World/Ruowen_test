@@ -58,8 +58,8 @@ const state = {
 [保留] 3. constants
 ========================================================= */
 const nodeColors = {
-  topic: "#CFEAF4",      // 主題：霧感淡藍
-  concept: "#D7EEE9",    // 概念：霧青綠，與背景融合
+  topic: "#E8D7F1",      // 主題：淺粉紫羅蘭
+  concept: "#BFE7E2",    // 概念：蒂芬妮藍綠
   term: "#DCD9EA",       // 詞彙：低飽和灰紫
   phrase: "#F6F1E8",     // 句子：只進 Info Panel，不進主網絡
   unknown: "#E8F3F1",
