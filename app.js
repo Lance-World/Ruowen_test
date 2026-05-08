@@ -31,7 +31,7 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
-  // Desktop 初始收合；選取節點後自動展開。Mobile 仍由 Bottom Sheet 控制。
+  // Desktop/Web starts collapsed; selecting a node expands it automatically.
   infoCompact: true,
   lastMobileTapNodeId: null,
   mobileSheetOpen: false,
@@ -90,6 +90,12 @@ const UI_TYPES = {
   phrase: "句子",
   sentence: "句子",
 };
+
+const INTRO_GREETING_TEXT = "Hi ! Guys ~";
+const INTRO_GREETING_TYPE_MS = 700;
+const DESKTOP_INFO_COLLAPSED_HEIGHT = 86;
+const DESKTOP_INFO_DEFAULT_HEIGHT = 280;
+const DESKTOP_INFO_MAX_VH = 0.8;
 
 
 /* =========================================================
@@ -631,8 +637,6 @@ function showAll() {
 
   if (isMobileLayout()) {
     closeMobileBottomSheet();
-  } else {
-    closeDesktopInfoPanel();
   }
 
   requestAnimationFrame(() => resetZoom());
@@ -645,8 +649,6 @@ function clearSelection() {
 
   if (isMobileLayout()) {
     closeMobileBottomSheet();
-  } else {
-    closeDesktopInfoPanel();
   }
 }
 
@@ -731,9 +733,16 @@ function applyInfoCompactState() {
   infoPanel.style.transform = "";
   infoPanel.style.height = "";
   infoPanel.classList.toggle("info-compact", Boolean(state.infoCompact));
+  infoPanel.setAttribute("aria-expanded", state.infoCompact ? "false" : "true");
 
   if (workspace) {
     workspace.classList.toggle("info-compact-workspace", Boolean(state.infoCompact));
+    if (!state.infoCompact) {
+      const current = Number.parseFloat(getComputedStyle(workspace).getPropertyValue("--info-height"));
+      if (!Number.isFinite(current) || current < DESKTOP_INFO_DEFAULT_HEIGHT) {
+        workspace.style.setProperty("--info-height", `${DESKTOP_INFO_DEFAULT_HEIGHT}px`);
+      }
+    }
   }
 
   requestAnimationFrame(() => {
@@ -976,14 +985,14 @@ function setInfoTitle(titleText) {
 ================================ */
 
 function setupResizablePanels() {
-  // J2 / K1：Sidebar 固定寬度，不啟用 Sidebar resize；保留其他資訊欄拖曳。
+  // Web/Desktop：Info Panel 改為 Resizable Bottom Drawer，只保留高度拖曳。
+  // Mobile：仍使用 Bottom Sheet 手勢，不啟用 pointer resize。
   setupMainVerticalResize();
   setupInnerHorizontalResize();
-  setupInfoRightResize();
 }
 
 function setupMainVerticalResize() {
-  const handle = document.getElementById("mainResizeHandle");
+  const handle = document.getElementById("infoDrawerHandle");
   const workspace = document.getElementById("workspace");
 
   if (!handle || !workspace) return;
@@ -993,22 +1002,15 @@ function setupMainVerticalResize() {
     canStart: () => !isMobileLayout(),
     onMove: (event) => {
       const rect = workspace.getBoundingClientRect();
-      const infoHeight = rect.bottom - event.clientY;
+      const rawHeight = rect.bottom - event.clientY;
+      const maxInfo = Math.max(320, rect.height * DESKTOP_INFO_MAX_VH);
+      const nextHeight = clamp(rawHeight, DESKTOP_INFO_COLLAPSED_HEIGHT, maxInfo);
 
-      const minInfo = isMobileLayout() ? 76 : 92;
-      const maxInfo = Math.max(240, rect.height * 0.76);
-      const nextHeight = clamp(infoHeight, minInfo, maxInfo);
-
-      state.infoCompact = false;
-      applyInfoCompactState();
-
+      state.infoCompact = nextHeight <= DESKTOP_INFO_COLLAPSED_HEIGHT + 18;
       workspace.style.setProperty("--info-height", `${nextHeight}px`);
-      if (!isMobileLayout()) {
-        localStorage.setItem("infoHeight", String(nextHeight));
-      } else {
-        localStorage.removeItem("infoHeight");
-      }
+      localStorage.setItem("infoHeight", String(nextHeight));
 
+      applyInfoCompactState();
       resizeGraphAfterPanelChange();
     },
   });
@@ -1139,8 +1141,10 @@ function restorePanelPreferences() {
   // JS-11C：桌機恢復資訊欄高度；手機不記住高度。
   if (!isMobileLayout()) {
     const savedInfoHeight = Number(localStorage.getItem("infoHeight"));
-    if (Number.isFinite(savedInfoHeight) && savedInfoHeight >= 160 && savedInfoHeight <= window.innerHeight * 0.76) {
+    if (Number.isFinite(savedInfoHeight) && savedInfoHeight >= DESKTOP_INFO_COLLAPSED_HEIGHT && savedInfoHeight <= window.innerHeight * DESKTOP_INFO_MAX_VH) {
       workspace.style.setProperty("--info-height", `${savedInfoHeight}px`);
+    } else {
+      workspace.style.setProperty("--info-height", `${DESKTOP_INFO_DEFAULT_HEIGHT}px`);
     }
 
     // JS-12B：桌機恢復句子 / 出處左右比例；手機不記住上下比例。
@@ -1297,6 +1301,7 @@ const FALLBACK_INTRO_MESSAGES = [
 async function setupIntroOverlay() {
   const overlay = document.getElementById("introOverlay");
   const textEl = document.getElementById("introMessageText");
+  const greetingEl = document.getElementById("introGreetingText");
 
   if (!overlay || !textEl) {
     finishIntroGraphReveal();
@@ -1305,6 +1310,7 @@ async function setupIntroOverlay() {
 
   const message = await pickIntroMessage();
   textEl.textContent = message;
+  startIntroGreetingTypewriter(greetingEl);
 
   let closed = false;
 
@@ -1360,6 +1366,27 @@ function finishIntroGraphReveal() {
       }, 920);
     }, INITIAL_CONCEPT_DELAY_MS);
   });
+}
+
+function startIntroGreetingTypewriter(element) {
+  if (!element) return;
+
+  const characters = Array.from(INTRO_GREETING_TEXT);
+  const delay = Math.max(24, Math.floor(INTRO_GREETING_TYPE_MS / Math.max(1, characters.length)));
+  let index = 0;
+
+  element.textContent = "";
+  element.classList.remove("intro-greeting-done");
+
+  const timer = window.setInterval(() => {
+    index += 1;
+    element.textContent = characters.slice(0, index).join("");
+
+    if (index >= characters.length) {
+      window.clearInterval(timer);
+      element.classList.add("intro-greeting-done");
+    }
+  }, delay);
 }
 
 async function pickIntroMessage() {
@@ -2377,7 +2404,6 @@ function returnToMainView() {
   updateGraph();
   renderDefaultInfo();
   updateBackToMainButton();
-  if (!isMobileLayout()) closeDesktopInfoPanel();
 
   const previousTransform = state.previousMainTransform;
   state.previousMainTransform = null;
@@ -2409,26 +2435,15 @@ function selectNode(nodeId) {
   if (node) {
     renderInfoPanel(node);
 
-    // 選取節點時，Info Panel 自動跳出。
-    // Mobile：開啟 Bottom Sheet。Desktop/Web：從 compact 展開成完整資訊欄。
     if (isMobileLayout()) {
+      // Mobile：點節點後開啟 Bottom Sheet。
       openMobileBottomSheet(60);
     } else {
-      openDesktopInfoPanel();
+      // Desktop/Web：剛進頁面 Info Panel 預設收合；選取節點後自動展開。
+      state.infoCompact = false;
+      applyInfoCompactState();
     }
   }
-}
-
-function openDesktopInfoPanel() {
-  if (isMobileLayout()) return;
-  state.infoCompact = false;
-  applyInfoCompactState();
-}
-
-function closeDesktopInfoPanel() {
-  if (isMobileLayout()) return;
-  state.infoCompact = true;
-  applyInfoCompactState();
 }
 
 function focusNode(nodeId) {

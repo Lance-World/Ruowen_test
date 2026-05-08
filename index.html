@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=a7_13_linked_clean_20260508_01" />
+  <link rel="stylesheet" href="./css/style.css?v=a7_13_web_drawer_type_intro_20260508_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
@@ -168,9 +168,16 @@
           </div>
         </section>
 
-        <div id="mainResizeHandle" class="resize-handle horizontal"></div>
+        <section id="infoPanel" class="info-panel" aria-expanded="false">
+          <div
+            id="infoDrawerHandle"
+            class="info-drawer-handle"
+            role="separator"
+            aria-orientation="horizontal"
+            title="拖曳調整資訊欄高度"
+            aria-label="拖曳調整資訊欄高度"
+          ></div>
 
-        <section id="infoPanel" class="info-panel">
          <div class="info-header info-header-row">
             <div class="info-icon" title="點擊收合/展開卡片">✦</div>
           
@@ -217,6 +224,7 @@
 
 
   <div id="introOverlay" class="intro-overlay" aria-hidden="false">
+    <div id="introGreetingText" class="intro-greeting-text" aria-label="Hi ! Guys ~"></div>
     <div class="intro-glass">
       <div class="intro-message-wrap">
         <span class="intro-star intro-star-top intro-star-top-a">✦</span>
@@ -246,6 +254,6 @@
     </section>
   </div>
 
-  <script src="./app.js?v=a7_13_linked_clean_20260508_01"></script>
+  <script src="./app.js?v=a7_13_web_drawer_type_intro_20260508_01"></script>
 </body>
 </html>
