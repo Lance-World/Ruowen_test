@@ -105,26 +105,26 @@ const DESKTOP_INFO_MAX_VH = 0.8;
 const SEED_MODES = {
   tag_bridge: {
     id: "tag_bridge",
-    label: "Tag 橫向橋接",
-    shortLabel: "1 Tag",
+    label: "Link｜Tag 橫向橋接",
+    shortLabel: "Link",
     sourceLabel: "Seed Mode 1｜Tag 橫向橋接",
   },
   concept_neighbors: {
     id: "concept_neighbors",
-    label: "鄰近概念",
-    shortLabel: "2 概念",
+    label: "Extend｜鄰近概念",
+    shortLabel: "Extend",
     sourceLabel: "Seed Mode 2｜鄰近概念",
   },
   term_association: {
     id: "term_association",
-    label: "詞彙聯想",
-    shortLabel: "3 詞彙",
+    label: "Associate｜詞彙聯想",
+    shortLabel: "Associate",
     sourceLabel: "Seed Mode 3｜詞彙聯想",
   },
   ai_question: {
     id: "ai_question",
-    label: "AI 腦洞提問",
-    shortLabel: "4 AI",
+    label: "AI｜腦洞提問",
+    shortLabel: "AI",
     sourceLabel: "Seed Mode 4｜AI 腦洞提問",
   },
 };
@@ -339,6 +339,10 @@ function toggleSearchPanel() {
   localStorage.setItem("searchPanelOpen", isOpen ? "1" : "0");
 
   if (isOpen) {
+    const seedPanel = document.getElementById("sidebarSeedPanel");
+    if (seedPanel) seedPanel.classList.add("seed-collapsed");
+    localStorage.setItem("seedPanelOpen", "0");
+    syncSeedPanelOpenState();
     setTimeout(() => {
       const input = document.getElementById("searchInput");
       if (input) input.focus();
@@ -379,6 +383,7 @@ function toggleSeedPanel() {
   panel.classList.toggle("seed-collapsed");
   const isOpen = !panel.classList.contains("seed-collapsed");
   localStorage.setItem("seedPanelOpen", isOpen ? "1" : "0");
+  syncSeedPanelOpenState();
 
   if (isOpen) {
     setTimeout(() => {
@@ -395,12 +400,22 @@ function toggleSeedPanel() {
   }, 120);
 }
 
+function syncSeedPanelOpenState() {
+  const panel = document.getElementById("sidebarSeedPanel");
+  const appShell = document.querySelector(".app-shell");
+  if (!panel || !appShell) return;
+
+  const isOpen = !panel.classList.contains("seed-collapsed");
+  appShell.classList.toggle("seed-panel-open", isOpen);
+}
+
 function restoreSeedPanelState() {
   const panel = document.getElementById("sidebarSeedPanel");
   if (!panel) return;
 
   const isOpen = localStorage.getItem("seedPanelOpen") === "1";
   panel.classList.toggle("seed-collapsed", !isOpen);
+  syncSeedPanelOpenState();
 }
 
 function setupSeedPanel() {
@@ -408,7 +423,6 @@ function setupSeedPanel() {
 
   const input = document.getElementById("seedInput");
   const submitBtn = document.getElementById("seedSubmitBtn");
-  const aiBtn = document.getElementById("seedAiBtn");
   const clearBtn = document.getElementById("clearSeedBtn");
   const wrap = document.querySelector(".sidebar-seed-wrap");
   const modeButtons = Array.from(document.querySelectorAll(".seed-mode-chip"));
@@ -438,12 +452,6 @@ function setupSeedPanel() {
       submitBtn.classList.add("seed-loading");
       submitBtn.setAttribute("aria-busy", "true");
     }
-    if (aiBtn) {
-      aiBtn.disabled = true;
-      aiBtn.classList.add("seed-loading");
-      aiBtn.setAttribute("aria-busy", "true");
-    }
-
     renderSeedLoadingInfoPanel(raw, nextMode);
 
     try {
@@ -451,7 +459,7 @@ function setupSeedPanel() {
       renderSeedInfoPanel(result, raw, nextMode);
       if (raw) addHistoryItem("seed", raw);
     } finally {
-      [submitBtn, aiBtn].forEach((button) => {
+      [submitBtn].forEach((button) => {
         if (!button) return;
         button.disabled = false;
         button.classList.remove("seed-loading");
@@ -465,8 +473,6 @@ function setupSeedPanel() {
   });
 
   if (submitBtn) submitBtn.addEventListener("click", () => runSeed(state.seedMode));
-  if (aiBtn) aiBtn.addEventListener("click", () => runSeed("ai_question"));
-
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       if (input) input.value = "";
@@ -488,6 +494,7 @@ function setupSeedPanel() {
         const panel = document.getElementById("sidebarSeedPanel");
         if (panel) panel.classList.add("seed-collapsed");
         localStorage.setItem("seedPanelOpen", "0");
+        syncSeedPanelOpenState();
       }
     });
     updateSeedClearState();
