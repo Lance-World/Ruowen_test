@@ -82,13 +82,15 @@ button { user-select: none; }
 #graphSvg { width: 100%; height: 100%; display: block; }
 
 body.graph-intro-active #graphSvg {
-  opacity: 0;
+  opacity: 0.42;
   transform: scale(0.985);
+  pointer-events: none;
   transition: opacity 0.92s ease, transform 0.92s ease;
 }
 body.graph-intro-finished #graphSvg {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
   transition: opacity 0.92s ease, transform 0.92s ease;
 }
 body.graph-intro-active .node-topic { opacity: 1; }
@@ -198,7 +200,7 @@ body.graph-intro-active.intro-concepts-visible .node-concept { opacity: 1; trans
   z-index: 30;
 }
 .sidebar-toggle { right: 18px; background: rgba(92, 166, 168, 0.88); }
-.seed-toggle { right: 58px; background: rgba(125, 126, 232, 0.72); }
+.seed-toggle { right: 58px; background: rgba(125, 126, 232, 0.72); font-size: 17px; }
 .search-toggle { right: 98px; background: rgba(36, 91, 98, 0.78); }
 .app-shell.sidebar-collapsed .sidebar-toggle { right: 15px; top: 14px; }
 .app-shell.sidebar-collapsed .seed-toggle { right: 15px; top: 56px; }

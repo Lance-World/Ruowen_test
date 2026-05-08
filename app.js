@@ -49,6 +49,8 @@ const state = {
   previousMainTransform: null,
   currentNodes: [],
   currentEdges: [],
+  // Main view uses a static preset layout at page load, but Topic/Core Concept nodes remain draggable.
+  manualMainPositions: new Map(),
 };
 
 /* =========================================================
@@ -78,6 +80,7 @@ const STORAGE_KEYS = {
 const MAX_HISTORY_ITEMS = 12;
 const INITIAL_CONCEPT_DELAY_MS = 300;
 const INITIAL_GRAPH_FADE_MS = 920;
+const MAIN_LAYOUT_RING_START_ANGLE = -Math.PI / 2;
 const UI_TYPES = {
   topic: "主題",
   concept: "概念",
@@ -1942,25 +1945,82 @@ function applyPresetMainLayout(nodes, edges, width, height) {
   const centerY = height / 2;
   const topicNodes = nodes.filter((node) => node.type === "topic");
   const conceptNodes = nodes.filter((node) => node.type === "concept");
-  const topicRadius = Math.max(120, Math.min(width, height) * (isMobileLayout() ? 0.34 : 0.32));
-  const conceptRadius = Math.max(62, Math.min(width, height) * (isMobileLayout() ? 0.18 : 0.20));
+
+  const boardRadiusX = Math.max(150, width * (isMobileLayout() ? 0.34 : 0.36));
+  const boardRadiusY = Math.max(120, height * (isMobileLayout() ? 0.29 : 0.32));
+  const conceptOrbit = Math.max(58, Math.min(width, height) * (isMobileLayout() ? 0.115 : 0.105));
+
+  const topicPositionMap = new Map();
 
   topicNodes.forEach((node, index) => {
-    const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / Math.max(1, topicNodes.length);
-    node.x = centerX + Math.cos(angle) * topicRadius;
-    node.y = centerY + Math.sin(angle) * topicRadius;
+    const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topicNodes.length);
+    const saved = state.manualMainPositions.get(node.id);
+
+    node.x = saved ? saved.x : centerX + Math.cos(angle) * boardRadiusX;
+    node.y = saved ? saved.y : centerY + Math.sin(angle) * boardRadiusY;
     node.fx = node.x;
     node.fy = node.y;
+    topicPositionMap.set(node.id, { x: node.x, y: node.y, angle, node });
   });
 
-  conceptNodes.forEach((node, index) => {
-    const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / Math.max(1, conceptNodes.length);
-    const jitter = (index % 2) * 22;
-    node.x = centerX + Math.cos(angle) * (conceptRadius + jitter);
-    node.y = centerY + Math.sin(angle) * (conceptRadius + jitter);
-    node.fx = node.x;
-    node.fy = node.y;
+  const conceptGroups = new Map();
+  conceptNodes.forEach((node) => {
+    const topic = findTopicForConcept(node, topicNodes, edges);
+    const key = topic ? topic.id : "__ungrouped__";
+    if (!conceptGroups.has(key)) conceptGroups.set(key, []);
+    conceptGroups.get(key).push(node);
   });
+
+  conceptGroups.forEach((groupNodes, topicId) => {
+    const topicPosition = topicPositionMap.get(topicId);
+    const fallbackAngle = MAIN_LAYOUT_RING_START_ANGLE;
+    const baseX = topicPosition ? topicPosition.x : centerX;
+    const baseY = topicPosition ? topicPosition.y : centerY;
+    const baseAngle = topicPosition ? topicPosition.angle : fallbackAngle;
+
+    groupNodes.forEach((node, index) => {
+      const spread = groupNodes.length <= 1 ? 0 : (index - (groupNodes.length - 1) / 2) * 0.42;
+      const angle = baseAngle + Math.PI + spread;
+      const ring = conceptOrbit + (index % 3) * 20;
+
+      const saved = state.manualMainPositions.get(node.id);
+      node.x = saved ? saved.x : baseX + Math.cos(angle) * ring;
+      node.y = saved ? saved.y : baseY + Math.sin(angle) * ring;
+
+      // Keep every initial main-view node fixed. This prevents page-load force explosions,
+      // but nodes are still manually draggable through D3 drag handlers.
+      node.fx = node.x;
+      node.fy = node.y;
+    });
+  });
+}
+
+function findTopicForConcept(conceptNode, topicNodes, edges) {
+  if (!conceptNode || !topicNodes.length) return null;
+
+  const rawCategory = String(conceptNode.level1_category || conceptNode.topic || conceptNode.primary_topic || "").trim();
+  const category = cleanTopicLabel(rawCategory);
+
+  if (category) {
+    const matchedByCategory = topicNodes.find((topic) => {
+      const values = [topic.id, topic.label, topic.canonical_term, topic.level1_category].map((item) => cleanTopicLabel(item || ""));
+      return values.some((value) => value && (value === category || value.includes(category) || category.includes(value)));
+    });
+    if (matchedByCategory) return matchedByCategory;
+  }
+
+  const directTopicId = edges
+    .map((edge) => {
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      if (sourceId === conceptNode.id) return targetId;
+      if (targetId === conceptNode.id) return sourceId;
+      return null;
+    })
+    .find((nodeId) => topicNodes.some((topic) => topic.id === nodeId));
+
+  if (directTopicId) return topicNodes.find((topic) => topic.id === directTopicId) || null;
+  return null;
 }
 
 function getEdgeNode(value, nodeMap) {
@@ -2597,8 +2657,21 @@ function focusByHashtag(tagText) {
   const tag = cleanTagText(tagText);
   if (!tag) return;
 
-  const matchedNodes = state.allNodes.filter((node) => nodeMatchesTag(node, tag));
-  if (matchedNodes.length === 0) return;
+  // Tag click is a visual navigation action only:
+  // - It does not change viewMode.
+  // - It does not inject a large number of hidden Terms into the main graph.
+  // - It only highlights currently visible Concept / Term nodes and zooms to that visible group.
+  const visibleNodes = state.currentNodes || [];
+  const matchedNodes = visibleNodes.filter((node) => {
+    if (node.type !== "concept" && node.type !== "term") return false;
+    return nodeMatchesTag(node, tag);
+  });
+
+  if (matchedNodes.length === 0) {
+    state.activeTag = null;
+    highlightSelection();
+    return;
+  }
 
   state.activeTag = tag;
   const matchedIds = new Set(matchedNodes.map((node) => node.id));
@@ -2606,7 +2679,7 @@ function focusByHashtag(tagText) {
   state.nodeSelection
     .selectAll("g")
     .classed("hashtag-active", (node) => matchedIds.has(node.id))
-    .classed("dimmed", (node) => !matchedIds.has(node.id));
+    .classed("dimmed", (node) => node.type === "concept" || node.type === "term" ? !matchedIds.has(node.id) : false);
 
   state.linkSelection
     .selectAll("line")
@@ -2820,16 +2893,51 @@ function escapeAttribute(text) {
   return escapeHtml(text).replaceAll("`", "&#096;");
 }
 
+function updateStaticGraphPositions() {
+  const currentNodeMap = new Map((state.currentNodes || []).map((node) => [node.id, node]));
+
+  if (state.nodeSelection) {
+    state.nodeSelection
+      .selectAll("g")
+      .attr("transform", (node) => `translate(${node.x || 0},${node.y || 0})`);
+  }
+
+  if (state.linkSelection) {
+    state.linkSelection
+      .selectAll("line")
+      .attr("x1", (edge) => {
+        const node = currentNodeMap.get(getEdgeSourceId(edge));
+        return node ? node.x || 0 : 0;
+      })
+      .attr("y1", (edge) => {
+        const node = currentNodeMap.get(getEdgeSourceId(edge));
+        return node ? node.y || 0 : 0;
+      })
+      .attr("x2", (edge) => {
+        const node = currentNodeMap.get(getEdgeTargetId(edge));
+        return node ? node.x || 0 : 0;
+      })
+      .attr("y2", (edge) => {
+        const node = currentNodeMap.get(getEdgeTargetId(edge));
+        return node ? node.y || 0 : 0;
+      });
+  }
+}
+
 /* ================================
    Drag Nodes
 ================================ */
 
 function dragStarted(event, node) {
-  if (state.viewMode === "main") return;
-  if (state.simulation && !event.active) state.simulation.alphaTarget(0.3).restart();
-
   node.fx = node.x;
   node.fy = node.y;
+
+  if (state.viewMode === "main") {
+    state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
+    return;
+  }
+
+  if (state.simulation && !event.active) state.simulation.alphaTarget(0.3).restart();
 }
 
 function dragged(event, node) {
@@ -2837,9 +2945,23 @@ function dragged(event, node) {
   node.fy = event.y;
   node.x = event.x;
   node.y = event.y;
+
+  if (state.viewMode === "main") {
+    state.manualMainPositions.set(node.id, { x: node.x, y: node.y });
+    updateStaticGraphPositions();
+  }
 }
 
 function dragEnded(event, node) {
+  if (state.viewMode === "main") {
+    // Keep the manually adjusted Topic/Core Concept position in the static main board.
+    node.fx = node.x;
+    node.fy = node.y;
+    state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
+    updateStaticGraphPositions();
+    return;
+  }
+
   if (state.simulation && !event.active) state.simulation.alphaTarget(0);
 
   node.fx = null;
