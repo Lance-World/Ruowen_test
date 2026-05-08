@@ -1,15 +1,26 @@
+/* =========================================================
+[保留] 1. DATA_PATHS
+- JSON 路徑集中管理。graph_cards.json 為 optional。
+========================================================= */
 const DATA_PATHS = {
   nodes: "./data/graph_nodes.json",
   edges: "./data/graph_edges.json",
   sources: "./data/graph_sources.json",
   meta: "./data/graph_meta.json",
   intro: "./data/intro_messages.json",
+  cards: "./data/graph_cards.json",
 };
 
+/* =========================================================
+[保留][可擴充] 2. state
+- Graph / Sidebar / Mobile / ViewMode / History 狀態集中管理。
+- 不要刪除 viewMode / activeConceptId / activeTermId。
+========================================================= */
 const state = {
   allNodes: [],
   allEdges: [],
   graphSources: {},
+  graphCards: {},
   meta: {},
   visibleTypes: new Set(["topic", "concept", "term", "phrase"]),
   selectedCategory: "all",
@@ -26,6 +37,12 @@ const state = {
   mobileSheetExpanded: false,
   aboutModalOpen: false,
   simulationStopTimer: null,
+  isInitialLoading: true,
+  introFinished: false,
+  forceStarted: false,
+  activeTag: null,
+  searchHistory: [],
+  seedHistory: [],
   viewMode: "main",
   activeConceptId: null,
   activeTermId: null,
@@ -34,11 +51,14 @@ const state = {
   currentEdges: [],
 };
 
+/* =========================================================
+[保留] 3. constants
+========================================================= */
 const nodeColors = {
-  topic: "#CFEAF4",      // 第一層：霧感淡藍
-  concept: "#D7EEE9",    // 第二層：霧青綠，與背景融合
-  term: "#DCD9EA",       // 第三層：低飽和灰紫
-  phrase: "#F6F1E8",     // 第四層：奶霜米白
+  topic: "#CFEAF4",      // 主題：霧感淡藍
+  concept: "#D7EEE9",    // 概念：霧青綠，與背景融合
+  term: "#DCD9EA",       // 詞彙：低飽和灰紫
+  phrase: "#F6F1E8",     // 句子：奶霜米白
   unknown: "#E8F3F1",
 };
 
@@ -49,24 +69,52 @@ const edgeColors = {
   related_phrase: "rgba(150, 168, 176, 0.34)",
 };
 
+
+const STORAGE_KEYS = {
+  searchHistory: "ruowenSearchHistory",
+  seedHistory: "ruowenSeedHistory",
+};
+
+const MAX_HISTORY_ITEMS = 12;
+const INITIAL_CONCEPT_DELAY_MS = 300;
+const INITIAL_GRAPH_FADE_MS = 920;
+const UI_TYPES = {
+  topic: "主題",
+  concept: "概念",
+  term: "詞彙",
+  phrase: "句子",
+  sentence: "句子",
+};
+
+
+/* =========================================================
+[不要改] 4. init() entry
+========================================================= */
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
   try {
     await loadData();
+    restoreRecentHistory();
     restoreSidebarState();
     restoreSidebarWidth();
     restoreSearchPanelState();
+    restoreSeedPanelState();
     restorePanelPreferences();
     updateFloatingLayoutVars();
     syncMobileOnlyResizeHandles();
     updateMobileToolbarPosition();
     setupCategoryChips();
     setupControls();
+    setupSeedPanel();
+    setupRelatedInteractions();
+    setupTagInteractions();
     setupResizablePanels();
     setupInfoCompactToggle();
     setupMobileBottomSheetGestures();
     setupAboutModal();
+    document.body.classList.add("graph-intro-active");
+    document.body.classList.remove("graph-intro-finished", "intro-concepts-visible");
     renderGraph();
     renderDefaultInfo();
     setupFloatingNoteAutoHide();
@@ -81,22 +129,29 @@ async function init() {
    Data
 ================================ */
 
+/* =========================================================
+[可改] 5. loadData()
+- 可接 graph_cards.json，但不能讓 optional file 缺失造成啟動失敗。
+========================================================= */
 async function loadData() {
-  const [nodes, edges, sources, meta] = await Promise.all([
+  const [nodes, edges, sources, meta, cards] = await Promise.all([
     fetchJson(DATA_PATHS.nodes),
     fetchJson(DATA_PATHS.edges),
     fetchJson(DATA_PATHS.sources),
     fetchJson(DATA_PATHS.meta),
+    fetchOptionalJson(DATA_PATHS.cards, {}),
   ]);
 
-  state.allNodes = nodes;
+  state.allNodes = normalizeNodeTypes(nodes);
   state.allEdges = edges;
-  state.graphSources = sources;
-  state.meta = meta;
+  state.graphSources = sources || {};
+  state.meta = meta || {};
+  state.graphCards = normalizeGraphCards(cards);
 
   console.log("nodes:", state.allNodes.length);
   console.log("edges:", state.allEdges.length);
   console.log("source nodes:", Object.keys(state.graphSources).length);
+  console.log("cards:", Object.keys(state.graphCards).length);
 }
 
 async function fetchJson(path) {
@@ -109,10 +164,45 @@ async function fetchJson(path) {
   return response.json();
 }
 
+async function fetchOptionalJson(path, fallbackValue) {
+  try {
+    return await fetchJson(path);
+  } catch (_) {
+    return fallbackValue;
+  }
+}
+
+function normalizeNodeTypes(nodes) {
+  return (Array.isArray(nodes) ? nodes : []).map((node) => {
+    if (!node || typeof node !== "object") return node;
+    if (node.type === "sentence") return { ...node, type: "phrase", ui_type: "sentence" };
+    return node;
+  });
+}
+
+function normalizeGraphCards(cards) {
+  if (!cards) return {};
+
+  if (Array.isArray(cards)) {
+    const result = {};
+    cards.forEach((card) => {
+      const id = card && (card.id || card.node_id || card.card_id);
+      if (id) result[id] = card;
+    });
+    return result;
+  }
+
+  if (typeof cards === "object") return cards;
+  return {};
+}
+
 /* ================================
    Sidebar
 ================================ */
 
+/* =========================================================
+[保留] 6. Sidebar controls
+========================================================= */
 function restoreSidebarState() {
   const appShell = document.querySelector(".app-shell");
   if (!appShell) return;
@@ -205,6 +295,111 @@ function toggleSearchPanel() {
   }, 120);
 }
 
+
+/* =========================================================
+[保留] 8. Seed
+- 產生 idea；空白隨機不記 history。
+========================================================= */
+function toggleSeedPanel() {
+  const panel = document.getElementById("sidebarSeedPanel");
+  const appShell = document.querySelector(".app-shell");
+
+  if (!panel) return;
+
+  if (appShell && appShell.classList.contains("sidebar-collapsed")) {
+    appShell.classList.remove("sidebar-collapsed");
+    localStorage.setItem("sidebarCollapsed", "0");
+  }
+
+  const searchPanel = document.getElementById("sidebarSearchPanel");
+  if (searchPanel) {
+    searchPanel.classList.add("search-collapsed");
+    localStorage.setItem("searchPanelOpen", "0");
+  }
+
+  panel.classList.toggle("seed-collapsed");
+  const isOpen = !panel.classList.contains("seed-collapsed");
+  localStorage.setItem("seedPanelOpen", isOpen ? "1" : "0");
+
+  if (isOpen) {
+    setTimeout(() => {
+      const input = document.getElementById("seedInput");
+      if (input) input.focus();
+    }, 120);
+  }
+
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+  setTimeout(() => {
+    updateMobileToolbarPosition();
+    resizeGraphAfterPanelChange();
+  }, 120);
+}
+
+function restoreSeedPanelState() {
+  const panel = document.getElementById("sidebarSeedPanel");
+  if (!panel) return;
+
+  const isOpen = localStorage.getItem("seedPanelOpen") === "1";
+  panel.classList.toggle("seed-collapsed", !isOpen);
+}
+
+function setupSeedPanel() {
+  restoreSeedPanelState();
+
+  const input = document.getElementById("seedInput");
+  const submitBtn = document.getElementById("seedSubmitBtn");
+  const randomBtn = document.getElementById("seedRandomBtn");
+  const resultBox = document.getElementById("seedResult");
+
+  function runSeed(randomOnly = false) {
+    const raw = input ? input.value.trim() : "";
+    const idea = generateSeedIdea(randomOnly ? "" : raw);
+    if (resultBox) resultBox.textContent = idea;
+    if (raw && !randomOnly) addHistoryItem("seed", raw);
+  }
+
+  if (submitBtn) submitBtn.addEventListener("click", () => runSeed(false));
+  if (randomBtn) randomBtn.addEventListener("click", () => runSeed(true));
+  if (input) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") runSeed(false);
+      if (event.key === "Escape") {
+        const panel = document.getElementById("sidebarSeedPanel");
+        if (panel) panel.classList.add("seed-collapsed");
+        localStorage.setItem("seedPanelOpen", "0");
+      }
+    });
+  }
+}
+
+function generateSeedIdea(userText = "") {
+  const topicPool = state.allNodes
+    .filter((node) => node.type === "topic" || node.type === "concept")
+    .map((node) => cleanTopicLabel(node.label || node.canonical_term || node.id))
+    .filter(Boolean);
+
+  const termPool = state.allNodes
+    .filter((node) => node.type === "term")
+    .map((node) => node.label || node.canonical_term || node.id)
+    .filter(Boolean);
+
+  const pick = (items, fallback) => items.length ? items[Math.floor(Math.random() * items.length)] : fallback;
+  const topic = pick(topicPool, "內在覺察");
+  const term = pick(termPool, "安全感");
+  const inputText = String(userText || "").trim();
+
+  if (!inputText) {
+    return `今天可以從「${topic}」靠近「${term}」，問自己：它正在提醒我什麼？`;
+  }
+
+  return `把「${inputText}」放進「${topic}」脈絡裡看：它和「${term}」之間，也許有一條新的理解路徑。`;
+}
+
+/* =========================================================
+[可改] 10. Category chips
+- 可清除 01_ 前綴；CSS 決定排版。
+========================================================= */
 function setupCategoryChips() {
   const container = document.getElementById("categoryChips");
   container.innerHTML = "";
@@ -221,7 +416,7 @@ function setupCategoryChips() {
     const button = document.createElement("button");
     button.className = "category-chip";
     button.dataset.category = category;
-    button.textContent = category;
+    button.textContent = cleanTopicLabel(category);
     container.appendChild(button);
   });
 
@@ -235,6 +430,7 @@ function setupCategoryChips() {
 
     button.classList.add("active");
     state.selectedCategory = button.dataset.category || "all";
+    state.activeTag = null;
     updateGraph();
   });
 }
@@ -291,6 +487,7 @@ function setupControls() {
   const clearSelectionBtn = document.getElementById("clearSelectionBtn");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const searchToggleBtn = document.getElementById("searchToggleBtn");
+  const seedToggleBtn = document.getElementById("seedToggleBtn");
   const categoryToggleBtn = document.getElementById("categoryToggleBtn");
   const sidebar = document.getElementById("sidebar");
 
@@ -374,6 +571,10 @@ function setupControls() {
   if (searchToggleBtn) {
     searchToggleBtn.addEventListener("click", toggleSearchPanel);
   }
+
+  if (seedToggleBtn) {
+    seedToggleBtn.addEventListener("click", toggleSeedPanel);
+  }
 }
 
 function setVisibleTypes(types) {
@@ -400,6 +601,7 @@ function showAll() {
   state.viewMode = "main";
   state.activeConceptId = null;
   state.activeTermId = null;
+  state.activeTag = null;
 
   document.querySelectorAll(".filter-chip").forEach((item) => {
     item.classList.add("active");
@@ -438,6 +640,9 @@ function clearSelection() {
    所有平台：點擊資訊欄圖案即可收合 / 展開
 ================================ */
 
+/* =========================================================
+[不建議改] 15. Mobile Bottom Sheet
+========================================================= */
 function setupInfoCompactToggle() {
   const infoIcon = document.querySelector(".info-icon");
   if (!infoIcon) return;
@@ -678,6 +883,9 @@ function setupMobileBottomSheetGestures() {
 }
 
 
+/* =========================================================
+[保留] 16. About modal
+========================================================= */
 function setupAboutModal() {
   const aboutBtn = document.getElementById("aboutBtn");
   const modal = document.getElementById("aboutModal");
@@ -727,6 +935,9 @@ function setupAboutModal() {
   });
 }
 
+/* =========================================================
+[保留] 17. Utilities
+========================================================= */
 function getRandomTitleNumber() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
@@ -754,31 +965,6 @@ function setupResizablePanels() {
   setupMainVerticalResize();
   setupInnerHorizontalResize();
   setupInfoRightResize();
-}
-
-function setupSidebarResize() {
-  const handle = document.getElementById("sidebarResizeHandle");
-  const sidebar = document.getElementById("sidebar");
-
-  if (!handle || !sidebar) return;
-
-  enablePointerResize(handle, {
-    cursor: "col-resize",
-    onMove: (event) => {
-      // JS-3A：手機完全停用 Sidebar resize。
-      if (isMobileLayout()) return;
-
-      const minWidth = 220;
-      const maxWidth = Math.min(520, window.innerWidth * 0.68);
-      const nextWidth = clamp(event.clientX - 18, minWidth, maxWidth);
-
-      sidebar.style.width = `${nextWidth}px`;
-
-      // JS-2B：不寫入 localStorage，重新整理後回到預設寬度。
-      updateFloatingLayoutVars();
-      resizeGraphAfterPanelChange();
-    },
-  });
 }
 
 function setupMainVerticalResize() {
@@ -1031,6 +1217,22 @@ function updateMobileToolbarPosition() {
   appShell.style.setProperty("--mobile-toolbar-top", `${nextTop}px`);
 }
 
+
+function collapseMobileSidebar() {
+  if (!isMobileLayout()) return;
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.getElementById("sidebar");
+  const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+  if (!appShell) return;
+
+  appShell.classList.add("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", "1");
+  if (sidebar) sidebar.classList.remove("categories-open");
+  if (categoryToggleBtn) categoryToggleBtn.setAttribute("aria-expanded", "false");
+  updateFloatingLayoutVars();
+  updateMobileToolbarPosition();
+}
+
 function isMobileLayout() {
   return window.matchMedia("(max-width: 768px)").matches;
 }
@@ -1081,10 +1283,17 @@ async function setupIntroOverlay() {
   const overlay = document.getElementById("introOverlay");
   const textEl = document.getElementById("introMessageText");
 
-  if (!overlay || !textEl) return;
+  if (!overlay || !textEl) {
+    finishIntroGraphReveal();
+    return;
+  }
 
   const message = await pickIntroMessage();
   textEl.textContent = message;
+
+  window.setTimeout(() => {
+    document.body.classList.add("intro-concepts-visible");
+  }, INITIAL_CONCEPT_DELAY_MS);
 
   let closed = false;
 
@@ -1096,6 +1305,7 @@ async function setupIntroOverlay() {
     window.setTimeout(() => {
       overlay.classList.add("intro-overlay-hidden");
       overlay.setAttribute("aria-hidden", "true");
+      finishIntroGraphReveal();
     }, 720);
   }
 
@@ -1110,6 +1320,14 @@ async function setupIntroOverlay() {
   }
 
   window.setTimeout(closeIntroOverlay, INTRO_DURATION_MS);
+}
+
+function finishIntroGraphReveal() {
+  state.isInitialLoading = false;
+  state.introFinished = true;
+  document.body.classList.remove("graph-intro-active");
+  document.body.classList.add("graph-intro-finished", "intro-concepts-visible");
+  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS);
 }
 
 async function pickIntroMessage() {
@@ -1206,6 +1424,7 @@ function hasSearchableMeaning(text) {
 }
 
 function buildSearchHaystack(node) {
+  const card = getCardForNode(node);
   const fields = [
     node.id,
     node.label,
@@ -1217,9 +1436,18 @@ function buildSearchHaystack(node) {
     node.canonical_term,
     node.text_preview,
     node.count,
+    card.display_name,
+    card.title,
+    card.topic,
+    card.theme,
+    card.playlist_type_tag,
+    card.tags,
+    card.aliases,
+    card.related_terms,
+    card.sentences,
   ];
 
-  const sources = getSourcesForNodeWithFallback(node);
+  const sources = getSourcesForNodeWithFallback(node, card);
   sources.forEach((source) => {
     fields.push(
       source.title,
@@ -1257,11 +1485,30 @@ function getFilteredData() {
   return data;
 }
 
+function isCoreConceptNode(node) {
+  const roleFields = [
+    node.concept_role,
+    node.role,
+    node.card_role,
+    node.node_role,
+  ].filter(Boolean).map((item) => String(item).toLowerCase());
+
+  if (roleFields.some((item) => item.includes("core") || item.includes("核心"))) return true;
+  if (node.is_core === true || node.core === true) return true;
+  return false;
+}
+
 function getMainViewData() {
+  const allConcepts = state.allNodes.filter((node) => node.type === "concept");
+  const hasCoreConcept = allConcepts.some(isCoreConceptNode);
+
   const nodes = state.allNodes.filter((node) => {
     if (node.type !== "topic" && node.type !== "concept") return false;
     if (!state.visibleTypes.has(node.type)) return false;
     if (state.selectedCategory !== "all" && node.level1_category !== state.selectedCategory) return false;
+
+    // 首頁主圖：Topic + Core Concept。若舊資料還沒標 core，fallback 保留 concept，避免空圖。
+    if (node.type === "concept" && hasCoreConcept && !isCoreConceptNode(node)) return false;
     return true;
   });
 
@@ -1485,6 +1732,10 @@ function ensureSvgDefs(svg) {
     .attr("stop-color", "#7d7ee8");
 }
 
+/* =========================================================
+[不要大改] 11. Graph render
+- 首頁 preset layout；點擊後才進 concept_terms / term_context。
+========================================================= */
 function renderGraph() {
   const svg = d3.select("#graphSvg");
   state.svg = svg;
@@ -1538,24 +1789,25 @@ function updateGraph() {
   }
 
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
-
   const preparedEdges = edges
-    .filter((edge) => nodeMap.has(edge.source) && nodeMap.has(edge.target))
+    .filter((edge) => nodeMap.has(getEdgeSourceId(edge)) && nodeMap.has(getEdgeTargetId(edge)))
     .map((edge) => ({ ...edge }));
+
+  const usePresetLayout = state.viewMode === "main";
+  if (usePresetLayout) {
+    applyPresetMainLayout(nodes, preparedEdges, width, height);
+  }
 
   state.linkSelection
     .selectAll("line")
-    .data(preparedEdges, (edge) => edge.id)
+    .data(preparedEdges, (edge) => edge.id || `${getEdgeSourceId(edge)}__${getEdgeTargetId(edge)}__${edge.type || "edge"}`)
     .join(
       (enter) =>
         enter
           .append("line")
           .attr("class", "link")
           .attr("stroke", (edge) => edgeColors[edge.type] || "rgba(96,129,137,0.5)")
-          .attr(
-            "stroke-width",
-            (edge) => Math.max(1, Math.min(5, Math.log((edge.weight || 1) + 1)))
-          ),
+          .attr("stroke-width", (edge) => Math.max(1, Math.min(5, Math.log((edge.weight || 1) + 1)))),
       (update) => update,
       (exit) => exit.remove()
     );
@@ -1567,7 +1819,7 @@ function updateGraph() {
       (enter) => {
         const g = enter
           .append("g")
-          .attr("class", "node")
+          .attr("class", (node) => `node node-${node.type}${isCoreConceptNode(node) ? " node-core" : ""}`)
           .call(
             d3
               .drag()
@@ -1602,6 +1854,7 @@ function updateGraph() {
       },
       (update) => {
         update
+          .attr("class", (node) => `node node-${node.type}${isCoreConceptNode(node) ? " node-core" : ""}`)
           .select("circle")
           .attr("r", (node) => getNodeRadius(node))
           .attr("fill", (node) => nodeColors[node.type] || nodeColors.unknown);
@@ -1619,7 +1872,7 @@ function updateGraph() {
       (exit) => exit.remove()
     );
 
-  state.svg.on("click", (event) => {
+  state.svg.on("click", () => {
     if (isMobileLayout()) collapseMobileSidebar();
   });
 
@@ -1628,6 +1881,23 @@ function updateGraph() {
     resetZoom();
   });
 
+  if (usePresetLayout) {
+    state.forceStarted = false;
+    state.linkSelection
+      .selectAll("line")
+      .attr("x1", (edge) => getEdgeNode(edge.source, nodeMap).x)
+      .attr("y1", (edge) => getEdgeNode(edge.source, nodeMap).y)
+      .attr("x2", (edge) => getEdgeNode(edge.target, nodeMap).x)
+      .attr("y2", (edge) => getEdgeNode(edge.target, nodeMap).y);
+
+    nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
+    requestAnimationFrame(() => focusNodeGroup(nodes.map((node) => node.id)));
+    highlightSelection();
+    updateBackToMainButton();
+    return;
+  }
+
+  state.forceStarted = true;
   state.simulation = d3
     .forceSimulation(nodes)
     .alphaDecay(0.08)
@@ -1665,6 +1935,37 @@ function updateGraph() {
 
   highlightSelection();
   updateBackToMainButton();
+}
+
+function applyPresetMainLayout(nodes, edges, width, height) {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const topicNodes = nodes.filter((node) => node.type === "topic");
+  const conceptNodes = nodes.filter((node) => node.type === "concept");
+  const topicRadius = Math.max(120, Math.min(width, height) * (isMobileLayout() ? 0.34 : 0.32));
+  const conceptRadius = Math.max(62, Math.min(width, height) * (isMobileLayout() ? 0.18 : 0.20));
+
+  topicNodes.forEach((node, index) => {
+    const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / Math.max(1, topicNodes.length);
+    node.x = centerX + Math.cos(angle) * topicRadius;
+    node.y = centerY + Math.sin(angle) * topicRadius;
+    node.fx = node.x;
+    node.fy = node.y;
+  });
+
+  conceptNodes.forEach((node, index) => {
+    const angle = (-Math.PI / 2) + (Math.PI * 2 * index) / Math.max(1, conceptNodes.length);
+    const jitter = (index % 2) * 22;
+    node.x = centerX + Math.cos(angle) * (conceptRadius + jitter);
+    node.y = centerY + Math.sin(angle) * (conceptRadius + jitter);
+    node.fx = node.x;
+    node.fy = node.y;
+  });
+}
+
+function getEdgeNode(value, nodeMap) {
+  if (value && typeof value === "object") return value;
+  return nodeMap.get(value) || { x: 0, y: 0 };
 }
 
 /* ================================
@@ -1747,8 +2048,13 @@ function shortenLabel(label, type) {
    Selection / Highlight
 ================================ */
 
+/* =========================================================
+[不要改壞] 12. Node interaction
+- Concept click 必須保留自動展開 Terms。
+========================================================= */
 function handleNodeClick(node) {
   if (!node) return;
+  state.activeTag = null;
 
   if (node.type === "concept") {
     if (state.viewMode === "main" && !state.previousMainTransform && state.svg) {
@@ -1993,6 +2299,10 @@ function highlightSelection() {
    Info Panel
 ================================ */
 
+/* =========================================================
+[可改] 13. Info Panel render
+- Sentences / Sources 只放 Info Panel，不進主圖。
+========================================================= */
 function renderDefaultInfo() {
   setInfoTitle("尚未選擇節點");
   document.getElementById("infoTags").innerHTML = "<span>請點選圖上的節點</span>";
@@ -2002,25 +2312,55 @@ function renderDefaultInfo() {
 }
 
 function renderInfoPanel(node) {
-  setInfoTitle(node.label || node.id);
+  const card = getCardForNode(node);
+  setInfoTitle(card.display_name || card.title || node.label || node.id);
 
-  const tags = [
-    typeLabel(node.type),
-    node.level1_category,
-    node.level2_concept && node.type !== "concept" ? node.level2_concept : "",
-    `出現次數 ${node.count || 0}`,
-  ].filter(Boolean);
+  const tags = collectDisplayTags(node, card);
+  renderInfoTags(tags);
 
-  document.getElementById("infoTags").innerHTML = tags
-    .map((tag) => `<span>${escapeHtml(tag)}</span>`)
-    .join("");
-
-  renderRelatedTerms(node);
-  renderRelatedPhrases(node);
-  renderSources(node);
+  renderRelatedTerms(node, card);
+  renderRelatedPhrases(node, card);
+  renderSources(node, card);
 }
 
-function renderRelatedTerms(node) {
+function getCardForNode(node) {
+  if (!node) return {};
+  return state.graphCards[node.id] || state.graphCards[node.card_id] || {};
+}
+
+function collectDisplayTags(node, card = {}) {
+  const rawTags = [
+    node.theme,
+    card.theme,
+    node.level1_category,
+    card.topic,
+    node.playlist_type_tag,
+    card.playlist_type_tag,
+    ...(Array.isArray(node.tags) ? node.tags : splitList(node.tags)),
+    ...(Array.isArray(card.tags) ? card.tags : splitList(card.tags)),
+  ];
+
+  return Array.from(new Set(rawTags.map(cleanTagText).filter(Boolean))).slice(0, 18);
+}
+
+function renderInfoTags(tags) {
+  const box = document.getElementById("infoTags");
+  if (!box) return;
+
+  if (!tags || tags.length === 0) {
+    box.innerHTML = "<span>請點選圖上的節點</span>";
+    return;
+  }
+
+  box.innerHTML = tags
+    .map((tag) => {
+      const label = tag.startsWith("#") ? tag : tag;
+      return `<button type="button" class="hashtag-chip" data-tag="${escapeAttribute(tag)}">${escapeHtml(label)}</button>`;
+    })
+    .join("");
+}
+
+function renderRelatedTerms(node, card = {}) {
   const box = document.getElementById("relatedTerms");
 
   if (!box) return;
@@ -2029,15 +2369,18 @@ function renderRelatedTerms(node) {
     .filter((item) => item.type === "term")
     .slice(0, 30);
 
-  const matchedTerms = String(node.matched_terms || "")
-    .split("、")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const matchedTerms = splitList(node.matched_terms);
+  const cardTerms = [
+    ...splitList(card.related_terms),
+    ...splitList(card.terms),
+    ...splitList(card.aliases),
+  ];
 
   const labels = Array.from(
     new Set([
       ...relatedNodes.map((item) => item.label),
       ...matchedTerms,
+      ...cardTerms,
       node.canonical_term,
     ].filter(Boolean))
   ).slice(0, 36);
@@ -2048,11 +2391,11 @@ function renderRelatedTerms(node) {
   }
 
   box.innerHTML = labels
-    .map((label) => `<span>${escapeHtml(label)}</span>`)
+    .map((label) => `<button type="button" class="related-term-chip" data-term="${escapeAttribute(label)}">${escapeHtml(label)}</button>`)
     .join("");
 }
 
-function renderRelatedPhrases(node) {
+function renderRelatedPhrases(node, card = {}) {
   const box = document.getElementById("relatedPhrases");
 
   if (!box) return;
@@ -2068,14 +2411,12 @@ function renderRelatedPhrases(node) {
   });
 
   if (node.text_preview) {
-    String(node.text_preview)
-      .split(" || ")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .forEach((item) => phraseTexts.push(item));
+    splitList(node.text_preview).forEach((item) => phraseTexts.push(item));
   }
 
-  const sources = getSourcesForNodeWithFallback(node);
+  splitList(card.sentences || card.related_sentences || card.examples).forEach((item) => phraseTexts.push(item));
+
+  const sources = getSourcesForNodeWithFallback(node, card);
 
   sources.slice(0, 4).forEach((source) => {
     if (source.text) {
@@ -2095,12 +2436,12 @@ function renderRelatedPhrases(node) {
     .join("");
 }
 
-function renderSources(node) {
+function renderSources(node, card = {}) {
   const box = document.getElementById("sourceList");
 
   if (!box) return;
 
-  const sources = getSourcesForNodeWithFallback(node);
+  const sources = getSourcesForNodeWithFallback(node, card);
 
   if (sources.length === 0) {
     box.innerHTML = '<span class="muted">尚無資料</span>';
@@ -2110,7 +2451,7 @@ function renderSources(node) {
   box.innerHTML = sources
     .slice(0, 18)
     .map((source) => {
-      const title = source.title || source.file || "未命名來源";
+      const title = source.source_label || source.title || source.file || "未命名來源";
       const time = source.timestamp || "";
       const url = source.timestamp_url || source.base_url || "";
       const text = source.text || "";
@@ -2132,8 +2473,9 @@ function renderSources(node) {
     .join("");
 }
 
-function getSourcesForNodeWithFallback(node) {
-  const directSources = state.graphSources[node.id] || [];
+function getSourcesForNodeWithFallback(node, card = {}) {
+  const cardSources = Array.isArray(card.sources) ? card.sources : [];
+  const directSources = [...(state.graphSources[node.id] || []), ...cardSources];
 
   if (directSources.length > 0) {
     return directSources;
@@ -2180,15 +2522,139 @@ function getNeighborNodes(nodeId) {
   return state.allNodes.filter((node) => neighborIds.has(node.id));
 }
 
+
+/* ================================
+   Related terms / tags interaction
+================================ */
+
+/* =========================================================
+[保留] 14. Related terms / tags interaction
+- Related term 與 hashtag 都要能連動 zoom / focus。
+========================================================= */
+function setupRelatedInteractions() {
+  const relatedTerms = document.getElementById("relatedTerms");
+  if (!relatedTerms) return;
+
+  relatedTerms.addEventListener("click", (event) => {
+    const button = event.target.closest(".related-term-chip");
+    if (!button) return;
+    focusByRelatedTerm(button.dataset.term || button.textContent || "");
+  });
+}
+
+function setupTagInteractions() {
+  const infoTags = document.getElementById("infoTags");
+  if (!infoTags) return;
+
+  infoTags.addEventListener("click", (event) => {
+    const button = event.target.closest(".hashtag-chip");
+    if (!button) return;
+    focusByHashtag(button.dataset.tag || button.textContent || "");
+  });
+}
+
+function focusByRelatedTerm(termText) {
+  const keyword = normalizeSearchKeyword(termText);
+  if (!keyword) return;
+
+  const matchedNode = state.allNodes.find((node) => {
+    if (node.type !== "term" && node.type !== "concept" && node.type !== "topic") return false;
+    return buildSearchHaystack(node).includes(keyword);
+  });
+
+  if (matchedNode) {
+    if (matchedNode.type === "term") {
+      const parentConceptId = findParentConceptIdForTerm(matchedNode.id);
+      state.viewMode = parentConceptId ? "term_context" : "main";
+      state.activeConceptId = parentConceptId;
+      state.activeTermId = matchedNode.id;
+    } else if (matchedNode.type === "concept") {
+      state.viewMode = "concept_terms";
+      state.activeConceptId = matchedNode.id;
+      state.activeTermId = null;
+    } else {
+      state.viewMode = "main";
+      state.activeConceptId = null;
+      state.activeTermId = null;
+    }
+
+    state.selectedNodeId = matchedNode.id;
+    updateGraph();
+    window.setTimeout(() => {
+      selectNode(matchedNode.id);
+      focusNode(matchedNode.id);
+      updateBackToMainButton();
+    }, 160);
+    return;
+  }
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.value = termText;
+  searchNode();
+}
+
+function focusByHashtag(tagText) {
+  const tag = cleanTagText(tagText);
+  if (!tag) return;
+
+  const matchedNodes = state.allNodes.filter((node) => nodeMatchesTag(node, tag));
+  if (matchedNodes.length === 0) return;
+
+  state.activeTag = tag;
+  const matchedIds = new Set(matchedNodes.map((node) => node.id));
+
+  state.nodeSelection
+    .selectAll("g")
+    .classed("hashtag-active", (node) => matchedIds.has(node.id))
+    .classed("dimmed", (node) => !matchedIds.has(node.id));
+
+  state.linkSelection
+    .selectAll("line")
+    .classed("dimmed", (edge) => {
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      return !matchedIds.has(sourceId) && !matchedIds.has(targetId);
+    });
+
+  focusNodeGroup(Array.from(matchedIds));
+}
+
+function nodeMatchesTag(node, tag) {
+  const card = getCardForNode(node);
+  const values = [
+    node.theme,
+    card.theme,
+    node.level1_category,
+    node.level2_concept,
+    node.playlist_type_tag,
+    card.playlist_type_tag,
+    node.label,
+    node.canonical_term,
+    ...(Array.isArray(node.tags) ? node.tags : splitList(node.tags)),
+    ...(Array.isArray(card.tags) ? card.tags : splitList(card.tags)),
+  ];
+
+  const normalizedTag = tag.replace(/^#/, "");
+  return values
+    .map(cleanTagText)
+    .filter(Boolean)
+    .some((value) => value === tag || value.replace(/^#/, "") === normalizedTag || value.includes(normalizedTag));
+}
+
 /* ================================
    Search / Zoom
 ================================ */
 
+/* =========================================================
+[保留] 7. Search
+- 搜尋既有節點 / 卡片，不與 Seed 共用。
+========================================================= */
 function searchNode() {
   const input = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(input ? input.value : "");
 
   if (!keyword) return;
+  addHistoryItem("search", keyword);
 
   const matchedNodes = state.allNodes.filter((node) => buildSearchHaystack(node).includes(keyword));
 
@@ -2198,6 +2664,7 @@ function searchNode() {
   }
 
   const matchedNode = matchedNodes[0];
+  state.activeTag = null;
   setVisibleTypes(["topic", "concept", "term", "phrase"]);
 
   if (matchedNode.type === "term") {
@@ -2275,15 +2742,64 @@ function resetZoom() {
 ================================ */
 
 function typeLabel(type) {
-  const map = {
-    topic: "第一層主題",
-    concept: "第二層概念",
-    term: "詞彙",
-    phrase: "句子",
-  };
-
-  return map[type] || type;
+  return UI_TYPES[type] || type;
 }
+
+
+function splitList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+
+  return String(value)
+    .split(/\s*\|\|\s*|[、,，;；\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cleanTopicLabel(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^\d+[_\.．、\-\s]+/, "")
+    .replace(/^0\d+[_\.．、\-\s]+/, "");
+}
+
+function cleanTagText(value) {
+  const text = cleanTopicLabel(value)
+    .replace(/^(主題|概念|詞彙|句子|terms?)[:：\s]+/i, "")
+    .trim();
+  if (!text || text === "none") return "";
+  return text;
+}
+
+/* =========================================================
+[可改] 9. Recent history
+========================================================= */
+function restoreRecentHistory() {
+  state.searchHistory = readHistory(STORAGE_KEYS.searchHistory);
+  state.seedHistory = readHistory(STORAGE_KEYS.seedHistory);
+}
+
+function readHistory(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function addHistoryItem(type, value) {
+  const text = String(value || "").trim();
+  if (!text) return;
+
+  const key = type === "seed" ? STORAGE_KEYS.seedHistory : STORAGE_KEYS.searchHistory;
+  const next = [text, ...readHistory(key).filter((item) => item !== text)].slice(0, MAX_HISTORY_ITEMS);
+  localStorage.setItem(key, JSON.stringify(next));
+
+  if (type === "seed") state.seedHistory = next;
+  else state.searchHistory = next;
+}
+
 
 function shortenText(text, maxLen) {
   if (!text) return "";
@@ -2309,7 +2825,8 @@ function escapeAttribute(text) {
 ================================ */
 
 function dragStarted(event, node) {
-  if (!event.active) state.simulation.alphaTarget(0.3).restart();
+  if (state.viewMode === "main") return;
+  if (state.simulation && !event.active) state.simulation.alphaTarget(0.3).restart();
 
   node.fx = node.x;
   node.fy = node.y;
@@ -2318,10 +2835,12 @@ function dragStarted(event, node) {
 function dragged(event, node) {
   node.fx = event.x;
   node.fy = event.y;
+  node.x = event.x;
+  node.y = event.y;
 }
 
 function dragEnded(event, node) {
-  if (!event.active) state.simulation.alphaTarget(0);
+  if (state.simulation && !event.active) state.simulation.alphaTarget(0);
 
   node.fx = null;
   node.fy = null;

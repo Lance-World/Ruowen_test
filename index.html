@@ -4,13 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ruowen Knowledge Map</title>
-  <link rel="stylesheet" href="./css/style.css?v=viewmode_toolbar_20260507_01" />
+  <link rel="stylesheet" href="./css/style.css?v=a7_13_linked_clean_20260508_01" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
   <div class="app-shell">
     <aside id="sidebar" class="sidebar">
       <button id="searchToggleBtn" class="search-toggle" title="搜尋 / 收合搜尋" aria-label="搜尋 / 收合搜尋">🔍</button>
+      <button id="seedToggleBtn" class="seed-toggle" title="Seed Idea / 靈感探索" aria-label="Seed Idea / 靈感探索">✦</button>
       <button id="sidebarToggleBtn" class="sidebar-toggle" title="收合 / 展開側邊欄" aria-label="收合 / 展開側邊欄">☰</button>
 
       <div class="logo">✦</div>
@@ -46,6 +47,24 @@
         </div>
       </div>
 
+
+      <div id="sidebarSeedPanel" class="sidebar-seed-panel seed-collapsed">
+        <div class="sidebar-seed-wrap">
+          <input
+            id="seedInput"
+            class="sidebar-seed-input"
+            type="text"
+            placeholder="一起探索吧！"
+            autocomplete="off"
+          />
+          <div class="seed-action-row">
+            <button type="button" id="seedSubmitBtn" class="seed-submit-btn">產生想法</button>
+            <button type="button" id="seedRandomBtn" class="seed-random-btn">隨機</button>
+          </div>
+          <div id="seedResult" class="seed-result" aria-live="polite"></div>
+        </div>
+      </div>
+
       <div class="sidebar-section filter-section">
         <label class="sidebar-label">顯示類型</label>
         <div class="filter-chip-row">
@@ -67,8 +86,6 @@
         <div id="categoryChips" class="sidebar-category-list"></div>
       </div>
     </aside>
-
-    <div id="sidebarResizeHandle" class="sidebar-resize-handle" title="拖曳調整側邊欄寬度"></div>
 
     <main class="main-area">
       <section id="workspace" class="workspace">
@@ -229,6 +246,6 @@
     </section>
   </div>
 
-  <script src="./app.js?v=viewmode_toolbar_20260507_01"></script>
+  <script src="./app.js?v=a7_13_linked_clean_20260508_01"></script>
 </body>
 </html>
