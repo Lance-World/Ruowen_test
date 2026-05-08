@@ -1006,9 +1006,10 @@ function setupMainVerticalResize() {
       const maxInfo = Math.max(320, rect.height * DESKTOP_INFO_MAX_VH);
       const nextHeight = clamp(rawHeight, DESKTOP_INFO_COLLAPSED_HEIGHT, maxInfo);
 
-      state.infoCompact = nextHeight <= DESKTOP_INFO_COLLAPSED_HEIGHT + 18;
-      workspace.style.setProperty("--info-height", `${nextHeight}px`);
-      localStorage.setItem("infoHeight", String(nextHeight));
+      const shouldCollapse = nextHeight <= DESKTOP_INFO_COLLAPSED_HEIGHT + 18;
+      state.infoCompact = shouldCollapse;
+      workspace.style.setProperty("--info-height", `${shouldCollapse ? DESKTOP_INFO_COLLAPSED_HEIGHT : nextHeight}px`);
+      localStorage.setItem("infoHeight", String(shouldCollapse ? DESKTOP_INFO_COLLAPSED_HEIGHT : nextHeight));
 
       applyInfoCompactState();
       resizeGraphAfterPanelChange();
@@ -1187,8 +1188,8 @@ function updateFloatingLayoutVars() {
 
   const isCollapsed = appShell.classList.contains("sidebar-collapsed");
   const sidebarLeft = 20;
-  const sidebarWidth = isCollapsed ? 64 : 280;
-  const infoLeft = isCollapsed ? 96 : 340;
+  const sidebarWidth = isCollapsed ? 64 : 340;
+  const infoLeft = isCollapsed ? 96 : 400;
 
   appShell.style.setProperty("--sidebar-left", `${sidebarLeft}px`);
   appShell.style.setProperty("--sidebar-top", "20px");
@@ -1308,9 +1309,11 @@ async function setupIntroOverlay() {
     return;
   }
 
+  // Greeting should start immediately when the page opens; do not wait for intro message fetch.
+  startIntroGreetingTypewriter(greetingEl);
+
   const message = await pickIntroMessage();
   textEl.textContent = message;
-  startIntroGreetingTypewriter(greetingEl);
 
   let closed = false;
 
@@ -2284,7 +2287,7 @@ function getEdgeNode(value, nodeMap) {
 function renderNodeLabel(textSelection, node) {
   textSelection.selectAll("*").remove();
 
-  const label = shortenLabel(node.label, node.type);
+  const label = shortenLabel(getNodeDisplayLabel(node), node.type);
 
   textSelection
     .append("tspan")
@@ -2339,6 +2342,16 @@ function getLinkDistance(edge) {
   if (edge.type === "alias_of") return 96;
   if (edge.type === "related_phrase") return 120;
   return 124;
+}
+
+function getNodeDisplayLabel(node) {
+  const raw = node && (node.label || node.canonical_term || node.id);
+  const text = String(raw || "").trim();
+  if (!text) return "";
+
+  // UI display only: remove leading ordering tokens such as 01_, 02. or 03、.
+  // Keep the original node id/category for data matching.
+  return cleanTopicLabel(text);
 }
 
 function shortenLabel(label, type) {
