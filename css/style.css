@@ -816,3 +816,99 @@ body.about-modal-lock { overflow: hidden; }
 .seed-mode-chip[title*="路徑"] {
   letter-spacing: 0.01em;
 }
+
+/* =========================================================
+   A7-13 Knowledge Star Map Refactor
+   單一宇宙 / 顯示密度 / 焦點視角 / 卡片喚出
+========================================================= */
+body.graph-entering .link {
+  stroke-opacity: 0;
+  transition: stroke-opacity 0.72s ease;
+}
+
+body.graph-edges-visible .link,
+body.graph-intro-finished .link {
+  stroke-opacity: 0.62;
+  transition: stroke-opacity 0.72s ease;
+}
+
+.node-topic text,
+.node-concept text,
+.node-term text {
+  font-weight: 900;
+}
+
+.node-focus-active circle,
+.node.selected circle {
+  stroke: rgba(216, 163, 111, 0.95);
+  stroke-width: 4px;
+  filter: drop-shadow(0 0 14px rgba(216, 163, 111, 0.36));
+}
+
+.node-focus-related {
+  opacity: 0.86;
+}
+
+.node-focus-dimmed,
+.node.dimmed {
+  opacity: 0.15;
+}
+
+.node-expanded-term circle {
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 2px;
+  filter: drop-shadow(0 8px 16px rgba(23, 60, 67, 0.12));
+}
+
+.node-expanded-term text {
+  font-size: 11px;
+  opacity: 0.88;
+}
+
+.link-focus-related,
+.link.highlight {
+  stroke-opacity: 0.95 !important;
+  stroke-width: 2.6px;
+}
+
+.link-dimmed,
+.link.dimmed {
+  stroke-opacity: 0.08 !important;
+}
+
+.node-label-soft {
+  opacity: 0.62;
+}
+
+.node-label-hidden {
+  opacity: 0;
+}
+
+body.graph-entering:not(.graph-topic-visible) .node-topic,
+body.graph-entering:not(.intro-concepts-visible) .node-concept {
+  opacity: 0;
+}
+
+body.graph-topic-visible .node-topic {
+  opacity: 1;
+}
+
+body.intro-concepts-visible .node-concept {
+  opacity: 1;
+}
+
+body.graph-entering .node text {
+  opacity: 0;
+  transition: opacity 0.52s ease 0.42s;
+}
+
+body.graph-interaction-enabled .node text,
+body.graph-intro-finished .node text {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .node-expanded-term text {
+    font-size: 10px;
+  }
+}

@@ -53,6 +53,14 @@ const state = {
   currentEdges: [],
   // Main view uses a static preset layout at page load, but Topic/Core Concept nodes remain draggable.
   manualMainPositions: new Map(),
+
+  // Knowledge Star Map focus model. Keep viewMode for backward compatibility,
+  // but new graph behavior is driven by currentFocus + expandedTermNodeIds.
+  currentFocus: { type: "universe", value: null },
+  expandedTermNodeIds: new Set(),
+  seedFocusNodeIds: new Set(),
+  hasEnteredUniverse: false,
+  initialAnimationDone: false,
 };
 
 /* =========================================================
@@ -97,6 +105,10 @@ const INTRO_GREETING_TYPE_MS = 700;
 const DESKTOP_INFO_COLLAPSED_HEIGHT = 86;
 const DESKTOP_INFO_DEFAULT_HEIGHT = 280;
 const DESKTOP_INFO_MAX_VH = 0.8;
+const INITIAL_CONCEPT_LIMIT = 250;
+const EXPANDED_TERM_LIMIT = 20;
+const TERM_ORBIT_INNER_RADIUS = 78;
+const TERM_ORBIT_OUTER_RADIUS = 122;
 
 // Seed AI priority:
 // 1) Local Ollama on the user's machine. No cloud API key.
@@ -1133,26 +1145,14 @@ function openSeedInfoPanel() {
 }
 
 function highlightSeedResultNodes(nodeIds = []) {
-  if (!state.nodeSelection || !state.linkSelection) return;
   const visibleIds = new Set((state.currentNodes || []).map((node) => node.id));
-  const targetIds = new Set((nodeIds || []).filter((id) => visibleIds.has(id)));
+  state.seedFocusNodeIds = new Set((nodeIds || []).filter((id) => visibleIds.has(id)));
+  state.currentFocus = { type: "seed", value: Array.from(state.seedFocusNodeIds) };
+  state.activeTag = null;
+  applyGraphFocusClasses();
 
-  state.nodeSelection
-    .selectAll("g")
-    .classed("hashtag-active", (node) => targetIds.has(node.id))
-    .classed("dimmed", (node) => targetIds.size > 0 && !targetIds.has(node.id));
-
-  state.linkSelection
-    .selectAll("line")
-    .classed("dimmed", (edge) => {
-      if (targetIds.size === 0) return false;
-      const sourceId = getEdgeSourceId(edge);
-      const targetId = getEdgeTargetId(edge);
-      return !targetIds.has(sourceId) && !targetIds.has(targetId);
-    });
-
-  if (targetIds.size > 0) {
-    requestAnimationFrame(() => focusNodeGroup(Array.from(targetIds)));
+  if (state.seedFocusNodeIds.size > 0) {
+    requestAnimationFrame(() => focusNodeGroup(Array.from(state.seedFocusNodeIds)));
   }
 }
 
@@ -1191,6 +1191,8 @@ function setupCategoryChips() {
     button.classList.add("active");
     state.selectedCategory = button.dataset.category || "all";
     state.activeTag = null;
+    state.currentFocus = { type: "universe", value: null };
+    clearExpandedTerms();
     updateGraph();
   });
 }
@@ -1359,9 +1361,12 @@ function showAll() {
   state.selectedCategory = "all";
   state.selectedNodeId = null;
   state.viewMode = "main";
+  state.currentFocus = { type: "universe", value: null };
   state.activeConceptId = null;
   state.activeTermId = null;
   state.activeTag = null;
+  state.seedFocusNodeIds = new Set();
+  clearExpandedTerms();
 
   document.querySelectorAll(".filter-chip").forEach((item) => {
     item.classList.add("active");
@@ -1387,7 +1392,14 @@ function showAll() {
 
 function clearSelection() {
   state.selectedNodeId = null;
-  highlightSelection();
+  state.activeConceptId = null;
+  state.activeTermId = null;
+  state.activeTag = null;
+  state.currentFocus = { type: "universe", value: null };
+  state.seedFocusNodeIds = new Set();
+  clearExpandedTerms();
+
+  updateGraph();
   renderDefaultInfo();
 
   if (isMobileLayout()) {
@@ -2088,29 +2100,17 @@ async function setupIntroOverlay() {
 function finishIntroGraphReveal() {
   state.isInitialLoading = false;
   state.introFinished = true;
+  state.hasEnteredUniverse = true;
+  state.currentFocus = { type: "universe", value: null };
 
-  // Page-load sequence:
-  // 1. Intro overlay fades out first.
-  // 2. Whiteboard fades in.
-  // 3. Topic nodes run the first burst simulation.
-  // 4. Core Concept nodes appear and run the second burst simulation.
-  // 5. Interaction is enabled after the two-stage reveal starts.
+  // Star Map entry sequence:
+  // Overlay fades out first -> board appears -> center stardust expands into Topic anchors -> Concepts surface -> edges fade in.
   document.body.classList.remove("graph-intro-active");
-  document.body.classList.add("graph-board-visible");
+  document.body.classList.add("graph-board-visible", "graph-entering");
 
   requestAnimationFrame(() => {
-    document.body.classList.add("graph-topic-visible");
-    startMainViewBurstSimulation("topic");
-
-    window.setTimeout(() => {
-      document.body.classList.add("intro-concepts-visible");
-      startMainViewBurstSimulation("concept");
-
-      window.setTimeout(() => {
-        document.body.classList.add("graph-interaction-enabled", "graph-intro-finished");
-        fitVisibleNodes();
-      }, 920);
-    }, INITIAL_CONCEPT_DELAY_MS);
+    updateGraph();
+    startUniverseEntryAnimation();
   });
 }
 
@@ -2275,24 +2275,19 @@ function buildSearchHaystack(node) {
 ================================ */
 
 function getFilteredData() {
-  let data;
+  const nodes = getVisibleNodes();
+  const visibleNodeIds = new Set(nodes.map((node) => node.id));
+  const edges = getVisibleEdges(visibleNodeIds);
 
-  if (state.viewMode === "concept_terms" && state.activeConceptId) {
-    data = getConceptTermsData(state.activeConceptId);
-  } else if (state.viewMode === "term_context" && state.activeConceptId && state.activeTermId) {
-    data = getTermContextData(state.activeConceptId, state.activeTermId);
-  } else {
-    data = getMainViewData();
-  }
-
-  state.currentNodes = data.nodes;
-  state.currentEdges = data.edges;
-  return data;
+  state.currentNodes = nodes;
+  state.currentEdges = edges;
+  return { nodes, edges };
 }
 
 function isCoreConceptNode(node) {
   const roleFields = [
     node.concept_role,
+    node.concept_rank,
     node.role,
     node.card_role,
     node.node_role,
@@ -2303,97 +2298,139 @@ function isCoreConceptNode(node) {
   return false;
 }
 
-function getMainViewData() {
-  const allConcepts = state.allNodes.filter((node) => node.type === "concept");
-  const hasCoreConcept = allConcepts.some(isCoreConceptNode);
+function isGraphEligibleConcept(node) {
+  const values = [node.graph_eligible, node.graphEligible, node.public_safe, node.publicSafe]
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => String(item).trim().toLowerCase());
 
-  const nodes = state.allNodes.filter((node) => {
-    if (node.type !== "topic" && node.type !== "concept") return false;
-    if (!state.visibleTypes.has(node.type)) return false;
+  if (values.some((item) => ["no", "false", "0", "否", "不公開"].includes(item))) return false;
+  return true;
+}
+
+function getConceptPriorityScore(node) {
+  const confidence = Number(node.confidence ?? node.score ?? node.semantic_score ?? 0);
+  const frequency = Number(node.frequency ?? node.count ?? 0);
+  let score = 0;
+  if (isGraphEligibleConcept(node)) score += 100000;
+  if (isCoreConceptNode(node)) score += 50000;
+  if (Number.isFinite(confidence)) score += confidence * 1000;
+  if (Number.isFinite(frequency)) score += Math.min(frequency, 5000);
+  return score;
+}
+
+function getUniverseConceptNodes() {
+  const concepts = state.allNodes
+    .filter((node) => node.type === "concept")
+    .filter((node) => state.visibleTypes.has("concept"))
+    .filter((node) => state.selectedCategory === "all" || node.level1_category === state.selectedCategory)
+    .filter(isGraphEligibleConcept)
+    .sort((a, b) => getConceptPriorityScore(b) - getConceptPriorityScore(a));
+
+  return concepts.slice(0, INITIAL_CONCEPT_LIMIT);
+}
+
+function getUniverseNodes() {
+  const topics = state.allNodes.filter((node) => {
+    if (node.type !== "topic") return false;
+    if (!state.visibleTypes.has("topic")) return false;
     if (state.selectedCategory !== "all" && node.level1_category !== state.selectedCategory) return false;
-
-    // 首頁主圖：Topic + Core Concept。若舊資料還沒標 core，fallback 保留 concept，避免空圖。
-    if (node.type === "concept" && hasCoreConcept && !isCoreConceptNode(node)) return false;
     return true;
   });
 
-  const visibleIds = new Set(nodes.map((node) => node.id));
-  const edges = state.allEdges.filter((edge) => {
+  return [...topics, ...getUniverseConceptNodes()];
+}
+
+function getVisibleNodes() {
+  const universeNodes = getUniverseNodes();
+  const universeIds = new Set(universeNodes.map((node) => node.id));
+
+  // Display density rule: the universe is always Topic + Concept.
+  // Terms are only "called out" around an active Concept.
+  const expandedTerms = state.allNodes
+    .filter((node) => node.type === "term" && state.expandedTermNodeIds.has(node.id))
+    .slice(0, EXPANDED_TERM_LIMIT);
+
+  const byId = new Map();
+  universeNodes.forEach((node) => byId.set(node.id, node));
+  expandedTerms.forEach((node) => byId.set(node.id, node));
+
+  // If a selected Concept was not in the top 250 universe set, keep it visible during focus.
+  if (state.activeConceptId && !universeIds.has(state.activeConceptId)) {
+    const activeConcept = getNodeById(state.activeConceptId);
+    if (activeConcept && activeConcept.type === "concept") byId.set(activeConcept.id, activeConcept);
+  }
+
+  // If a selected Term is focused, keep it visible without opening the whole term universe.
+  if (state.activeTermId) {
+    const activeTerm = getNodeById(state.activeTermId);
+    if (activeTerm && activeTerm.type === "term") byId.set(activeTerm.id, activeTerm);
+  }
+
+  return Array.from(byId.values()).filter((node) => ["topic", "concept", "term"].includes(node.type));
+}
+
+function getVisibleEdges(visibleNodeIds) {
+  return state.allEdges.filter((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
-    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
+    if (!visibleNodeIds.has(sourceId) || !visibleNodeIds.has(targetId)) return false;
 
     const sourceNode = getNodeById(sourceId);
     const targetNode = getNodeById(targetId);
     if (!sourceNode || !targetNode) return false;
+
+    const hasTerm = sourceNode.type === "term" || targetNode.type === "term";
+    if (hasTerm) {
+      return state.expandedTermNodeIds.has(sourceId) ||
+        state.expandedTermNodeIds.has(targetId) ||
+        sourceId === state.activeTermId ||
+        targetId === state.activeTermId;
+    }
 
     const types = new Set([sourceNode.type, targetNode.type]);
     return (types.has("topic") && types.has("concept")) ||
       (sourceNode.type === "concept" && targetNode.type === "concept");
   });
+}
 
+function getMainViewData() {
+  const nodes = getUniverseNodes();
+  const visibleIds = new Set(nodes.map((node) => node.id));
+  const edges = getVisibleEdges(visibleIds);
   return { nodes, edges };
+}
+
+function getTermsForConcept(conceptId) {
+  return Array.from(getDirectTermIdsForConcept(conceptId))
+    .map((id) => getNodeById(id))
+    .filter((node) => node && node.type === "term")
+    .sort((a, b) => {
+      const bCount = Number(b.count || b.frequency || 0);
+      const aCount = Number(a.count || a.frequency || 0);
+      return bCount - aCount;
+    })
+    .slice(0, EXPANDED_TERM_LIMIT);
+}
+
+function expandTermsAroundConcept(conceptId) {
+  const terms = getTermsForConcept(conceptId);
+  state.expandedTermNodeIds = new Set(terms.map((term) => term.id));
+  return terms;
+}
+
+function clearExpandedTerms() {
+  state.expandedTermNodeIds = new Set();
 }
 
 function getConceptTermsData(conceptId) {
-  const main = getMainViewData();
-  const termIds = getDirectTermIdsForConcept(conceptId);
-  const visibleIds = new Set([...main.nodes.map((node) => node.id), conceptId, ...termIds]);
-
-  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id) && ["topic", "concept", "term"].includes(node.type));
-  const graphVisibleIds = new Set(nodes.map((node) => node.id));
-  const edges = state.allEdges.filter((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    if (!graphVisibleIds.has(sourceId) || !graphVisibleIds.has(targetId)) return false;
-
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-    if (!sourceNode || !targetNode) return false;
-
-    const isConceptTerm = (sourceId === conceptId && targetNode.type === "term") ||
-      (targetId === conceptId && sourceNode.type === "term");
-    const isMainEdge = sourceNode.type !== "term" && targetNode.type !== "term";
-
-    return isConceptTerm || isMainEdge;
-  });
-
-  return { nodes, edges };
+  expandTermsAroundConcept(conceptId);
+  return getFilteredData();
 }
 
 function getTermContextData(conceptId, termId) {
-  const main = getMainViewData();
-  const conceptTermIds = getDirectTermIdsForConcept(conceptId);
-  const relatedTermIds = getDirectTermNeighborIds(termId);
-  const visibleIds = new Set([
-    ...main.nodes.map((node) => node.id),
-    conceptId,
-    ...conceptTermIds,
-    termId,
-    ...relatedTermIds,
-  ]);
-
-  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id) && ["topic", "concept", "term"].includes(node.type));
-  const graphVisibleIds = new Set(nodes.map((node) => node.id));
-  const edges = state.allEdges.filter((edge) => {
-    const sourceId = getEdgeSourceId(edge);
-    const targetId = getEdgeTargetId(edge);
-    if (!graphVisibleIds.has(sourceId) || !graphVisibleIds.has(targetId)) return false;
-
-    const sourceNode = getNodeById(sourceId);
-    const targetNode = getNodeById(targetId);
-    if (!sourceNode || !targetNode) return false;
-
-    const isConceptTerm = (sourceId === conceptId && targetNode.type === "term") ||
-      (targetId === conceptId && sourceNode.type === "term");
-    const isTermRelated = sourceNode.type === "term" && targetNode.type === "term" &&
-      (sourceId === termId || targetId === termId || (conceptTermIds.has(sourceId) && conceptTermIds.has(targetId)));
-    const isMainEdge = sourceNode.type !== "term" && targetNode.type !== "term";
-
-    return isConceptTerm || isTermRelated || isMainEdge;
-  });
-
-  return { nodes, edges };
+  if (conceptId) expandTermsAroundConcept(conceptId);
+  if (termId) state.expandedTermNodeIds.add(termId);
+  return getFilteredData();
 }
 
 function getNodeById(nodeId) {
@@ -2586,23 +2623,19 @@ function updateGraph() {
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
 
-  if (state.simulationStopTimer) {
-    window.clearTimeout(state.simulationStopTimer);
-    state.simulationStopTimer = null;
-  }
-
-  if (state.simulation) {
-    state.simulation.stop();
-  }
+  stopActiveSimulation();
 
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const preparedEdges = edges
     .filter((edge) => nodeMap.has(getEdgeSourceId(edge)) && nodeMap.has(getEdgeTargetId(edge)))
     .map((edge) => ({ ...edge }));
 
-  const usePresetLayout = state.viewMode === "main";
-  if (usePresetLayout) {
-    applyPresetMainLayout(nodes, preparedEdges, width, height);
+  if (state.isInitialLoading || !state.hasEnteredUniverse) {
+    applyCenterStardustLayout(nodes, width, height);
+  } else if (state.currentFocus.type === "universe") {
+    applyUniverseLayout(nodes, preparedEdges, width, height);
+  } else if (state.currentFocus.type === "node") {
+    applyConceptFocusLayout(nodes, preparedEdges, width, height);
   }
 
   state.linkSelection
@@ -2626,7 +2659,7 @@ function updateGraph() {
       (enter) => {
         const g = enter
           .append("g")
-          .attr("class", (node) => `node node-${node.type}${isCoreConceptNode(node) ? " node-core" : ""}`)
+          .attr("class", (node) => getNodeClassName(node))
           .call(
             d3
               .drag()
@@ -2661,7 +2694,7 @@ function updateGraph() {
       },
       (update) => {
         update
-          .attr("class", (node) => `node node-${node.type}${isCoreConceptNode(node) ? " node-core" : ""}`)
+          .attr("class", (node) => getNodeClassName(node))
           .select("circle")
           .attr("r", (node) => getNodeRadius(node))
           .attr("fill", (node) => nodeColors[node.type] || nodeColors.unknown);
@@ -2688,66 +2721,100 @@ function updateGraph() {
     resetZoom();
   });
 
-  if (usePresetLayout) {
-    state.forceStarted = false;
-    state.linkSelection
-      .selectAll("line")
-      .attr("x1", (edge) => getEdgeNode(edge.source, nodeMap).x)
-      .attr("y1", (edge) => getEdgeNode(edge.source, nodeMap).y)
-      .attr("x2", (edge) => getEdgeNode(edge.target, nodeMap).x)
-      .attr("y2", (edge) => getEdgeNode(edge.target, nodeMap).y);
-
-    nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
-
-    requestAnimationFrame(() => focusNodeGroup(nodes.map((node) => node.id)));
-    highlightSelection();
-    updateBackToMainButton();
-    return;
-  }
-
-  applyFocusedTermOrbitLayout(nodes, width, height);
-
-  state.forceStarted = true;
-  state.simulation = d3
-    .forceSimulation(nodes)
-    .alphaDecay(0.08)
-    .velocityDecay(0.45)
-    .force(
-      "link",
-      d3
-        .forceLink(preparedEdges)
-        .id((node) => node.id)
-        .distance((edge) => getLinkDistance(edge))
-        .strength(0.45)
-    )
-    .force("charge", d3.forceManyBody().strength((node) => getCharge(node)))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (isMobileLayout() ? 40 : 48)).strength(0.96))
-    .force("x", d3.forceX((node) => getFocusedForceTarget(node, width, height).x).strength((node) => node.type === "term" ? 0.16 : 0.052))
-    .force("y", d3.forceY((node) => getFocusedForceTarget(node, width, height).y).strength((node) => node.type === "term" ? 0.16 : 0.052))
-    .on("tick", () => {
-      state.linkSelection
-        .selectAll("line")
-        .attr("x1", (edge) => edge.source.x)
-        .attr("y1", (edge) => edge.source.y)
-        .attr("x2", (edge) => edge.target.x)
-        .attr("y2", (edge) => edge.target.y);
-
-      nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
-    });
-
-  state.simulationStopTimer = window.setTimeout(() => {
-    if (state.simulation) {
-      state.simulation.stop();
-    }
-    state.simulationStopTimer = null;
-  }, 2500);
-
-  highlightSelection();
+  updateStaticGraphPositions();
+  applyGraphFocusClasses();
   updateBackToMainButton();
 }
 
+function getNodeClassName(node) {
+  return [
+    "node",
+    `node-${node.type}`,
+    isCoreConceptNode(node) ? "node-core" : "",
+    state.expandedTermNodeIds.has(node.id) ? "node-expanded-term" : "",
+  ].filter(Boolean).join(" ");
+}
 
+function applyCenterStardustLayout(nodes, width, height) {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  nodes.forEach((node, index) => {
+    const radius = 8 + (index % 7) * 1.8;
+    const angle = index * GOLDEN_ANGLE;
+    node.x = centerX + Math.cos(angle) * radius;
+    node.y = centerY + Math.sin(angle) * radius;
+    node.fx = node.x;
+    node.fy = node.y;
+  });
+}
+
+function applyUniverseLayout(nodes, edges, width, height) {
+  const topics = nodes.filter((node) => node.type === "topic");
+  const concepts = nodes.filter((node) => node.type === "concept");
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * (isMobileLayout() ? 0.31 : 0.36);
+  const topicByConcept = buildTopicByConceptMap(concepts, topics, edges);
+
+  topics.forEach((node, index) => {
+    const saved = state.manualMainPositions.get(node.id);
+    if (saved) {
+      node.x = saved.x;
+      node.y = saved.y;
+    } else if (!Number.isFinite(node.x) || !state.initialAnimationDone) {
+      const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topics.length);
+      node.x = centerX + Math.cos(angle) * radius;
+      node.y = centerY + Math.sin(angle) * radius;
+    }
+    node.fx = node.x;
+    node.fy = node.y;
+  });
+
+  const topicMap = new Map(topics.map((topic) => [topic.id, topic]));
+  concepts.forEach((node, index) => {
+    const saved = state.manualMainPositions.get(node.id);
+    if (saved) {
+      node.x = saved.x;
+      node.y = saved.y;
+    } else if (!Number.isFinite(node.x) || !state.initialAnimationDone) {
+      const topic = topicMap.get(topicByConcept.get(node.id));
+      const baseX = topic ? topic.x : centerX;
+      const baseY = topic ? topic.y : centerY;
+      const angle = index * GOLDEN_ANGLE + seededUnitFromText(node.id, 88) * Math.PI * 2;
+      const ring = (isMobileLayout() ? 86 : 118) + (index % 4) * (isMobileLayout() ? 26 : 34);
+      node.x = clamp(baseX + Math.cos(angle) * ring, 36, width - 36);
+      node.y = clamp(baseY + Math.sin(angle) * ring, 42, height - 42);
+    }
+    node.fx = node.x;
+    node.fy = node.y;
+  });
+}
+
+function applyConceptFocusLayout(nodes, edges, width, height) {
+  applyUniverseLayout(nodes.filter((node) => node.type !== "term"), edges, width, height);
+  const concept = nodes.find((node) => node.id === state.activeConceptId && node.type === "concept");
+  if (!concept) return;
+  const terms = nodes.filter((node) => node.type === "term" && state.expandedTermNodeIds.has(node.id));
+  placeTermsAroundConcept(concept, terms, width, height);
+}
+
+function placeTermsAroundConcept(conceptNode, terms, width, height) {
+  const innerRadius = isMobileLayout() ? 70 : TERM_ORBIT_INNER_RADIUS;
+  const outerRadius = isMobileLayout() ? 108 : TERM_ORBIT_OUTER_RADIUS;
+
+  terms.slice(0, EXPANDED_TERM_LIMIT).forEach((term, index) => {
+    const isOuter = index >= 12;
+    const radius = isOuter ? outerRadius : innerRadius;
+    const ringIndex = isOuter ? index - 12 : index;
+    const ringCount = isOuter ? Math.max(1, terms.length - 12) : Math.min(terms.length, 12);
+    const angle = (Math.PI * 2 * ringIndex) / Math.max(1, ringCount) - Math.PI / 2;
+
+    term.x = clamp((conceptNode.x || width / 2) + Math.cos(angle) * radius, 28, width - 28);
+    term.y = clamp((conceptNode.y || height / 2) + Math.sin(angle) * radius, 32, height - 32);
+    term.fx = term.x;
+    term.fy = term.y;
+  });
+}
 
 function applyFocusedTermOrbitLayout(nodes, width, height) {
   if (state.viewMode !== "concept_terms" && state.viewMode !== "term_context") return;
@@ -2793,140 +2860,124 @@ function getFocusedForceTarget(node, width, height) {
   return { x: activeConcept.x || width / 2, y: activeConcept.y || height / 2 };
 }
 
-function startMainViewBurstSimulation(phase = "concept") {
-  if (state.viewMode !== "main" || !state.introFinished) return;
-  if (!state.currentNodes || state.currentNodes.length === 0) return;
+function startUniverseEntryAnimation() {
+  if (!state.introFinished || !state.currentNodes || state.currentNodes.length === 0) return;
 
   const graphCard = document.querySelector(".graph-card");
   if (!graphCard || !state.nodeSelection || !state.linkSelection) return;
 
+  state.initialAnimationDone = false;
+  document.body.classList.add("graph-entering");
+  document.body.classList.remove("graph-topic-visible", "intro-concepts-visible", "graph-edges-visible", "graph-interaction-enabled");
+
   const width = graphCard.clientWidth;
   const height = graphCard.clientHeight;
-  const allMainNodes = state.currentNodes;
-  const topics = allMainNodes.filter((node) => node.type === "topic");
-  const concepts = allMainNodes.filter((node) => node.type === "concept");
+  applyCenterStardustLayout(state.currentNodes, width, height);
+  updateStaticGraphPositions();
 
-  const simNodes = phase === "topic" ? topics : allMainNodes;
-  if (simNodes.length === 0) return;
+  window.setTimeout(() => {
+    document.body.classList.add("graph-topic-visible");
+    runTopicAnchorSimulation();
+  }, 120);
 
-  const simNodeIds = new Set(simNodes.map((node) => node.id));
-  const allNodeIds = new Set(allMainNodes.map((node) => node.id));
-  const simEdges = (state.currentEdges || [])
-    .filter((edge) => allNodeIds.has(getEdgeSourceId(edge)) && allNodeIds.has(getEdgeTargetId(edge)))
-    .map((edge) => ({ ...edge }));
+  window.setTimeout(() => {
+    document.body.classList.add("intro-concepts-visible");
+    runConceptSurfaceSimulation();
+  }, 620);
+
+  window.setTimeout(() => {
+    state.initialAnimationDone = true;
+    state.currentFocus = { type: "universe", value: null };
+    document.body.classList.add("graph-edges-visible", "graph-interaction-enabled", "graph-intro-finished");
+    document.body.classList.remove("graph-entering");
+    updateGraph();
+    fitVisibleNodes();
+  }, 1900);
+}
+
+function runTopicAnchorSimulation() {
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const topics = (state.currentNodes || []).filter((node) => node.type === "topic");
+  if (!topics.length) return;
 
   stopActiveSimulation();
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * (isMobileLayout() ? 0.30 : 0.36);
 
-  const topicAnchors = new Map();
-  topics.forEach((node) => {
-    const saved = state.manualMainPositions.get(node.id);
-    if (saved) {
-      node.x = saved.x;
-      node.y = saved.y;
-    }
-
-    if (phase === "topic") {
-      node.fx = null;
-      node.fy = null;
-    } else {
-      node.fx = node.x;
-      node.fy = node.y;
-    }
-
-    topicAnchors.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
-  });
-
-  concepts.forEach((node) => {
-    const saved = state.manualMainPositions.get(node.id);
-    if (saved) {
-      node.x = saved.x;
-      node.y = saved.y;
-    }
-
-    if (phase === "topic") {
-      node.fx = node.x;
-      node.fy = node.y;
-    } else {
-      node.fx = null;
-      node.fy = null;
-    }
-  });
-
-  const topicByConcept = buildTopicByConceptMap(concepts, topics, simEdges);
-  const conceptBurstRadius = isMobileLayout() ? 165 : 235;
-
-  if (phase === "concept") {
-    concepts.forEach((node, index) => {
-      if (state.manualMainPositions.has(node.id)) return;
-
-      const topicId = topicByConcept.get(node.id);
-      const anchor = topicId ? topicAnchors.get(topicId) : null;
-      const baseX = anchor ? anchor.x : width / 2;
-      const baseY = anchor ? anchor.y : height / 2;
-      const angle = index * GOLDEN_ANGLE + seededUnitFromText(node.id, 12) * Math.PI * 2;
-      const radius = conceptBurstRadius * (0.42 + seededUnitFromText(node.id, 13) * 0.72);
-      node.x = clamp(baseX + Math.cos(angle) * radius, 48, width - 48);
-      node.y = clamp(baseY + Math.sin(angle) * radius, 54, height - 54);
-    });
-  }
-
-  state.forceStarted = true;
-  state.simulation = d3
-    .forceSimulation(simNodes)
-    .alpha(phase === "topic" ? 1 : 0.92)
-    .alphaMin(0.035)
-    .alphaDecay(phase === "topic" ? 0.048 : 0.052)
-    .velocityDecay(phase === "topic" ? 0.42 : 0.50)
-    .force("charge", d3.forceManyBody().strength((node) => {
-      if (node.type === "topic") return phase === "topic" ? -2800 : -900;
-      return -820;
-    }))
-    .force("collision", d3.forceCollide().radius((node) => {
-      const base = getNodeRadius(node);
-      if (node.type === "topic") return base + (phase === "topic" ? 86 : 58);
-      return base + 56;
-    }).strength(0.96))
-    .force("center", d3.forceCenter(width / 2, height / 2).strength(phase === "topic" ? 0.045 : 0.018))
-    .force("x", d3.forceX((node) => {
-      if (node.type === "topic") return width / 2;
-      const topicId = topicByConcept.get(node.id);
-      const anchor = topicId ? topicAnchors.get(topicId) : null;
-      return anchor ? anchor.x : width / 2;
-    }).strength((node) => node.type === "topic" ? 0.045 : 0.075))
-    .force("y", d3.forceY((node) => {
-      if (node.type === "topic") return height / 2;
-      const topicId = topicByConcept.get(node.id);
-      const anchor = topicId ? topicAnchors.get(topicId) : null;
-      return anchor ? anchor.y : height / 2;
-    }).strength((node) => node.type === "topic" ? 0.045 : 0.075))
+  state.simulation = d3.forceSimulation(topics)
+    .alpha(0.95)
+    .alphaDecay(0.055)
+    .velocityDecay(0.42)
+    .force("charge", d3.forceManyBody().strength(-1800))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + 42).strength(0.95))
+    .force("x", d3.forceX((node, index) => {
+      const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topics.length);
+      return centerX + Math.cos(angle) * radius;
+    }).strength(0.16))
+    .force("y", d3.forceY((node, index) => {
+      const angle = MAIN_LAYOUT_RING_START_ANGLE + (Math.PI * 2 * index) / Math.max(1, topics.length);
+      return centerY + Math.sin(angle) * radius;
+    }).strength(0.16))
     .on("tick", updateStaticGraphPositions);
+}
 
-  if (phase === "concept") {
-    state.simulation.force(
-      "link",
-      d3.forceLink(simEdges)
-        .id((node) => node.id)
-        .distance((edge) => {
-          const sourceNode = getNodeById(getEdgeSourceId(edge));
-          const targetNode = getNodeById(getEdgeTargetId(edge));
-          if (sourceNode?.type === "topic" || targetNode?.type === "topic") return isMobileLayout() ? 190 : 240;
-          return isMobileLayout() ? 132 : 170;
-        })
-        .strength(0.12)
-    );
-  }
+function runConceptSurfaceSimulation() {
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard) return;
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const nodes = (state.currentNodes || []).filter((node) => node.type === "topic" || node.type === "concept");
+  const topics = nodes.filter((node) => node.type === "topic");
+  const concepts = nodes.filter((node) => node.type === "concept");
+  if (!nodes.length) return;
+
+  stopActiveSimulation();
+  const topicByConcept = buildTopicByConceptMap(concepts, topics, state.currentEdges || []);
+  const topicMap = new Map(topics.map((topic) => [topic.id, topic]));
+
+  topics.forEach((topic) => {
+    topic.fx = topic.x;
+    topic.fy = topic.y;
+    state.manualMainPositions.set(topic.id, { x: topic.x || width / 2, y: topic.y || height / 2 });
+  });
+
+  state.simulation = d3.forceSimulation(nodes)
+    .alpha(0.9)
+    .alphaDecay(0.05)
+    .velocityDecay(0.48)
+    .force("link", d3.forceLink(state.currentEdges || []).id((node) => node.id).distance(getLinkDistance).strength(0.18))
+    .force("charge", d3.forceManyBody().strength((node) => node.type === "topic" ? -180 : -70))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (node.type === "topic" ? 42 : 30)).strength(0.95))
+    .force("x", d3.forceX((node) => {
+      if (node.type === "topic") return node.x || width / 2;
+      const topic = topicMap.get(topicByConcept.get(node.id));
+      return topic ? topic.x : width / 2;
+    }).strength((node) => node.type === "topic" ? 0.18 : 0.07))
+    .force("y", d3.forceY((node) => {
+      if (node.type === "topic") return node.y || height / 2;
+      const topic = topicMap.get(topicByConcept.get(node.id));
+      return topic ? topic.y : height / 2;
+    }).strength((node) => node.type === "topic" ? 0.18 : 0.07))
+    .on("tick", updateStaticGraphPositions);
 
   state.simulationStopTimer = window.setTimeout(() => {
     stopActiveSimulation(false);
-    allMainNodes.forEach((node) => {
-      state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
-      if (state.viewMode === "main") {
-        node.fx = node.x;
-        node.fy = node.y;
-      }
+    nodes.forEach((node) => {
+      state.manualMainPositions.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
+      node.fx = node.x;
+      node.fy = node.y;
     });
     updateStaticGraphPositions();
-  }, phase === "topic" ? 1150 : 2600);
+  }, 1700);
+}
+
+// Compatibility wrapper for older calls.
+function startMainViewBurstSimulation() {
+  startUniverseEntryAnimation();
 }
 
 function buildTopicByConceptMap(concepts, topics, edges) {
@@ -3100,38 +3151,35 @@ function formatCount(count) {
 }
 
 function getNodeRadius(node) {
-  // 主網絡節點層級：Topic > Concept > Term。Sentence / Source 不進 Graph。
   const isMobile = isMobileLayout();
-
-  if (node.type === "topic") return isMobile ? 36 : 44;
-  if (node.type === "concept") return isMobile ? 29 : 34;
-  if (node.type === "term") return isMobile ? 18 : 22;
-
-  // 相容舊資料：phrase / sentence 只進 Info Panel，理論上不會被繪製。
-  if (node.type === "phrase" || node.type === "sentence") return isMobile ? 12 : 14;
-
-  return isMobile ? 16 : 18;
+  if (node.type === "topic") return isMobile ? 36 : 42;
+  if (node.type === "concept") return isMobile ? 25 : 29;
+  if (node.type === "term") return isMobile ? 13 : 15;
+  return isMobile ? 12 : 13;
 }
 
 function getLabelSize(node) {
-  if (node.type === "topic") return 16;
-  if (node.type === "concept") return 14;
-  if (node.type === "term") return 12;
+  if (node.type === "topic") return isMobileLayout() ? 15 : 16;
+  if (node.type === "concept") return isMobileLayout() ? 13 : 14;
+  if (node.type === "term") return isMobileLayout() ? 10 : 11;
   return 12;
 }
 
 function getCharge(node) {
-  if (node.type === "topic") return -1150;
-  if (node.type === "concept") return -760;
-  if (node.type === "term") return -360;
-  return -260;
+  if (node.type === "topic") return -180;
+  if (node.type === "concept") return -70;
+  if (node.type === "term") return -28;
+  return -40;
 }
 
 function getLinkDistance(edge) {
-  if (edge.type === "contains") return 175;
-  if (edge.type === "alias_of") return 96;
-  if (edge.type === "related_phrase") return 120;
-  return 124;
+  const sourceNode = getNodeById(getEdgeSourceId(edge));
+  const targetNode = getNodeById(getEdgeTargetId(edge));
+  const types = new Set([sourceNode?.type, targetNode?.type]);
+  if (types.has("topic") && types.has("concept")) return 120;
+  if (types.has("term")) return 54;
+  if (sourceNode?.type === "concept" && targetNode?.type === "concept") return 90;
+  return 96;
 }
 
 function getNodeDisplayLabel(node) {
@@ -3167,13 +3215,15 @@ function handleNodeClick(node) {
   state.activeTag = null;
 
   if (node.type === "concept") {
-    if (state.viewMode === "main" && !state.previousMainTransform && state.svg) {
+    if (state.currentFocus.type === "universe" && !state.previousMainTransform && state.svg) {
       state.previousMainTransform = d3.zoomTransform(state.svg.node());
     }
-    state.viewMode = "concept_terms";
+    state.viewMode = "concept_terms"; // backward compatible only: this is card call-out, not a layer.
+    state.currentFocus = { type: "node", value: node.id };
     state.activeConceptId = node.id;
     state.activeTermId = null;
     state.selectedNodeId = node.id;
+    expandTermsAroundConcept(node.id);
     updateGraph();
     selectNode(node.id);
     requestAnimationFrame(() => focusNode(node.id));
@@ -3184,9 +3234,12 @@ function handleNodeClick(node) {
   if (node.type === "term") {
     const parentConceptId = findParentConceptIdForTerm(node.id) || state.activeConceptId;
     state.viewMode = parentConceptId ? "term_context" : "main";
+    state.currentFocus = parentConceptId ? { type: "node", value: parentConceptId } : { type: "universe", value: null };
     state.activeConceptId = parentConceptId;
     state.activeTermId = node.id;
     state.selectedNodeId = node.id;
+    if (parentConceptId) expandTermsAroundConcept(parentConceptId);
+    state.expandedTermNodeIds.add(node.id);
     updateGraph();
     selectNode(node.id);
     requestAnimationFrame(() => focusNode(node.id));
@@ -3194,37 +3247,34 @@ function handleNodeClick(node) {
     return;
   }
 
+  state.currentFocus = { type: "node", value: node.id };
   selectNode(node.id);
   requestAnimationFrame(() => focusNode(node.id));
 }
 
 function returnToMainView() {
   state.viewMode = "main";
+  state.currentFocus = { type: "universe", value: null };
   state.activeConceptId = null;
   state.activeTermId = null;
+  state.activeTag = null;
   state.selectedNodeId = null;
+  state.seedFocusNodeIds = new Set();
+  clearExpandedTerms();
 
   updateGraph();
   renderDefaultInfo();
   updateBackToMainButton();
 
-  const previousTransform = state.previousMainTransform;
   state.previousMainTransform = null;
-
-  requestAnimationFrame(() => {
-    if (previousTransform && state.svg && state.zoomBehavior) {
-      state.svg.transition().duration(560).call(state.zoomBehavior.transform, previousTransform);
-    } else {
-      resetZoom();
-    }
-  });
+  requestAnimationFrame(() => fitVisibleNodes());
 }
 
 function updateBackToMainButton() {
   const button = document.getElementById("backToMainBtn");
   if (!button) return;
 
-  const isMain = state.viewMode === "main" && !state.activeConceptId && !state.activeTermId;
+  const isMain = state.currentFocus.type === "universe" && !state.activeConceptId && !state.activeTermId && state.expandedTermNodeIds.size === 0;
   button.classList.toggle("hidden", isMain);
   button.disabled = isMain;
   button.setAttribute("aria-hidden", isMain ? "true" : "false");
@@ -3368,44 +3418,70 @@ function getConnectedNodeIds(selectedId) {
 }
 
 function highlightSelection() {
+  applyGraphFocusClasses();
+}
+
+function applyGraphFocusClasses() {
   const selectedId = state.selectedNodeId;
+  const activeConceptId = state.activeConceptId;
+  const activeTag = state.activeTag;
+  const seedIds = state.seedFocusNodeIds || new Set();
+  const connectedIds = selectedId ? getConnectedNodeIds(selectedId) : new Set();
 
-  if (!selectedId) {
-    state.nodeSelection
-      .selectAll("g")
-      .classed("selected", false)
-      .classed("related", false)
-      .classed("dimmed", false);
-
-    state.linkSelection
-      .selectAll("line")
-      .classed("highlight", false)
-      .classed("dimmed", false);
-
-    return;
+  if (activeConceptId) {
+    connectedIds.add(activeConceptId);
+    state.expandedTermNodeIds.forEach((id) => connectedIds.add(id));
   }
-
-  const connectedIds = getConnectedNodeIds(selectedId);
 
   state.nodeSelection
     .selectAll("g")
     .classed("selected", (node) => node.id === selectedId)
-    .classed("related", (node) => connectedIds.has(node.id))
-    .classed("dimmed", (node) => !connectedIds.has(node.id));
+    .classed("node-focus-active", (node) => node.id === selectedId || node.id === activeConceptId)
+    .classed("node-focus-related", (node) => connectedIds.has(node.id) || seedIds.has(node.id))
+    .classed("hashtag-active", (node) => activeTag ? nodeMatchesTag(node, activeTag) : false)
+    .classed("node-focus-dimmed", (node) => {
+      if (activeTag) return !nodeMatchesTag(node, activeTag);
+      if (seedIds.size > 0) return !seedIds.has(node.id);
+      if (selectedId || activeConceptId) return !connectedIds.has(node.id) && node.id !== selectedId && node.id !== activeConceptId;
+      return false;
+    })
+    .classed("dimmed", (node) => {
+      if (activeTag) return !nodeMatchesTag(node, activeTag);
+      if (seedIds.size > 0) return !seedIds.has(node.id);
+      if (selectedId || activeConceptId) return !connectedIds.has(node.id) && node.id !== selectedId && node.id !== activeConceptId;
+      return false;
+    })
+    .classed("related", (node) => connectedIds.has(node.id) || seedIds.has(node.id));
 
   state.linkSelection
     .selectAll("line")
+    .classed("link-focus-related", (edge) => {
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      return sourceId === selectedId || targetId === selectedId ||
+        sourceId === activeConceptId || targetId === activeConceptId ||
+        seedIds.has(sourceId) || seedIds.has(targetId);
+    })
     .classed("highlight", (edge) => {
-      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
-      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
-
-      return sourceId === selectedId || targetId === selectedId;
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      return sourceId === selectedId || targetId === selectedId || sourceId === activeConceptId || targetId === activeConceptId;
+    })
+    .classed("link-dimmed", (edge) => {
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      if (activeTag) return !nodeMatchesTag(getNodeById(sourceId) || {}, activeTag) && !nodeMatchesTag(getNodeById(targetId) || {}, activeTag);
+      if (seedIds.size > 0) return !seedIds.has(sourceId) && !seedIds.has(targetId);
+      if (selectedId || activeConceptId) return sourceId !== selectedId && targetId !== selectedId && sourceId !== activeConceptId && targetId !== activeConceptId;
+      return false;
     })
     .classed("dimmed", (edge) => {
-      const sourceId = typeof edge.source === "object" ? edge.source.id : edge.source;
-      const targetId = typeof edge.target === "object" ? edge.target.id : edge.target;
-
-      return sourceId !== selectedId && targetId !== selectedId;
+      const sourceId = getEdgeSourceId(edge);
+      const targetId = getEdgeTargetId(edge);
+      if (activeTag) return !nodeMatchesTag(getNodeById(sourceId) || {}, activeTag) && !nodeMatchesTag(getNodeById(targetId) || {}, activeTag);
+      if (seedIds.size > 0) return !seedIds.has(sourceId) && !seedIds.has(targetId);
+      if (selectedId || activeConceptId) return sourceId !== selectedId && targetId !== selectedId && sourceId !== activeConceptId && targetId !== activeConceptId;
+      return false;
     });
 }
 
@@ -3728,6 +3804,7 @@ function focusByHashtag(tagText) {
   }
 
   state.activeTag = tag;
+  state.currentFocus = { type: "tag", value: tag };
   const matchedIds = new Set(matchedNodes.map((node) => node.id));
 
   state.nodeSelection
@@ -3809,19 +3886,26 @@ function searchNode() {
     const parentConceptId = findParentConceptIdForTerm(graphTargetNode.id);
     if (parentConceptId) {
       state.viewMode = "term_context";
+      state.currentFocus = { type: "node", value: parentConceptId };
       state.activeConceptId = parentConceptId;
       state.activeTermId = graphTargetNode.id;
       state.selectedNodeId = graphTargetNode.id;
+      expandTermsAroundConcept(parentConceptId);
+      state.expandedTermNodeIds.add(graphTargetNode.id);
     }
   } else if (graphTargetNode.type === "concept") {
     state.viewMode = "concept_terms";
+    state.currentFocus = { type: "node", value: graphTargetNode.id };
     state.activeConceptId = graphTargetNode.id;
     state.activeTermId = null;
     state.selectedNodeId = graphTargetNode.id;
+    expandTermsAroundConcept(graphTargetNode.id);
   } else {
     state.viewMode = "main";
+    state.currentFocus = { type: "universe", value: null };
     state.activeConceptId = null;
     state.activeTermId = null;
+    clearExpandedTerms();
     state.selectedNodeId = graphTargetNode.id;
   }
 
@@ -3880,7 +3964,15 @@ function resetZoom() {
 ================================ */
 
 function typeLabel(type) {
-  return UI_TYPES[type] || type;
+  const map = {
+    topic: "主題",
+    concept: "概念",
+    term: "詞彙",
+    phrase: "句子",
+    sentence: "句子",
+  };
+
+  return map[type] || type;
 }
 
 
