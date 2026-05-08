@@ -22,7 +22,7 @@ const state = {
   graphSources: {},
   graphCards: {},
   meta: {},
-  visibleTypes: new Set(["topic", "concept", "term", "phrase"]),
+  visibleTypes: new Set(["topic", "concept", "term"]),
   selectedCategory: "all",
   selectedNodeId: null,
   simulation: null,
@@ -31,7 +31,8 @@ const state = {
   linkSelection: null,
   nodeSelection: null,
   zoomBehavior: null,
-  infoCompact: false,
+  // Desktop 初始收合；選取節點後自動展開。Mobile 仍由 Bottom Sheet 控制。
+  infoCompact: true,
   lastMobileTapNodeId: null,
   mobileSheetOpen: false,
   mobileSheetExpanded: false,
@@ -60,7 +61,7 @@ const nodeColors = {
   topic: "#CFEAF4",      // 主題：霧感淡藍
   concept: "#D7EEE9",    // 概念：霧青綠，與背景融合
   term: "#DCD9EA",       // 詞彙：低飽和灰紫
-  phrase: "#F6F1E8",     // 句子：奶霜米白
+  phrase: "#F6F1E8",     // 句子：只進 Info Panel，不進主網絡
   unknown: "#E8F3F1",
 };
 
@@ -462,7 +463,7 @@ function setupControls() {
         });
 
         state.visibleTypes = shouldEnableAll
-          ? new Set(["topic", "concept", "term", "phrase"])
+          ? new Set(["topic", "concept", "term"])
           : new Set();
 
         updateGraph();
@@ -478,7 +479,7 @@ function setupControls() {
       }
 
       const allChip = document.querySelector('.filter-chip[data-type="all"]');
-      const allEnabled = ["topic", "concept", "term", "phrase"].every((item) =>
+      const allEnabled = ["topic", "concept", "term"].every((item) =>
         state.visibleTypes.has(item)
       );
 
@@ -594,7 +595,7 @@ function setVisibleTypes(types) {
     const type = chip.dataset.type;
 
     if (type === "all") {
-      chip.classList.toggle("active", types.length === 4);
+      chip.classList.toggle("active", types.length === 3);
       return;
     }
 
@@ -605,7 +606,7 @@ function setVisibleTypes(types) {
 }
 
 function showAll() {
-  state.visibleTypes = new Set(["topic", "concept", "term", "phrase"]);
+  state.visibleTypes = new Set(["topic", "concept", "term"]);
   state.selectedCategory = "all";
   state.selectedNodeId = null;
   state.viewMode = "main";
@@ -630,6 +631,8 @@ function showAll() {
 
   if (isMobileLayout()) {
     closeMobileBottomSheet();
+  } else {
+    closeDesktopInfoPanel();
   }
 
   requestAnimationFrame(() => resetZoom());
@@ -642,6 +645,8 @@ function clearSelection() {
 
   if (isMobileLayout()) {
     closeMobileBottomSheet();
+  } else {
+    closeDesktopInfoPanel();
   }
 }
 
@@ -1562,11 +1567,12 @@ function getConceptTermsData(conceptId) {
   const termIds = getDirectTermIdsForConcept(conceptId);
   const visibleIds = new Set([...main.nodes.map((node) => node.id), conceptId, ...termIds]);
 
-  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id));
+  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id) && ["topic", "concept", "term"].includes(node.type));
+  const graphVisibleIds = new Set(nodes.map((node) => node.id));
   const edges = state.allEdges.filter((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
-    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
+    if (!graphVisibleIds.has(sourceId) || !graphVisibleIds.has(targetId)) return false;
 
     const sourceNode = getNodeById(sourceId);
     const targetNode = getNodeById(targetId);
@@ -1594,11 +1600,12 @@ function getTermContextData(conceptId, termId) {
     ...relatedTermIds,
   ]);
 
-  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id));
+  const nodes = state.allNodes.filter((node) => visibleIds.has(node.id) && ["topic", "concept", "term"].includes(node.type));
+  const graphVisibleIds = new Set(nodes.map((node) => node.id));
   const edges = state.allEdges.filter((edge) => {
     const sourceId = getEdgeSourceId(edge);
     const targetId = getEdgeTargetId(edge);
-    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) return false;
+    if (!graphVisibleIds.has(sourceId) || !graphVisibleIds.has(targetId)) return false;
 
     const sourceNode = getNodeById(sourceId);
     const targetNode = getNodeById(targetId);
@@ -2273,42 +2280,38 @@ function formatCount(count) {
 }
 
 function getNodeRadius(node) {
-  // 階層視覺規則：Topic 最大 → Concept 中等 → Term 小 → Sentence 最小。
-  // 不直接吃 node.size 當主尺寸，避免資料 count/size 讓 Concept 比 Topic 還大。
+  // 主網絡節點層級：Topic > Concept > Term。Sentence / Source 不進 Graph。
   const isMobile = isMobileLayout();
-  const count = Math.max(0, Number(node.count || node.frequency || 0));
-  const countBoost = Math.min(6, Math.log(count + 1) * 1.2);
 
-  if (node.type === "topic") return (isMobile ? 34 : 42) + countBoost;
-  if (node.type === "concept") return (isMobile ? 25 : 31) + countBoost * 0.65;
-  if (node.type === "term") return (isMobile ? 15 : 18) + countBoost * 0.38;
-  if (node.type === "phrase" || node.type === "sentence") return isMobile ? 11 : 13;
+  if (node.type === "topic") return isMobile ? 36 : 44;
+  if (node.type === "concept") return isMobile ? 29 : 34;
+  if (node.type === "term") return isMobile ? 18 : 22;
 
-  return isMobile ? 15 : 17;
+  // 相容舊資料：phrase / sentence 只進 Info Panel，理論上不會被繪製。
+  if (node.type === "phrase" || node.type === "sentence") return isMobile ? 12 : 14;
+
+  return isMobile ? 16 : 18;
 }
 
 function getLabelSize(node) {
-  // 字體也跟著層級遞減，但差距不要太大，避免可讀性下降。
-  if (node.type === "topic") return isMobileLayout() ? 16 : 18;
-  if (node.type === "concept") return isMobileLayout() ? 14 : 16;
-  if (node.type === "term") return isMobileLayout() ? 12 : 13;
-  if (node.type === "phrase" || node.type === "sentence") return 12;
-  return 13;
+  if (node.type === "topic") return 16;
+  if (node.type === "concept") return 14;
+  if (node.type === "term") return 12;
+  return 12;
 }
 
 function getCharge(node) {
-  if (node.type === "topic") return -900;
-  if (node.type === "concept") return -650;
-  if (node.type === "term") return -260;
-  if (node.type === "phrase") return -220;
-  return -300;
+  if (node.type === "topic") return -1150;
+  if (node.type === "concept") return -760;
+  if (node.type === "term") return -360;
+  return -260;
 }
 
 function getLinkDistance(edge) {
-  if (edge.type === "contains") return 145;
-  if (edge.type === "alias_of") return 88;
-  if (edge.type === "related_phrase") return 110;
-  return 105;
+  if (edge.type === "contains") return 175;
+  if (edge.type === "alias_of") return 96;
+  if (edge.type === "related_phrase") return 120;
+  return 124;
 }
 
 function shortenLabel(label, type) {
@@ -2374,6 +2377,7 @@ function returnToMainView() {
   updateGraph();
   renderDefaultInfo();
   updateBackToMainButton();
+  if (!isMobileLayout()) closeDesktopInfoPanel();
 
   const previousTransform = state.previousMainTransform;
   state.previousMainTransform = null;
@@ -2405,11 +2409,26 @@ function selectNode(nodeId) {
   if (node) {
     renderInfoPanel(node);
 
-    // JS-7C：手機點節點後開啟 Bottom Sheet；桌機維持目前狀態。
+    // 選取節點時，Info Panel 自動跳出。
+    // Mobile：開啟 Bottom Sheet。Desktop/Web：從 compact 展開成完整資訊欄。
     if (isMobileLayout()) {
       openMobileBottomSheet(60);
+    } else {
+      openDesktopInfoPanel();
     }
   }
+}
+
+function openDesktopInfoPanel() {
+  if (isMobileLayout()) return;
+  state.infoCompact = false;
+  applyInfoCompactState();
+}
+
+function closeDesktopInfoPanel() {
+  if (isMobileLayout()) return;
+  state.infoCompact = true;
+  applyInfoCompactState();
 }
 
 function focusNode(nodeId) {
@@ -2939,6 +2958,16 @@ function nodeMatchesTag(node, tag) {
 [保留] 7. Search
 - 搜尋既有節點 / 卡片，不與 Seed 共用。
 ========================================================= */
+
+function resolveGraphNodeForSearchMatch(node) {
+  if (!node) return null;
+  if (["topic", "concept", "term"].includes(node.type)) return node;
+
+  // Sentence / phrase 不進主網絡：搜尋命中時，改聚焦其相鄰 Concept / Term。
+  const neighbor = getNeighborNodes(node.id).find((item) => item.type === "concept" || item.type === "term");
+  return neighbor || null;
+}
+
 function searchNode() {
   const input = document.getElementById("searchInput");
   const keyword = normalizeSearchKeyword(input ? input.value : "");
@@ -2954,27 +2983,28 @@ function searchNode() {
   }
 
   const matchedNode = matchedNodes[0];
+  const graphTargetNode = resolveGraphNodeForSearchMatch(matchedNode) || matchedNode;
   state.activeTag = null;
-  setVisibleTypes(["topic", "concept", "term", "phrase"]);
+  setVisibleTypes(["topic", "concept", "term"]);
 
-  if (matchedNode.type === "term") {
-    const parentConceptId = findParentConceptIdForTerm(matchedNode.id);
+  if (graphTargetNode.type === "term") {
+    const parentConceptId = findParentConceptIdForTerm(graphTargetNode.id);
     if (parentConceptId) {
       state.viewMode = "term_context";
       state.activeConceptId = parentConceptId;
-      state.activeTermId = matchedNode.id;
-      state.selectedNodeId = matchedNode.id;
+      state.activeTermId = graphTargetNode.id;
+      state.selectedNodeId = graphTargetNode.id;
     }
-  } else if (matchedNode.type === "concept") {
+  } else if (graphTargetNode.type === "concept") {
     state.viewMode = "concept_terms";
-    state.activeConceptId = matchedNode.id;
+    state.activeConceptId = graphTargetNode.id;
     state.activeTermId = null;
-    state.selectedNodeId = matchedNode.id;
+    state.selectedNodeId = graphTargetNode.id;
   } else {
     state.viewMode = "main";
     state.activeConceptId = null;
     state.activeTermId = null;
-    state.selectedNodeId = matchedNode.id;
+    state.selectedNodeId = graphTargetNode.id;
   }
 
   updateGraph();
@@ -2991,8 +3021,8 @@ function searchNode() {
   }
 
   setTimeout(() => {
-    selectNode(state.selectedNodeId || matchedNode.id);
-    focusNode(state.selectedNodeId || matchedNode.id);
+    selectNode(state.selectedNodeId || graphTargetNode.id);
+    focusNode(state.selectedNodeId || graphTargetNode.id);
     appendSearchFeedback(matchedNodes.length);
     updateBackToMainButton();
   }, 280);

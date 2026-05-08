@@ -228,7 +228,8 @@ body.intro-concepts-visible .node-concept circle {
 .sidebar-toggle { right: 18px; background: rgba(92, 166, 168, 0.88); }
 .seed-toggle:hover { background: rgba(215, 238, 233, 0.42); box-shadow: 0 8px 18px rgba(47, 125, 98, 0.12); }
 .seed-toggle { right: 58px; background: transparent; color: #2f7d62; font-size: 18px; box-shadow: none; border: 1px solid rgba(47, 125, 98, 0.18); }
-.search-toggle { right: 98px; background: rgba(36, 91, 98, 0.78); }
+.search-toggle { right: 98px; background: transparent; color: var(--teal-deep); box-shadow: none; border: 1px solid rgba(36, 91, 98, 0.16); }
+.search-toggle:hover { background: rgba(215, 238, 233, 0.32); box-shadow: 0 8px 18px rgba(36, 91, 98, 0.10); }
 .app-shell.sidebar-collapsed .sidebar-toggle { right: 15px; top: 14px; }
 .app-shell.sidebar-collapsed .seed-toggle { right: 15px; top: 56px; }
 .app-shell.sidebar-collapsed .search-toggle { right: 15px; top: 98px; }
@@ -243,8 +244,8 @@ body.intro-concepts-visible .node-concept circle {
   max-height: 180px;
   overflow: hidden;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(199, 220, 222, 0.72);
+  background: rgba(255, 255, 255, 0.36);
+  border: 1px solid rgba(199, 220, 222, 0.50);
   transition: opacity 0.18s ease, max-height 0.22s ease, margin 0.18s ease, padding 0.18s ease;
 }
 .sidebar-search-panel.search-collapsed, .sidebar-seed-panel.seed-collapsed {
@@ -263,7 +264,7 @@ body.intro-concepts-visible .node-concept circle {
   height: 44px;
   min-height: 44px;
   border: 1px solid rgba(199, 220, 222, 0.9);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.34);
   border-radius: 999px;
   outline: none;
   color: var(--text-main);
