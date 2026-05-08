@@ -1346,10 +1346,14 @@ function finishIntroGraphReveal() {
 
     window.setTimeout(() => {
       document.body.classList.add("intro-concepts-visible", "graph-interaction-enabled", "graph-intro-finished");
+
+      // After the board is visible, run a short controlled main-view simulation.
+      // Page load itself still does not run force simulation behind the overlay.
+      startMainViewForceSimulation();
     }, INITIAL_CONCEPT_DELAY_MS);
   });
 
-  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS + INITIAL_CONCEPT_DELAY_MS);
+  window.setTimeout(() => fitVisibleNodes(), INITIAL_GRAPH_FADE_MS + INITIAL_CONCEPT_DELAY_MS + 420);
 }
 
 async function pickIntroMessage() {
@@ -1913,6 +1917,13 @@ function updateGraph() {
       .attr("y2", (edge) => getEdgeNode(edge.target, nodeMap).y);
 
     nodeEnter.attr("transform", (node) => `translate(${node.x},${node.y})`);
+
+    // During Intro, keep the main graph static. After Intro, run a short
+    // controlled force simulation so Concepts spread out without adding Terms.
+    if (state.introFinished) {
+      startMainViewForceSimulation();
+    }
+
     requestAnimationFrame(() => focusNodeGroup(nodes.map((node) => node.id)));
     highlightSelection();
     updateBackToMainButton();
@@ -1959,17 +1970,129 @@ function updateGraph() {
   updateBackToMainButton();
 }
 
+
+function startMainViewForceSimulation() {
+  if (state.viewMode !== "main" || !state.introFinished) return;
+  if (!state.currentNodes || state.currentNodes.length === 0) return;
+
+  const graphCard = document.querySelector(".graph-card");
+  if (!graphCard || !state.nodeSelection || !state.linkSelection) return;
+
+  const width = graphCard.clientWidth;
+  const height = graphCard.clientHeight;
+  const nodes = state.currentNodes;
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const edges = (state.currentEdges || [])
+    .filter((edge) => nodeIds.has(getEdgeSourceId(edge)) && nodeIds.has(getEdgeTargetId(edge)))
+    .map((edge) => ({ ...edge }));
+
+  if (state.simulationStopTimer) {
+    window.clearTimeout(state.simulationStopTimer);
+    state.simulationStopTimer = null;
+  }
+
+  if (state.simulation) {
+    state.simulation.stop();
+  }
+
+  const topicAnchors = new Map();
+  nodes.forEach((node) => {
+    if (node.type === "topic") {
+      // Keep Topic nodes as stable anchors. Users can still drag them later.
+      node.fx = node.x;
+      node.fy = node.y;
+      topicAnchors.set(node.id, { x: node.x || width / 2, y: node.y || height / 2 });
+      return;
+    }
+
+    const manual = state.manualMainPositions.get(node.id);
+    if (manual) {
+      node.fx = manual.x;
+      node.fy = manual.y;
+      node.x = manual.x;
+      node.y = manual.y;
+    } else {
+      // Let Concept nodes breathe. They start from preset positions, then collision/link forces separate them.
+      node.fx = null;
+      node.fy = null;
+    }
+  });
+
+  const topicByConcept = new Map();
+  const topics = nodes.filter((node) => node.type === "topic");
+  nodes.filter((node) => node.type === "concept").forEach((concept) => {
+    const topic = findTopicForConcept(concept, topics, edges);
+    if (topic) topicByConcept.set(concept.id, topic.id);
+  });
+
+  state.forceStarted = true;
+  state.simulation = d3
+    .forceSimulation(nodes)
+    .alpha(0.72)
+    .alphaMin(0.035)
+    .alphaDecay(0.055)
+    .velocityDecay(0.56)
+    .force(
+      "link",
+      d3
+        .forceLink(edges)
+        .id((node) => node.id)
+        .distance((edge) => {
+          const sourceNode = getNodeById(getEdgeSourceId(edge));
+          const targetNode = getNodeById(getEdgeTargetId(edge));
+          if (sourceNode?.type === "topic" || targetNode?.type === "topic") return isMobileLayout() ? 150 : 185;
+          return isMobileLayout() ? 118 : 142;
+        })
+        .strength(0.24)
+    )
+    .force("charge", d3.forceManyBody().strength((node) => node.type === "topic" ? -1500 : -560))
+    .force("collision", d3.forceCollide().radius((node) => getNodeRadius(node) + (node.type === "topic" ? 56 : 46)).strength(0.92))
+    .force("center", d3.forceCenter(width / 2, height / 2).strength(0.012))
+    .force("topicX", d3.forceX((node) => {
+      if (node.type === "topic") return node.x || width / 2;
+      const topicId = topicByConcept.get(node.id);
+      const anchor = topicId ? topicAnchors.get(topicId) : null;
+      return anchor ? anchor.x : width / 2;
+    }).strength((node) => node.type === "concept" ? 0.085 : 0.02))
+    .force("topicY", d3.forceY((node) => {
+      if (node.type === "topic") return node.y || height / 2;
+      const topicId = topicByConcept.get(node.id);
+      const anchor = topicId ? topicAnchors.get(topicId) : null;
+      return anchor ? anchor.y : height / 2;
+    }).strength((node) => node.type === "concept" ? 0.085 : 0.02))
+    .on("tick", updateStaticGraphPositions);
+
+  state.simulationStopTimer = window.setTimeout(() => {
+    if (state.simulation && state.viewMode === "main") {
+      state.simulation.stop();
+      nodes.forEach((node) => {
+        if (node.type === "topic" || state.manualMainPositions.has(node.id)) {
+          state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
+          node.fx = node.x;
+          node.fy = node.y;
+        } else {
+          node.fx = null;
+          node.fy = null;
+        }
+      });
+      updateStaticGraphPositions();
+    }
+    state.simulationStopTimer = null;
+  }, 3600);
+}
+
 function applyPresetMainLayout(nodes, edges, width, height) {
   const centerX = width / 2;
   const centerY = height / 2;
   const topicNodes = nodes.filter((node) => node.type === "topic");
   const conceptNodes = nodes.filter((node) => node.type === "concept");
 
-  const marginX = clamp(width * (isMobileLayout() ? 0.12 : 0.14), 56, 170);
-  const marginY = clamp(height * (isMobileLayout() ? 0.16 : 0.14), 72, 150);
-  const usableWidth = Math.max(220, width - marginX * 2);
-  const usableHeight = Math.max(220, height - marginY * 2);
-  const conceptOrbit = Math.max(62, Math.min(width, height) * (isMobileLayout() ? 0.12 : 0.11));
+  // Wider scatter: use more whiteboard area so Topic nodes open up earlier.
+  const marginX = clamp(width * (isMobileLayout() ? 0.08 : 0.08), 34, 112);
+  const marginY = clamp(height * (isMobileLayout() ? 0.10 : 0.09), 42, 118);
+  const usableWidth = Math.max(260, width - marginX * 2);
+  const usableHeight = Math.max(260, height - marginY * 2);
+  const conceptOrbit = Math.max(78, Math.min(width, height) * (isMobileLayout() ? 0.15 : 0.16));
 
   const topicPositionMap = new Map();
   const sortedTopics = [...topicNodes].sort((a, b) => seededUnitFromText(a.id, 1) - seededUnitFromText(b.id, 1));
@@ -1982,8 +2105,8 @@ function applyPresetMainLayout(nodes, edges, width, height) {
     const saved = state.manualMainPositions.get(node.id);
     const col = index % columns;
     const row = Math.floor(index / columns);
-    const jitterX = (seededUnitFromText(node.id, 2) - 0.5) * cellWidth * 0.34;
-    const jitterY = (seededUnitFromText(node.id, 3) - 0.5) * cellHeight * 0.34;
+    const jitterX = (seededUnitFromText(node.id, 2) - 0.5) * cellWidth * 0.58;
+    const jitterY = (seededUnitFromText(node.id, 3) - 0.5) * cellHeight * 0.58;
     const x = marginX + cellWidth * (col + 0.5) + jitterX;
     const y = marginY + cellHeight * (row + 0.5) + jitterY;
 
@@ -2013,9 +2136,9 @@ function applyPresetMainLayout(nodes, edges, width, height) {
 
     sortedGroup.forEach((node, index) => {
       const saved = state.manualMainPositions.get(node.id);
-      const ringLevel = Math.floor(index / 5);
-      const angle = outwardAngle + Math.PI + index * GOLDEN_ANGLE + (seededUnitFromText(node.id, 5) - 0.5) * 0.32;
-      const ring = conceptOrbit + ringLevel * 42 + seededUnitFromText(node.id, 6) * 18;
+      const ringLevel = Math.floor(index / 4);
+      const angle = outwardAngle + Math.PI + index * GOLDEN_ANGLE + (seededUnitFromText(node.id, 5) - 0.5) * 0.48;
+      const ring = conceptOrbit + ringLevel * 56 + seededUnitFromText(node.id, 6) * 26;
       const x = baseX + Math.cos(angle) * ring;
       const y = baseY + Math.sin(angle) * ring;
 
@@ -2976,12 +3099,13 @@ function dragStarted(event, node) {
   node.fx = node.x;
   node.fy = node.y;
 
-  if (state.viewMode === "main") {
-    state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
-    return;
+  if (state.simulation && !event.active) {
+    state.simulation.alphaTarget(state.viewMode === "main" ? 0.16 : 0.3).restart();
   }
 
-  if (state.simulation && !event.active) state.simulation.alphaTarget(0.3).restart();
+  if (state.viewMode === "main") {
+    state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
+  }
 }
 
 function dragged(event, node) {
@@ -2997,16 +3121,16 @@ function dragged(event, node) {
 }
 
 function dragEnded(event, node) {
+  if (state.simulation && !event.active) state.simulation.alphaTarget(0);
+
   if (state.viewMode === "main") {
-    // Keep the manually adjusted Topic/Core Concept position in the static main board.
+    // Keep the manually adjusted Topic/Core Concept position in the main board.
     node.fx = node.x;
     node.fy = node.y;
     state.manualMainPositions.set(node.id, { x: node.x || 0, y: node.y || 0 });
     updateStaticGraphPositions();
     return;
   }
-
-  if (state.simulation && !event.active) state.simulation.alphaTarget(0);
 
   node.fx = null;
   node.fy = null;

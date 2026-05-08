@@ -216,7 +216,8 @@ body.intro-concepts-visible .node-concept { opacity: 1; transition: opacity 0.56
   z-index: 30;
 }
 .sidebar-toggle { right: 18px; background: rgba(92, 166, 168, 0.88); }
-.seed-toggle { right: 58px; background: rgba(125, 126, 232, 0.72); font-size: 17px; }
+.seed-toggle:hover { background: rgba(215, 238, 233, 0.42); box-shadow: 0 8px 18px rgba(47, 125, 98, 0.12); }
+.seed-toggle { right: 58px; background: transparent; color: #2f7d62; font-size: 18px; box-shadow: none; border: 1px solid rgba(47, 125, 98, 0.18); }
 .search-toggle { right: 98px; background: rgba(36, 91, 98, 0.78); }
 .app-shell.sidebar-collapsed .sidebar-toggle { right: 15px; top: 14px; }
 .app-shell.sidebar-collapsed .seed-toggle { right: 15px; top: 56px; }
